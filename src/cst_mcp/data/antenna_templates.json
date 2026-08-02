@@ -1,0 +1,247 @@
+{
+  "templates": [
+    {
+      "type": "patch",
+      "name": "Rectangular Microstrip Patch",
+      "description": "Most common planar antenna. Low profile, easy to fabricate on PCB. Narrowband but can be enhanced with stacked or U-slot designs.",
+      "typical_gain_dbi": [5, 8],
+      "bandwidth_percent": [1, 5],
+      "frequency_range_ghz": [0.5, 100],
+      "polarization": "linear",
+      "radiation_pattern": "broadside",
+      "feed_types": ["microstrip", "probe", "inset", "aperture_coupled"],
+      "substrate_recommendations": ["Rogers RO4003C", "Rogers RO4350B", "FR-4"],
+      "design_equations": {
+        "patch_width": "c / (2 * f0 * sqrt((epsilon_r + 1) / 2))",
+        "effective_epsilon": "((epsilon_r+1)/2) + ((epsilon_r-1)/2) * (1 + 12*h/W)^(-0.5)",
+        "delta_L": "0.412 * h * ((epsilon_eff + 0.3) * (W/h + 0.264)) / ((epsilon_eff - 0.258) * (W/h + 0.8))",
+        "patch_length": "c / (2 * f0 * sqrt(epsilon_eff)) - 2 * delta_L"
+      },
+      "design_notes": "Substrate height affects bandwidth (thicker = wider BW but more surface waves). Lower epsilon_r gives wider BW but larger size. Ground plane should extend at least 6h beyond patch edges."
+    },
+    {
+      "type": "dipole",
+      "name": "Half-Wave Dipole",
+      "description": "Fundamental resonant antenna. Omnidirectional in azimuth. Serves as reference for gain measurements.",
+      "typical_gain_dbi": [2.15, 2.15],
+      "bandwidth_percent": [8, 15],
+      "frequency_range_ghz": [0.001, 30],
+      "polarization": "linear",
+      "radiation_pattern": "omnidirectional_azimuth",
+      "feed_types": ["center_fed", "offset_fed", "folded"],
+      "substrate_recommendations": [],
+      "design_equations": {
+        "total_length": "0.48 * lambda0 (accounting for end effects)",
+        "input_impedance": "73 + j42.5 ohms at resonance",
+        "folded_dipole_impedance": "292 ohms (4x dipole)"
+      },
+      "design_notes": "Physical length is approximately 0.48*lambda due to end effects. Thick dipoles have wider bandwidth. Folded dipole provides 4:1 impedance transformation and wider bandwidth."
+    },
+    {
+      "type": "monopole",
+      "name": "Quarter-Wave Monopole",
+      "description": "Half of a dipole over a ground plane. Omnidirectional in azimuth. Common for handheld devices and vehicular antennas.",
+      "typical_gain_dbi": [2, 5.15],
+      "bandwidth_percent": [5, 20],
+      "frequency_range_ghz": [0.001, 10],
+      "polarization": "linear",
+      "radiation_pattern": "omnidirectional_azimuth",
+      "feed_types": ["base_fed", "coaxial", "top_loaded"],
+      "substrate_recommendations": [],
+      "design_equations": {
+        "height": "lambda0 / 4",
+        "input_impedance": "36.5 + j21.25 ohms (half of dipole)",
+        "ground_plane_min_radius": "lambda0 / 4"
+      },
+      "design_notes": "Requires a ground plane for proper operation. Infinite ground plane gives 5.15 dBi; finite ground planes reduce gain and tilt the pattern upward. Top loading or inverted-L shape can reduce height."
+    },
+    {
+      "type": "horn",
+      "name": "Pyramidal Horn",
+      "description": "Flared waveguide opening. Wideband, high gain, well-characterized. Standard gain antenna for measurements and calibration.",
+      "typical_gain_dbi": [10, 25],
+      "bandwidth_percent": [40, 80],
+      "frequency_range_ghz": [1, 325],
+      "polarization": "linear",
+      "radiation_pattern": "directive",
+      "feed_types": ["waveguide"],
+      "substrate_recommendations": [],
+      "design_equations": {
+        "optimum_gain": "G = (4*pi*A_aperture*eta) / lambda0^2",
+        "3dB_beamwidth_E": "56 * lambda0 / b_aperture degrees",
+        "3dB_beamwidth_H": "67 * lambda0 / a_aperture degrees",
+        "aperture_efficiency": "0.51 (optimum design)"
+      },
+      "design_notes": "Gain determined by aperture size relative to wavelength. Corrugated horns achieve symmetric patterns and low cross-polarization. Conical horns used for circular polarization with appropriate feed."
+    },
+    {
+      "type": "yagi",
+      "name": "Yagi-Uda Array",
+      "description": "Endfire parasitic array. High gain from a simple structure. The workhorse of VHF/UHF communications and television reception.",
+      "typical_gain_dbi": [6, 18],
+      "bandwidth_percent": [2, 5],
+      "frequency_range_ghz": [0.01, 6],
+      "polarization": "linear",
+      "radiation_pattern": "endfire",
+      "feed_types": ["center_fed_driven_element", "folded_dipole", "gamma_match"],
+      "substrate_recommendations": [],
+      "design_equations": {
+        "reflector_length": "0.5 * lambda0",
+        "driven_element_length": "0.48 * lambda0",
+        "first_director_length": "0.44 * lambda0",
+        "reflector_spacing": "0.2 * lambda0",
+        "director_spacing": "0.2 to 0.35 * lambda0"
+      },
+      "design_notes": "Gain increases roughly 1 dB per doubled number of directors. Very narrow bandwidth; optimize for center frequency. Folded dipole driven element provides better impedance match and wider bandwidth."
+    },
+    {
+      "type": "helix",
+      "name": "Axial-Mode Helical",
+      "description": "Circularly polarized wideband antenna. Simple construction with excellent CP performance. Common for satellite communications and GPS.",
+      "typical_gain_dbi": [8, 18],
+      "bandwidth_percent": [40, 70],
+      "frequency_range_ghz": [0.1, 10],
+      "polarization": "circular",
+      "radiation_pattern": "endfire",
+      "feed_types": ["coaxial_base_fed"],
+      "substrate_recommendations": [],
+      "design_equations": {
+        "circumference": "lambda0 (for axial mode)",
+        "pitch_angle": "12 to 15 degrees",
+        "turn_spacing": "lambda0 / 4",
+        "gain_approx": "10 * log10(15 * N * S * C^2 / lambda0^3) dBi",
+        "ground_plane_diameter": "0.75 * lambda0 minimum"
+      },
+      "design_notes": "Axial mode requires circumference approximately equal to one wavelength. Number of turns determines gain. Right-hand winding gives RHCP. Ground plane should be at least 0.75*lambda in diameter."
+    },
+    {
+      "type": "vivaldi",
+      "name": "Vivaldi / Tapered Slot",
+      "description": "Ultra-wideband endfire antenna with exponentially tapered slot. Excellent for phased arrays, ground-penetrating radar, and UWB systems.",
+      "typical_gain_dbi": [4, 12],
+      "bandwidth_percent": [100, 170],
+      "frequency_range_ghz": [0.5, 40],
+      "polarization": "linear",
+      "radiation_pattern": "endfire",
+      "feed_types": ["stripline_to_slotline", "microstrip_to_slotline", "antipodal"],
+      "substrate_recommendations": ["Rogers RO4003C", "Rogers RT/duroid 5880", "Taconic TLY-5"],
+      "design_equations": {
+        "taper_profile": "y = A * exp(R * x) + C",
+        "antenna_length": ">= lambda_low / 2 (at lowest frequency)",
+        "slot_width_max": ">= lambda_low / 2",
+        "slot_width_min": "< lambda_high / 10"
+      },
+      "design_notes": "Bandwidth ratio > 10:1 achievable. Exponential taper rate R controls beamwidth. Antipodal Vivaldi avoids balun but has higher cross-polarization. Substrate thickness < 0.03*lambda_mid for best performance."
+    },
+    {
+      "type": "slot",
+      "name": "Slot Antenna",
+      "description": "Complement of a dipole by Babinet's principle. Cut in a ground plane, fed by a transmission line. Low profile and flush-mountable.",
+      "typical_gain_dbi": [2, 6],
+      "bandwidth_percent": [5, 15],
+      "frequency_range_ghz": [0.1, 30],
+      "polarization": "linear",
+      "radiation_pattern": "bidirectional",
+      "feed_types": ["microstrip_coupled", "waveguide", "cpw"],
+      "substrate_recommendations": ["Rogers RO4003C", "Rogers RO4350B", "FR-4"],
+      "design_equations": {
+        "slot_length": "lambda0 / 2",
+        "slot_width": "lambda0 / 20 typical",
+        "input_impedance": "Z_slot = eta^2 / (4 * Z_dipole)"
+      },
+      "design_notes": "Radiates on both sides of the ground plane (bidirectional). Cavity backing makes it unidirectional. Babinet impedance: Z_slot * Z_complementary_dipole = eta^2/4. Annular slot gives wider bandwidth."
+    },
+    {
+      "type": "ifa",
+      "name": "Inverted-F Antenna (IFA)",
+      "description": "Compact low-profile antenna. Shorted patch variant with feed offset for impedance matching. Dominant in mobile phones and WiFi devices.",
+      "typical_gain_dbi": [0, 3],
+      "bandwidth_percent": [3, 10],
+      "frequency_range_ghz": [0.7, 6],
+      "polarization": "linear",
+      "radiation_pattern": "omnidirectional_approximate",
+      "feed_types": ["coaxial_probe"],
+      "substrate_recommendations": ["FR-4"],
+      "design_equations": {
+        "resonant_length": "lambda0 / 4 (shorting pin to open end)",
+        "height": "lambda0 / 50 to lambda0 / 20 typical",
+        "impedance_control": "Feed point position between short and open end"
+      },
+      "design_notes": "Height above ground plane is the main bandwidth driver. Shorting pin/wall provides compact lambda/4 resonance. Feed position controls input impedance. Multi-band operation via multiple branches."
+    },
+    {
+      "type": "pifa",
+      "name": "Planar Inverted-F Antenna (PIFA)",
+      "description": "Planar version of IFA with a wider top plate. Very common in smartphones for multi-band cellular. Compact with reasonable bandwidth.",
+      "typical_gain_dbi": [1, 5],
+      "bandwidth_percent": [5, 15],
+      "frequency_range_ghz": [0.7, 6],
+      "polarization": "linear",
+      "radiation_pattern": "hemispherical",
+      "feed_types": ["coaxial_probe"],
+      "substrate_recommendations": ["FR-4", "Rogers RO4003C"],
+      "design_equations": {
+        "resonant_condition": "L + W = lambda0 / 4 (with shorting wall)",
+        "height": "5 to 10 mm typical for cellular bands",
+        "impedance_control": "Shorting pin/wall width and feed position"
+      },
+      "design_notes": "Width of shorting wall affects bandwidth (wider = more BW). Top plate dimensions L+W approximately lambda/4. Dual-band via slots in top plate or parasitic elements. SAR reduction compared to external antennas."
+    },
+    {
+      "type": "spiral",
+      "name": "Archimedean Spiral",
+      "description": "Frequency-independent antenna with inherent circular polarization. Ultra-wideband with consistent gain across decades of bandwidth.",
+      "typical_gain_dbi": [2, 8],
+      "bandwidth_percent": [100, 180],
+      "frequency_range_ghz": [0.1, 40],
+      "polarization": "circular",
+      "radiation_pattern": "broadside_bidirectional",
+      "feed_types": ["center_fed_balanced", "infinite_balun"],
+      "substrate_recommendations": ["Rogers RT/duroid 5880", "Rogers RO4003C", "Taconic TLY-5"],
+      "design_equations": {
+        "outer_radius": "lambda_low / (2 * pi) (sets low-frequency cutoff)",
+        "inner_radius": "lambda_high / (2 * pi) (sets high-frequency cutoff)",
+        "arm_width": "equal to gap width (self-complementary)",
+        "input_impedance": "188.5 ohms (self-complementary, eta/2)"
+      },
+      "design_notes": "Active region radiates where circumference equals one wavelength. Self-complementary design gives constant 188.5 ohm impedance. Cavity backing makes unidirectional but narrows bandwidth. Absorber-loaded cavity is a compromise."
+    },
+    {
+      "type": "bowtie",
+      "name": "Bowtie (Biconical Dipole)",
+      "description": "Wideband planar dipole variant. Triangular flare provides broader bandwidth than a linear dipole. Simple and inexpensive to fabricate.",
+      "typical_gain_dbi": [2, 5],
+      "bandwidth_percent": [20, 50],
+      "frequency_range_ghz": [0.1, 20],
+      "polarization": "linear",
+      "radiation_pattern": "omnidirectional_azimuth",
+      "feed_types": ["center_fed", "microstrip_balun"],
+      "substrate_recommendations": ["FR-4", "Rogers RO4003C"],
+      "design_equations": {
+        "arm_length": "lambda0 / 4",
+        "flare_angle": "60 to 90 degrees typical",
+        "input_impedance": "depends on flare angle; ~100-200 ohms"
+      },
+      "design_notes": "Wider flare angle gives wider bandwidth but lower impedance. Printed bowtie on substrate is narrower band than free-space. Resistive loading or rounded edges further improve bandwidth."
+    },
+    {
+      "type": "loop",
+      "name": "Loop Antenna",
+      "description": "Electrically small or resonant loop. Small loops have magnetic dipole pattern. Resonant loops (1-lambda circumference) provide moderate gain.",
+      "typical_gain_dbi": [-2, 4],
+      "bandwidth_percent": [1, 10],
+      "frequency_range_ghz": [0.001, 10],
+      "polarization": "linear",
+      "radiation_pattern": "broadside_or_omnidirectional",
+      "feed_types": ["direct", "gamma_match", "capacitive_tuning"],
+      "substrate_recommendations": ["FR-4"],
+      "design_equations": {
+        "small_loop_radiation_resistance": "31171 * (A / lambda0^2)^2 ohms",
+        "resonant_circumference": "lambda0 (resonant loop)",
+        "small_loop_directivity": "1.5 (1.76 dBi)",
+        "resonant_loop_directivity": "3.11 (4.9 dBi, 1-lambda circular)"
+      },
+      "design_notes": "Electrically small loops (circumference < lambda/10) are poor radiators but useful for direction finding and near-field probes. Resonant loops have circumference near one wavelength. Multiple turns with tuning capacitor for HF reception."
+    }
+  ]
+}

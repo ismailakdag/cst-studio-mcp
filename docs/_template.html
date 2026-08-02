@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>cst-studio-mcp — CST Studio Suite MCP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet"/>
+<script>
+/* Apply saved theme before paint to avoid flash / missing dark mode */
+(function () {
+  try {
+    var t = localStorage.getItem('cst_mcp_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+  } catch (e) {}
+})();
+</script>
+<style>
+:root {
+  --ink: #1c2430;
+  --ink-soft: #3d4a5c;
+  --muted: #5c6b7a;
+  --faint: #8a97a6;
+  --line: #d8dee6;
+  --line-soft: #e8edf2;
+  --paper: #f4f1ea;
+  --paper-2: #ebe6dc;
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
+  --sidebar: #f0ebe3;
+  --accent: #1f4e79;
+  --accent-2: #2a6f97;
+  --accent-soft: #e6eef5;
+  --code-bg: #eef2f6;
+  --code-ink: #0f3d5c;
+  --ok: #1b6b4a;
+  --warn-bg: #f7f0e0;
+  --radius: 6px;
+  --sidebar-w: 280px;
+  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", "Times New Roman", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "Consolas", ui-monospace, monospace;
+  --shadow: 0 1px 2px rgba(28, 36, 48, 0.06);
+  --badge-req-fg: #7a3e1d;
+  --badge-req-bg: #f8efe6;
+  --badge-req-bd: #e2c9b0;
+}
+
+/* Academic dark — slate/ink, not terminal green */
+html[data-theme="dark"] {
+  --ink: #e6eaf0;
+  --ink-soft: #b8c2d0;
+  --muted: #8b98a8;
+  --faint: #6b7888;
+  --line: #2c3544;
+  --line-soft: #243040;
+  --paper: #12171f;
+  --paper-2: #0e1319;
+  --surface: #1a212c;
+  --surface-2: #222b38;
+  --sidebar: #161c26;
+  --accent: #6ea8d8;
+  --accent-2: #8fbee6;
+  --accent-soft: rgba(110, 168, 216, 0.12);
+  --code-bg: #0f1520;
+  --code-ink: #9ec9ea;
+  --ok: #5dba8c;
+  --warn-bg: #2a2418;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --badge-req-fg: #f0c9a8;
+  --badge-req-bg: #3a2a1c;
+  --badge-req-bd: #5c4330;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+html, body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+/* —— Sidebar —— */
+.sidebar {
+  background: var(--sidebar);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+.brand {
+  padding: 1.15rem 1rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.brand h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.brand .sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.brand-meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+}
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+}
+
+.side-controls {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  background: var(--sidebar);
+}
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.seg button {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  padding: 0.45rem 0.4rem;
+  cursor: pointer;
+  margin: 0;
+}
+.seg button:last-child { border-right: none; }
+.seg button:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.seg button.on {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-theme="dark"] .seg button.on {
+  color: #0e1319;
+  background: var(--accent);
+}
+.filters {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+}
+.filter-btn:hover {
+  border-color: var(--accent-2);
+  color: var(--accent);
+}
+.filter-btn.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.search {
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 0.5rem 0.65rem;
+  outline: none;
+}
+.search:focus {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.search::placeholder { color: var(--faint); }
+
+.nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem 0.45rem 1rem;
+  overscroll-behavior: contain;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.42rem 0.55rem;
+  margin-bottom: 1px;
+  border-radius: 4px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.8rem;
+  border-left: 2px solid transparent;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,0.55);
+  color: var(--ink);
+}
+.nav-item.active {
+  background: var(--surface);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.nav-item .lbl {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-item .cnt {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--faint);
+  flex-shrink: 0;
+}
+
+/* —— Main —— */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--paper);
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1.35rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  z-index: 5;
+}
+.topbar h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1 1 auto;
+  min-width: 10rem;
+}
+.result-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.15rem 1.5rem 2.5rem;
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+}
+
+/* Intro + install guide */
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.intro-top {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  box-shadow: var(--shadow);
+}
+.panel h3 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.panel h4 {
+  margin: 0.85rem 0 0.35rem;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.panel p {
+  margin: 0 0 0.55rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.panel p:last-child { margin-bottom: 0; }
+.panel .note {
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--warn-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.guide-wide { grid-column: 1 / -1; }
+table.env {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  margin: 0.4rem 0 0.2rem;
+}
+table.env th, table.env td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+table.env th {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+table.env code {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--code-ink);
+  background: var(--code-bg);
+  padding: 0.05rem 0.28rem;
+  border-radius: 3px;
+}
+/* Copyable code blocks */
+.code-block {
+  margin: 0.45rem 0 0.65rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.code-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.28rem 0.45rem 0.28rem 0.65rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+.code-block-head .lbl {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.code-block pre {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--code-ink);
+  white-space: pre;
+  tab-size: 2;
+}
+.btn-copy-sm {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.22rem 0.5rem;
+  cursor: pointer;
+}
+.btn-copy-sm:hover {
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: var(--accent-soft);
+}
+.btn-copy-sm.ok {
+  color: var(--ok);
+  border-color: #9dcbb5;
+  background: #eef7f2;
+}
+html[data-theme="dark"] .btn-copy-sm.ok {
+  color: var(--ok);
+  border-color: #3d6b52;
+  background: #1a2e24;
+}
+
+/* Path builder form */
+.path-form {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.5rem 0 0.35rem;
+}
+.path-form label {
+  display: grid;
+  gap: 0.22rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.path-form input[type="text"] {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.45rem 0.55rem;
+  outline: none;
+  width: 100%;
+}
+.path-form input[type="text"]:focus {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.path-form .hint {
+  font-weight: 400;
+  font-size: 0.74rem;
+  color: var(--faint);
+  line-height: 1.35;
+}
+.step-list {
+  margin: 0.35rem 0 0.5rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: setup;
+}
+.step-list > li {
+  position: relative;
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.65rem 0.55rem 2.4rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+.step-list > li::before {
+  counter-increment: setup;
+  content: counter(setup);
+  position: absolute;
+  left: 0.55rem;
+  top: 0.55rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.step-list > li > b {
+  display: block;
+  font-size: 0.86rem;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+}
+.step-list > li > p {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  font-weight: 400;
+}
+ul.plain {
+  margin: 0.25rem 0 0.4rem;
+  padding-left: 1.15rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+ul.plain li { margin: 0.15rem 0; }
+ul.plain code {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--code-ink);
+  background: var(--code-bg);
+  padding: 0.05rem 0.25rem;
+  border-radius: 3px;
+}
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.steps li {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.steps .n {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 3px;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+}
+.steps b {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+.note {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  line-height: 1.4;
+}
+
+/* Categories & tools */
+.category {
+  margin: 0 0 1.75rem;
+  scroll-margin-top: 0.75rem;
+}
+.category.hidden { display: none; }
+.cat-head {
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--line);
+}
+.cat-head h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.cat-head .count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+}
+.cat-head p {
+  margin: 0.3rem 0 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+  max-width: 72ch;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 0.7rem;
+}
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.85rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 8.5rem;
+  box-shadow: var(--shadow);
+}
+.tool-card:hover {
+  border-color: #b8c5d4;
+}
+.tool-card.hidden { display: none; }
+.tool-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.tool-top code {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--code-ink);
+  background: var(--code-bg);
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  padding: 0.18rem 0.4rem;
+  word-break: break-all;
+  line-height: 1.35;
+}
+.btn-copy {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.25rem 0.45rem;
+  cursor: pointer;
+}
+.btn-copy:hover {
+  color: var(--accent);
+  border-color: var(--accent-2);
+  background: var(--accent-soft);
+}
+.btn-copy.ok {
+  color: var(--ok);
+  border-color: #9dcbb5;
+  background: #eef7f2;
+}
+.desc {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0;
+}
+.tool-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+.btn-link {
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.btn-link:hover { color: var(--accent-2); }
+
+.params {
+  display: none;
+  margin-top: 0.25rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line-soft);
+}
+.tool-card.open .params { display: block; }
+table.p {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+table.p th, table.p td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.35rem 0.3rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+table.p th {
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+table.p code {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--code-ink);
+}
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  border-radius: 2px;
+  padding: 0.05rem 0.3rem;
+  margin-right: 0.2rem;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.badge.req {
+  color: var(--badge-req-fg);
+  background: var(--badge-req-bg);
+  border-color: var(--badge-req-bd);
+}
+html[data-theme="dark"] .btn-copy.ok {
+  color: var(--ok);
+  border-color: #3d6b52;
+  background: #1a2e24;
+}
+html[data-theme="dark"] .nav-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+html[data-theme="dark"] .nav-item.active {
+  background: var(--surface-2);
+}
+.badge.enum {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: #c5d6e6;
+}
+.pdesc {
+  color: var(--muted);
+  margin-top: 0.15rem;
+  line-height: 1.35;
+  font-size: 0.76rem;
+}
+.default {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--faint);
+}
+
+.empty {
+  display: none;
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem 1rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.9rem;
+}
+.empty.show { display: block; }
+
+footer {
+  margin-top: 1.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+  body { overflow: auto; height: auto; }
+  .sidebar {
+    height: auto;
+    max-height: 40vh;
+  }
+  .main { height: auto; min-height: 60vh; }
+  .content { overflow: visible; }
+  .intro-top, .guide-grid { grid-template-columns: 1fr; }
+  .guide-wide { grid-column: auto; }
+  .tool-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>cst-studio-mcp</h1>
+      <p class="sub" id="brandSub">CST Studio Suite MCP tool reference</p>
+      <div class="brand-meta">
+        <span class="meta-chip" id="pillTools">— tools</span>
+        <span class="meta-chip" id="pillCats">— categories</span>
+        <span class="meta-chip">v1.0.0</span>
+      </div>
+    </div>
+    <div class="side-controls">
+      <div class="seg" role="group" aria-label="Language">
+        <button type="button" id="btnEn" class="on">EN</button>
+        <button type="button" id="btnTr">TR</button>
+      </div>
+      <div class="seg" role="group" aria-label="Theme">
+        <button type="button" id="btnLight" class="on">Light</button>
+        <button type="button" id="btnDark">Dark</button>
+      </div>
+      <input class="search" id="search" type="search" placeholder="Search tools…" autocomplete="off" spellcheck="false"/>
+    </div>
+    <nav class="nav" id="nav" aria-label="Categories"></nav>
+  </aside>
+
+  <section class="main">
+    <header class="topbar">
+      <h2 id="pageTitle">Tool reference</h2>
+      <div class="filters" id="filters"></div>
+      <div class="result-meta" id="resultMeta"></div>
+    </header>
+    <div class="content" id="content">
+      <div class="intro" id="intro"></div>
+      <div class="empty" id="empty"></div>
+      <div id="categories"></div>
+      <footer id="footer"></footer>
+    </div>
+  </section>
+</div>
+
+<script id="catalog" type="application/json">__CATALOG_JSON__</script>
+<script>
+const CATALOG = JSON.parse(document.getElementById('catalog').textContent);
+
+const I18N = {
+  en: {
+    brand_sub: "MCP tool reference for CST Studio Suite — install, workflows, geometry, solvers, results",
+    page_title: "Tool reference & setup",
+    search_ph: "Filter by name or description…",
+    showing_all: "all tools",
+    showing_n: (n) => n + " shown",
+    empty: "No tools match this filter.",
+    hero_title: "About cst-studio-mcp",
+    hero_body: "cst-studio-mcp is a Python-first MCP server: an AI assistant calls structured tools to control CST Studio Suite on your PC — projects, geometry (history VBA), materials, ports, solvers, S-parameters, and farfield metrics. This page is the live tool catalog; installation details match the project README.",
+    steps_title: "Suggested workflow",
+    s1t: "Connect", s1d: "cst_connection_status — confirm mode is connected.",
+    s2t: "Build or template", s2d: "Workflows (e.g. patch antenna) or geometry + materials + ports.",
+    s3t: "Simulate and report", s3d: "cst_workflow_simulate_and_report, or solve then S-parameters / farfield metrics.",
+    note: "After install, set CST_PATH / PYTHONPATH (form below) and paste them into your MCP client env. Full text: README.md.",
+    setup_title: "Setup for a new clone",
+    setup_intro: "You downloaded the repo. Do these steps once on Windows (PowerShell).",
+    s_need: "You need",
+    s_need_items: [
+      "Windows 10/11 + licensed CST Studio Suite 2024–2026",
+      "Python 3.10+ on PATH (3.12 recommended)",
+      "This repository folder on disk",
+    ],
+    step1_t: "Open PowerShell in the repo folder",
+    step1_d: "git clone https://github.com/ismailakdag/cst-studio-mcp.git then cd cst-studio-mcp (folder with pyproject.toml).",
+    step2_t: "Create venv and install the package",
+    step2_d: "Copy-paste into PowerShell (creates .venv, activates it, installs cst-studio-mcp editable):",
+    step3_t: "Tell Python where CST lives",
+    step3_d: "Enter your CST install root below (the folder that contains AMD64). Generated commands set session env vars — paste into the same PowerShell window.",
+    step4_t: "MCP client config (Cursor / Claude / …)",
+    step4_d: "Copy the JSON into your MCP servers config. Paths update when you edit the form. Restart the MCP server after saving.",
+    step5_t: "Verify",
+    step5_d: "In the activated venv PowerShell:",
+    path_cst: "CST install root (CST_PATH)",
+    path_cst_hint: "Example: C:\\Program Files\\CST Studio Suite 2026  or  E:\\CST Studio Suite 2026 — not the AMD64 subfolder.",
+    path_work: "Work directory (CST_WORK_DIR)",
+    path_work_hint: "Where .cst projects and exports go. Created if missing when you run tools.",
+    path_repo: "This repo root (optional, for full path to cst-studio-mcp.exe)",
+    path_repo_hint: "Folder with pyproject.toml. Used only to fill the command path in MCP JSON.",
+    gen_ps: "PowerShell — set env for this terminal session",
+    gen_ps_note: "These last only for the current PowerShell window. For MCP, put the same values in the client env block (JSON below), not only in the shell.",
+    gen_mcp: "MCP config JSON (copy into client)",
+    gen_user: "User env (optional, permanent for your Windows account)",
+    gen_user_note: "Sets user-level environment variables (new terminals / apps after re-login may be needed). Prefer MCP env for AI clients.",
+    lbl_install: "PowerShell — install",
+    lbl_verify: "PowerShell — verify",
+    lbl_env: "PowerShell — environment",
+    lbl_mcp: "MCP JSON",
+    lbl_userenv: "PowerShell — user env (permanent)",
+    env_title: "What each variable means",
+    env_headers: ["Variable", "Role"],
+    env_rows: [
+      ["CST_PATH", "CST product root (contains AMD64)"],
+      ["PYTHONPATH", "…\\AMD64\\python_cst_libraries — required for import cst"],
+      ["CST_WORK_DIR", "Projects / exports folder"],
+      ["CST_VERSION", "Year hint for auto-detect (default 2026)"],
+      ["CST_QUIET", "1 = quieter Design Environment"],
+    ],
+    ff_title: "Farfield notes (CST 2026)",
+    ff_body: "Add a frequency-domain Farfield monitor before solve. Tree: Farfields\\farfield (f=…) [1]. Use cst_get_farfield_metrics (GetMax) — avoid ASCIIExportSummary spam.",
+    tips_title: "Tips",
+    tips_items: [
+      "Restart MCP after pip install -e . or source edits",
+      "If cst-studio-mcp is not found, use full path to .venv\\Scripts\\cst-studio-mcp.exe in MCP command",
+      "Rebuild this page: python scripts/build_docs.py",
+    ],
+    params: (n) => (n ? "Parameters (" + n + ")" : "No parameters"),
+    hide_params: "Hide parameters",
+    no_params: "No parameters.",
+    all: "All",
+    footer: "Generated from live tool schemas · python scripts/build_docs.py · MIT · see README.md",
+    copy: "Copy",
+    copied: "Copied",
+    copy_hint: "Copy to clipboard",
+  },
+  tr: {
+    brand_sub: "CST Studio Suite MCP araç referansı — kurulum, iş akışı, geometri, çözücü, sonuç",
+    page_title: "Araç referansı ve kurulum",
+    search_ph: "İsim veya açıklamaya göre filtrele…",
+    showing_all: "tüm araçlar",
+    showing_n: (n) => n + " gösteriliyor",
+    empty: "Bu filtreyle eşleşen araç yok.",
+    hero_title: "cst-studio-mcp nedir?",
+    hero_body: "cst-studio-mcp, Python öncelikli bir MCP sunucusudur: asistan yapılandırılmış araçlarla bilgisayarınızdaki CST Studio Suite’i kontrol eder — proje, geometri, malzeme, port, çözücü, S-parametreleri ve farfield. Bu sayfa canlı araç kataloğudur.",
+    steps_title: "Önerilen akış",
+    s1t: "Bağlan", s1d: "cst_connection_status — mode=connected olmalı.",
+    s2t: "Model kur", s2d: "İş akışları (ör. patch anten) veya geometri + malzeme + port.",
+    s3t: "Simüle et ve raporla", s3d: "cst_workflow_simulate_and_report veya solve + S / farfield.",
+    note: "Kurulumdan sonra aşağıdaki formla CST_PATH / PYTHONPATH üretin; MCP istemcisinin env bloğuna yapıştırın. Tam metin: README.md.",
+    setup_title: "Yeni klon için kurulum",
+    setup_intro: "Repoyu indirdiniz. Windows’ta (PowerShell) bir kez şu adımları uygulayın.",
+    s_need: "Gerekenler",
+    s_need_items: [
+      "Windows 10/11 + lisanslı CST Studio Suite 2024–2026",
+      "PATH’te Python 3.10+ (3.12 önerilir)",
+      "Bu depo klasörü diskte",
+    ],
+    step1_t: "PowerShell’i repo klasöründe açın",
+    step1_d: "git clone https://github.com/ismailakdag/cst-studio-mcp.git sonra cd cst-studio-mcp (pyproject.toml olan klasör).",
+    step2_t: "venv oluşturun ve paketi kurun",
+    step2_d: "PowerShell’e yapıştırın (.venv oluşturur, aktif eder, cst-studio-mcp’yi editable kurar):",
+    step3_t: "CST’nin yerini Python’a gösterin",
+    step3_d: "Aşağıya CST kurulum kökünü yazın (içinde AMD64 olan klasör). Üretilen komutları aynı PowerShell penceresine yapıştırın.",
+    step4_t: "MCP istemci ayarı (Cursor / Claude / …)",
+    step4_d: "JSON’u MCP sunucu config’inize kopyalayın. Formu değiştirince yollar güncellenir. Kaydettikten sonra MCP sürecini yeniden başlatın.",
+    step5_t: "Doğrulama",
+    step5_d: "Aktif venv’li PowerShell’de:",
+    path_cst: "CST kurulum kökü (CST_PATH)",
+    path_cst_hint: "Örnek: C:\\Program Files\\CST Studio Suite 2026  veya  E:\\CST Studio Suite 2026 — AMD64 alt klasörü değil, bir üstü.",
+    path_work: "Çalışma klasörü (CST_WORK_DIR)",
+    path_work_hint: ".cst projeleri ve export’lar buraya yazılır.",
+    path_repo: "Bu depo kökü (isteğe bağlı, cst-studio-mcp.exe tam yolu için)",
+    path_repo_hint: "pyproject.toml’un olduğu klasör. Sadece MCP JSON içindeki command yolunu doldurur.",
+    gen_ps: "PowerShell — bu oturum için ortam değişkenleri",
+    gen_ps_note: "Sadece açık PowerShell penceresinde geçerlidir. AI istemcisi için aynı değerleri aşağıdaki MCP JSON env bloğuna koyun.",
+    gen_mcp: "MCP config JSON (istemciye kopyala)",
+    gen_user: "Kullanıcı ortamı (isteğe bağlı, kalıcı)",
+    gen_user_note: "Windows kullanıcı ortam değişkenlerini ayarlar (yeni pencereler / yeniden oturum gerekebilir). AI için MCP env tercih edin.",
+    lbl_install: "PowerShell — kurulum",
+    lbl_verify: "PowerShell — doğrulama",
+    lbl_env: "PowerShell — ortam",
+    lbl_mcp: "MCP JSON",
+    lbl_userenv: "PowerShell — kalıcı kullanıcı env",
+    env_title: "Değişkenlerin anlamı",
+    env_headers: ["Değişken", "Görev"],
+    env_rows: [
+      ["CST_PATH", "CST ürün kökü (AMD64 içerir)"],
+      ["PYTHONPATH", "…\\AMD64\\python_cst_libraries — import cst için şart"],
+      ["CST_WORK_DIR", "Proje / export klasörü"],
+      ["CST_VERSION", "Otomatik arama yılı (varsayılan 2026)"],
+      ["CST_QUIET", "1 = daha sessiz Design Environment"],
+    ],
+    ff_title: "Farfield notları (CST 2026)",
+    ff_body: "Solve öncesi frekans domain Farfield monitörü. Ağaç: Farfields\\farfield (f=…) [1]. cst_get_farfield_metrics (GetMax) kullanın.",
+    tips_title: "İpuçları",
+    tips_items: [
+      "pip install -e . veya kaynak değişince MCP’yi yeniden başlatın",
+      "cst-studio-mcp bulunamazsa MCP command olarak .venv\\Scripts\\cst-studio-mcp.exe tam yolunu yazın",
+      "Bu sayfayı yenile: python scripts/build_docs.py",
+    ],
+    params: (n) => (n ? "Parametreler (" + n + ")" : "Parametre yok"),
+    hide_params: "Parametreleri gizle",
+    no_params: "Parametre yok.",
+    all: "Tümü",
+    footer: "Canlı şemalardan üretildi · python scripts/build_docs.py · MIT · README.md",
+    copy: "Kopyala",
+    copied: "Kopyalandı",
+    copy_hint: "Panoya kopyala",
+  }
+};
+
+let lang = localStorage.getItem('cst_mcp_lang') || 'en';
+let filter = 'all';
+let theme = localStorage.getItem('cst_mcp_theme') || 'light';
+const t = () => I18N[lang];
+const catTitle = (c) => (lang === 'tr' ? c.title_tr : c.title_en);
+const catBlurb = (c) => (lang === 'tr' ? c.blurb_tr : c.blurb_en);
+
+function applyTheme() {
+  const mode = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', mode);
+  try { localStorage.setItem('cst_mcp_theme', mode); } catch (e) {}
+  theme = mode;
+  const bl = document.getElementById('btnLight');
+  const bd = document.getElementById('btnDark');
+  if (bl && bd) {
+    bl.classList.toggle('on', mode === 'light');
+    bd.classList.toggle('on', mode === 'dark');
+    bl.textContent = lang === 'tr' ? 'Açık' : 'Light';
+    bd.textContent = lang === 'tr' ? 'Koyu' : 'Dark';
+  }
+}
+
+/** Full tool text for Copy — not stored in HTML attributes (newlines break attrs). */
+const TOOL_TEXT = {};
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, m =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function toolPlainText(tool, catLabel) {
+  const lines = [];
+  lines.push(tool.name);
+  lines.push('');
+  if (catLabel) lines.push('Category: ' + catLabel);
+  lines.push('');
+  lines.push(tool.description || '');
+  lines.push('');
+  if (tool.params && tool.params.length) {
+    lines.push('Parameters:');
+    tool.params.forEach(p => {
+      let line = '  - ' + p.name + ' (' + (p.type || 'any') + ')';
+      line += p.required ? ' [required]' : ' [optional]';
+      if (p.default !== null && p.default !== undefined) {
+        line += ' default=' + JSON.stringify(p.default);
+      }
+      if (p.enum && p.enum.length) line += ' enum=' + JSON.stringify(p.enum);
+      lines.push(line);
+      if (p.description) lines.push('      ' + p.description);
+    });
+  } else {
+    lines.push('Parameters: (none)');
+  }
+  if (tool.required && tool.required.length) {
+    lines.push('');
+    lines.push('Required: ' + tool.required.join(', '));
+  }
+  return lines.join('\n');
+}
+
+/** Safe install lines — built as array to avoid JS string escape glitches (e.g. broken .venv). */
+function installPsCommands() {
+  return [
+    'python -m venv .venv',
+    '.\\.venv\\Scripts\\Activate.ps1',
+    'pip install -U pip',
+    'pip install -e ".[dev]"',
+  ].join('\n');
+}
+
+function verifyPsCommands() {
+  return [
+    'python -c "import cst.interface; print(\'CST interface OK\')"',
+    'python -c "from cst_mcp.config import CSTConfig; c=CSTConfig.from_env(); print(c.cst_path); print(c.python_lib_path); print(\'available\', c.cst_available)"',
+    'Get-Command cst-studio-mcp',
+  ].join('\n');
+}
+
+function normalizePath(p) {
+  return String(p || '').trim().replace(/[\/]+/g, '\\').replace(/\\+$/, '');
+}
+
+function joinPath(a, b) {
+  a = normalizePath(a);
+  b = String(b || '').replace(/^[\\\/]+/, '');
+  if (!a) return b;
+  return a + '\\' + b;
+}
+
+function psQuote(s) {
+  return '"' + String(s).replace(/"/g, '`"') + '"';
+}
+
+function jsonEscapePath(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function buildSessionEnvPs(cstRoot, workDir) {
+  const root = normalizePath(cstRoot);
+  const work = normalizePath(workDir) || joinPath('%USERPROFILE%', 'cst_projects');
+  const pyLibs = joinPath(root, 'AMD64\\python_cst_libraries');
+  return [
+    '# Paste into PowerShell (current window only)',
+    '$env:CST_PATH = ' + psQuote(root),
+    '$env:PYTHONPATH = ' + psQuote(pyLibs),
+    '$env:CST_WORK_DIR = ' + psQuote(work),
+    '$env:CST_VERSION = "2026"',
+    'New-Item -ItemType Directory -Force -Path $env:CST_WORK_DIR | Out-Null',
+    'Write-Host "CST_PATH=$env:CST_PATH"',
+    'Write-Host "PYTHONPATH=$env:PYTHONPATH"',
+  ].join('\n');
+}
+
+function buildUserEnvPs(cstRoot, workDir) {
+  const root = normalizePath(cstRoot);
+  const work = normalizePath(workDir) || joinPath('%USERPROFILE%', 'cst_projects');
+  const pyLibs = joinPath(root, 'AMD64\\python_cst_libraries');
+  return [
+    '# Optional: permanent USER environment (new apps may need re-login)',
+    '[Environment]::SetEnvironmentVariable("CST_PATH", ' + psQuote(root) + ', "User")',
+    '[Environment]::SetEnvironmentVariable("PYTHONPATH", ' + psQuote(pyLibs) + ', "User")',
+    '[Environment]::SetEnvironmentVariable("CST_WORK_DIR", ' + psQuote(work) + ', "User")',
+    '[Environment]::SetEnvironmentVariable("CST_VERSION", "2026", "User")',
+    'Write-Host "User env updated. Open a new terminal or restart the MCP host."',
+  ].join('\n');
+}
+
+function buildMcpJson(cstRoot, workDir, repoRoot) {
+  const root = normalizePath(cstRoot);
+  const work = normalizePath(workDir) || 'C:\\cst_projects';
+  const pyLibs = joinPath(root, 'AMD64\\python_cst_libraries');
+  let command = 'cst-studio-mcp';
+  const repo = normalizePath(repoRoot);
+  if (repo) {
+    command = joinPath(repo, '.venv\\Scripts\\cst-studio-mcp.exe');
+  }
+  return [
+    '{',
+    '  "mcpServers": {',
+    '    "cst-studio": {',
+    '      "command": "' + jsonEscapePath(command) + '",',
+    '      "env": {',
+    '        "CST_PATH": "' + jsonEscapePath(root) + '",',
+    '        "CST_WORK_DIR": "' + jsonEscapePath(work) + '",',
+    '        "CST_VERSION": "2026",',
+    '        "PYTHONPATH": "' + jsonEscapePath(pyLibs) + '",',
+    '        "CST_LOG_LEVEL": "INFO"',
+    '      }',
+    '    }',
+    '  }',
+    '}',
+  ].join('\n');
+}
+
+function codeBlock(label, text, id) {
+  const i = t();
+  return (
+    '<div class="code-block">' +
+      '<div class="code-block-head">' +
+        '<span class="lbl">' + esc(label) + '</span>' +
+        '<button type="button" class="btn-copy-sm" data-copy-id="' + esc(id) + '" title="' + esc(i.copy_hint) + '">' +
+          esc(i.copy) +
+        '</button>' +
+      '</div>' +
+      '<pre id="' + esc(id) + '">' + esc(text) + '</pre>' +
+    '</div>'
+  );
+}
+
+async function copyById(id, btn) {
+  const el = document.getElementById(id);
+  const text = el ? el.textContent : '';
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  if (btn) {
+    btn.classList.add('ok');
+    btn.textContent = t().copied;
+    setTimeout(() => {
+      btn.classList.remove('ok');
+      btn.textContent = t().copy;
+    }, 1200);
+  }
+}
+
+function wireCopyButtons(root) {
+  root.querySelectorAll('.btn-copy-sm[data-copy-id]').forEach(btn => {
+    btn.onclick = () => copyById(btn.getAttribute('data-copy-id'), btn);
+  });
+}
+
+function refreshGeneratedBlocks() {
+  const cst = document.getElementById('inpCstPath');
+  const work = document.getElementById('inpWorkDir');
+  const repo = document.getElementById('inpRepoPath');
+  if (!cst || !work) return;
+  const cstV = cst.value.trim() || 'C:\\Program Files\\CST Studio Suite 2026';
+  const workV = work.value.trim() || 'C:\\cst_projects';
+  const repoV = repo ? repo.value.trim() : '';
+  const elEnv = document.getElementById('genEnvPs');
+  const elMcp = document.getElementById('genMcpJson');
+  const elUser = document.getElementById('genUserEnvPs');
+  if (elEnv) elEnv.textContent = buildSessionEnvPs(cstV, workV);
+  if (elMcp) elMcp.textContent = buildMcpJson(cstV, workV, repoV);
+  if (elUser) elUser.textContent = buildUserEnvPs(cstV, workV);
+}
+
+function wirePathForm() {
+  ['inpCstPath', 'inpWorkDir', 'inpRepoPath'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', refreshGeneratedBlocks);
+      el.addEventListener('change', refreshGeneratedBlocks);
+    }
+  });
+  refreshGeneratedBlocks();
+}
+
+function renderIntro() {
+  const i = t();
+  const envHead = (i.env_headers || ['Variable', 'Role'])
+    .map(h => '<th>' + esc(h) + '</th>').join('');
+  const envRows = (i.env_rows || []).map(r =>
+    '<tr><td><code>' + esc(r[0]) + '</code></td><td>' + esc(r[1]) + '</td></tr>'
+  ).join('');
+  const tips = (i.tips_items || []).map(x => '<li>' + esc(x) + '</li>').join('');
+  const need = (i.s_need_items || []).map(x => '<li>' + esc(x) + '</li>').join('');
+  const installPs = installPsCommands();
+  const verifyPs = verifyPsCommands();
+  const defaultCst = 'C:\\Program Files\\CST Studio Suite 2026';
+  const defaultWork = 'C:\\cst_projects';
+
+  document.getElementById('intro').innerHTML =
+    '<div class="intro-top">' +
+      '<div class="panel"><h3>' + esc(i.hero_title) + '</h3><p>' + esc(i.hero_body) +
+      '</p><div class="note">' + esc(i.note) + '</div></div>' +
+      '<div class="panel"><h3>' + esc(i.steps_title) + '</h3><ol class="steps">' +
+      '<li><span class="n">1</span><div><b>' + esc(i.s1t) + '</b>' + esc(i.s1d) + '</div></li>' +
+      '<li><span class="n">2</span><div><b>' + esc(i.s2t) + '</b>' + esc(i.s2d) + '</div></li>' +
+      '<li><span class="n">3</span><div><b>' + esc(i.s3t) + '</b>' + esc(i.s3d) + '</div></li>' +
+      '</ol></div>' +
+    '</div>' +
+
+    '<div class="panel guide-wide">' +
+      '<h3>' + esc(i.setup_title) + '</h3>' +
+      '<p>' + esc(i.setup_intro) + '</p>' +
+      '<h4>' + esc(i.s_need) + '</h4>' +
+      '<ul class="plain">' + need + '</ul>' +
+
+      '<ol class="step-list">' +
+        '<li><b>' + esc(i.step1_t) + '</b><p>' + esc(i.step1_d) + '</p></li>' +
+        '<li><b>' + esc(i.step2_t) + '</b><p>' + esc(i.step2_d) + '</p>' +
+          codeBlock(i.lbl_install, installPs, 'blkInstallPs') +
+        '</li>' +
+        '<li><b>' + esc(i.step3_t) + '</b><p>' + esc(i.step3_d) + '</p>' +
+          '<div class="path-form">' +
+            '<label>' + esc(i.path_cst) +
+              '<input type="text" id="inpCstPath" spellcheck="false" autocomplete="off" value="' + esc(defaultCst) + '"/>' +
+              '<span class="hint">' + esc(i.path_cst_hint) + '</span>' +
+            '</label>' +
+            '<label>' + esc(i.path_work) +
+              '<input type="text" id="inpWorkDir" spellcheck="false" autocomplete="off" value="' + esc(defaultWork) + '"/>' +
+              '<span class="hint">' + esc(i.path_work_hint) + '</span>' +
+            '</label>' +
+            '<label>' + esc(i.path_repo) +
+              '<input type="text" id="inpRepoPath" spellcheck="false" autocomplete="off" placeholder="E:\\cst-studio-mcp"/>' +
+              '<span class="hint">' + esc(i.path_repo_hint) + '</span>' +
+            '</label>' +
+          '</div>' +
+          '<p><b>' + esc(i.gen_ps) + '</b></p>' +
+          '<p class="hint" style="margin:0 0 0.35rem;font-size:0.8rem;color:var(--muted)">' + esc(i.gen_ps_note) + '</p>' +
+          codeBlock(i.lbl_env, buildSessionEnvPs(defaultCst, defaultWork), 'genEnvPs') +
+          '<p><b>' + esc(i.gen_user) + '</b></p>' +
+          '<p class="hint" style="margin:0 0 0.35rem;font-size:0.8rem;color:var(--muted)">' + esc(i.gen_user_note) + '</p>' +
+          codeBlock(i.lbl_userenv, buildUserEnvPs(defaultCst, defaultWork), 'genUserEnvPs') +
+        '</li>' +
+        '<li><b>' + esc(i.step4_t) + '</b><p>' + esc(i.step4_d) + '</p>' +
+          codeBlock(i.lbl_mcp, buildMcpJson(defaultCst, defaultWork, ''), 'genMcpJson') +
+        '</li>' +
+        '<li><b>' + esc(i.step5_t) + '</b><p>' + esc(i.step5_d) + '</p>' +
+          codeBlock(i.lbl_verify, verifyPs, 'blkVerifyPs') +
+        '</li>' +
+      '</ol>' +
+    '</div>' +
+
+    '<div class="guide-grid">' +
+      '<div class="panel">' +
+        '<h3>' + esc(i.env_title) + '</h3>' +
+        '<table class="env"><thead><tr>' + envHead + '</tr></thead><tbody>' + envRows + '</tbody></table>' +
+      '</div>' +
+      '<div class="panel">' +
+        '<h3>' + esc(i.ff_title) + '</h3>' +
+        '<p>' + esc(i.ff_body) + '</p>' +
+        '<h3 style="margin-top:1rem">' + esc(i.tips_title) + '</h3>' +
+        '<ul class="plain">' + tips + '</ul>' +
+      '</div>' +
+    '</div>';
+
+  wireCopyButtons(document.getElementById('intro'));
+  wirePathForm();
+}
+
+function renderNav() {
+  document.getElementById('nav').innerHTML = CATALOG.categories.map(c =>
+    '<a class="nav-item" href="#cat-' + esc(c.id) + '" data-cat="' + esc(c.id) + '">' +
+    '<span class="lbl">' + esc(catTitle(c)) + '</span>' +
+    '<span class="cnt">' + c.count + '</span></a>'
+  ).join('');
+}
+
+function renderFilters() {
+  const quick = ['all', 'workflows', 'geometry', 'antenna_templates', 'results', 'pcb', 'matching'];
+  document.getElementById('filters').innerHTML = quick.map(id => {
+    const c = CATALOG.categories.find(x => x.id === id);
+    let label = id === 'all' ? t().all : (c ? catTitle(c).split('(')[0].trim() : id);
+    // shorten long labels
+    if (label.length > 18) label = label.slice(0, 16) + '…';
+    return '<button type="button" class="filter-btn' + (filter === id ? ' on' : '') +
+      '" data-filter="' + id + '">' + esc(label) + '</button>';
+  }).join('');
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      filter = btn.dataset.filter;
+      applyFilter();
+      renderFilters();
+    };
+  });
+}
+
+function paramTable(params) {
+  if (!params.length) {
+    return '<p class="pdesc" style="margin:0">' + esc(t().no_params) + '</p>';
+  }
+  const rows = params.map(p => {
+    let badges = '<span class="badge' + (p.required ? ' req' : '') + '">' +
+      (p.required ? 'required' : 'optional') + '</span>';
+    if (p.enum) badges += '<span class="badge enum">' + esc(p.enum.join(', ')) + '</span>';
+    const def = (p.default !== null && p.default !== undefined)
+      ? '<span class="default">default: ' + esc(JSON.stringify(p.default)) + '</span>' : '';
+    return '<tr><td><code>' + esc(p.name) + '</code></td><td>' + esc(String(p.type || 'any')) +
+      '</td><td>' + badges + ' ' + def +
+      '<div class="pdesc">' + esc(p.description || '') + '</div></td></tr>';
+  }).join('');
+  return '<table class="p"><thead><tr><th>Name</th><th>Type</th><th>Details</th></tr></thead><tbody>' +
+    rows + '</tbody></table>';
+}
+
+function renderCategories() {
+  const root = document.getElementById('categories');
+  root.innerHTML = CATALOG.categories.map(c => {
+    const label = catTitle(c);
+    const cards = c.tools.map(tool => {
+      TOOL_TEXT[tool.name] = toolPlainText(tool, label);
+      return '<article class="tool-card" data-name="' + esc(tool.name.toLowerCase()) +
+        '" data-desc="' + esc((tool.description || '').toLowerCase()) +
+        '" data-cat="' + esc(c.id) + '">' +
+        '<div class="tool-top">' +
+        '<code>' + esc(tool.name) + '</code>' +
+        '<button type="button" class="btn-copy" title="' + esc(t().copy_hint) +
+        '" data-tool="' + esc(tool.name) + '">' + esc(t().copy) + '</button>' +
+        '</div>' +
+        '<p class="desc">' + esc(tool.description || '') + '</p>' +
+        '<div class="tool-actions">' +
+        '<button type="button" class="btn-link params-toggle" data-n="' + tool.params.length + '">' +
+        esc(t().params(tool.params.length)) + '</button>' +
+        '</div>' +
+        '<div class="params">' + paramTable(tool.params) + '</div>' +
+        '</article>';
+    }).join('');
+    return '<section class="category" id="cat-' + esc(c.id) + '" data-cat="' + esc(c.id) + '">' +
+      '<div class="cat-head"><h3>' + esc(label) +
+      '<span class="count">' + c.count + '</span></h3>' +
+      '<p>' + esc(catBlurb(c)) + '</p></div>' +
+      '<div class="tool-grid">' + cards + '</div></section>';
+  }).join('');
+
+  root.querySelectorAll('.params-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const card = btn.closest('.tool-card');
+      const open = card.classList.toggle('open');
+      const n = parseInt(btn.dataset.n, 10) || 0;
+      btn.textContent = open ? t().hide_params : t().params(n);
+    };
+  });
+
+  root.querySelectorAll('.btn-copy').forEach(btn => {
+    btn.onclick = async () => {
+      const name = btn.getAttribute('data-tool') || '';
+      const text = TOOL_TEXT[name] || name;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      btn.classList.add('ok');
+      btn.textContent = t().copied;
+      setTimeout(() => {
+        btn.classList.remove('ok');
+        btn.textContent = t().copy;
+      }, 1200);
+    };
+  });
+}
+
+function applyFilter() {
+  const q = (document.getElementById('search').value || '').trim().toLowerCase();
+  let visible = 0;
+  document.querySelectorAll('.tool-card').forEach(card => {
+    const matchQ = !q || card.dataset.name.includes(q) || card.dataset.desc.includes(q);
+    const matchF = filter === 'all' || card.dataset.cat === filter;
+    const show = matchQ && matchF;
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  document.querySelectorAll('.category').forEach(sec => {
+    const any = [...sec.querySelectorAll('.tool-card')].some(c => !c.classList.contains('hidden'));
+    sec.classList.toggle('hidden', !any);
+  });
+  document.getElementById('empty').classList.toggle('show', visible === 0);
+  document.getElementById('empty').textContent = t().empty;
+  document.getElementById('resultMeta').textContent =
+    (q || filter !== 'all') ? t().showing_n(visible) : t().showing_all;
+}
+
+function applyI18n() {
+  document.getElementById('btnEn').classList.toggle('on', lang === 'en');
+  document.getElementById('btnTr').classList.toggle('on', lang === 'tr');
+  document.documentElement.lang = lang === 'tr' ? 'tr' : 'en';
+  document.getElementById('pageTitle').textContent = t().page_title;
+  document.getElementById('brandSub').textContent = t().brand_sub;
+  document.getElementById('search').placeholder = t().search_ph;
+  document.getElementById('footer').textContent = t().footer;
+  document.getElementById('pillTools').textContent = CATALOG.total_tools + ' tools';
+  document.getElementById('pillCats').textContent = CATALOG.categories.length + ' categories';
+  applyTheme();
+  renderIntro();
+  renderNav();
+  renderFilters();
+  renderCategories();
+  applyFilter();
+}
+
+document.getElementById('btnEn').onclick = () => {
+  lang = 'en';
+  localStorage.setItem('cst_mcp_lang', 'en');
+  applyI18n();
+};
+document.getElementById('btnTr').onclick = () => {
+  lang = 'tr';
+  localStorage.setItem('cst_mcp_lang', 'tr');
+  applyI18n();
+};
+document.getElementById('btnLight').onclick = () => {
+  theme = 'light';
+  applyTheme();
+};
+document.getElementById('btnDark').onclick = () => {
+  theme = 'dark';
+  applyTheme();
+};
+document.getElementById('search').addEventListener('input', applyFilter);
+
+// Smooth category navigation without fighting nested scroll
+document.getElementById('nav').addEventListener('click', (e) => {
+  const a = e.target.closest('.nav-item');
+  if (!a) return;
+  e.preventDefault();
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  a.classList.add('active');
+  const id = a.getAttribute('href').slice(1);
+  const el = document.getElementById(id);
+  const scroller = document.getElementById('content');
+  if (el && scroller) {
+    const top = el.offsetTop - scroller.offsetTop - 8;
+    scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
+});
+
+// Highlight nav from main scroll position
+const contentEl = document.getElementById('content');
+let scrollTick = false;
+contentEl.addEventListener('scroll', () => {
+  if (scrollTick) return;
+  scrollTick = true;
+  requestAnimationFrame(() => {
+    scrollTick = false;
+    const sections = [...document.querySelectorAll('.category:not(.hidden)')];
+    const scrollTop = contentEl.scrollTop + 48;
+    let current = sections[0];
+    for (const sec of sections) {
+      if (sec.offsetTop - contentEl.offsetTop <= scrollTop) current = sec;
+    }
+    if (current) {
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.getAttribute('href') === '#' + current.id);
+      });
+    }
+  });
+}, { passive: true });
+
+applyI18n();
+</script>
+</body>
+</html>

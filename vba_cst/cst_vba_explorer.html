@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CST Studio Suite - VBA Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #4facfe;
+            --warning: #f6d55c;
+            --danger: #ff6b6b;
+            --dark: #0f0f23;
+            --light: #ffffff;
+            --glass: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --shadow: rgba(31, 38, 135, 0.37);
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            max-width: 100vw;
+        }
+
+        .sidebar {
+            width: 350px;
+            min-width: 300px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        }
+
+        .brand-section {
+            padding: 1.25rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .brand-subtitle {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 400;
+        }
+
+        .brand-description {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.4;
+            margin-top: 0.5rem;
+        }
+
+        .search-section {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            z-index: 2;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.75rem 0.6rem 2rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .results-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .results-header {
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 500;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .results-list {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 transparent;
+        }
+
+        .results-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .results-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .results-list::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .result-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            touch-action: manipulation;
+        }
+
+        .result-item:hover {
+            background: #f8fafc;
+            border-left: 3px solid var(--primary);
+        }
+
+        .result-item.selected {
+            background: #eff6ff;
+            border-left: 3px solid var(--primary);
+        }
+
+        .result-item:active {
+            background: #e0e7ff;
+            transform: scale(0.98);
+        }
+
+        .result-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .result-description {
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .object-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 1.25rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .object-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .object-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 transparent;
+        }
+
+        .content-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-body::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            background: #eff6ff;
+            border-color: var(--primary);
+        }
+
+        .stat-number {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .category-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .category-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .category-header {
+            background: #f8fafc;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .category-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .category-content {
+            padding: 0.75rem;
+        }
+
+        .method-grid {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .method-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .method-item:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .method-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: #eff6ff;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .method-description {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .vba-code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+            margin-top: 0.75rem;
+            border-left: 3px solid var(--primary);
+            position: relative;
+            text-align: left;
+        }
+
+        .vba-code-content {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+            padding: 0.4rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .copy-btn.copied {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .empty-description {
+            font-size: 1rem;
+            opacity: 0.8;
+            max-width: 400px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 320px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+                height: 100vh;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 45vh;
+                min-height: 300px;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .main-content {
+                height: 55vh;
+                min-height: 400px;
+            }
+            
+            .object-header {
+                padding: 1rem;
+            }
+            
+            .object-title {
+                font-size: 1.25rem;
+            }
+            
+            .object-subtitle {
+                font-size: 0.8rem;
+            }
+            
+            .content-body {
+                padding: 0.75rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .brand-section {
+                padding: 1rem;
+            }
+            
+            .brand-title {
+                font-size: 1.1rem;
+            }
+            
+            .brand-subtitle {
+                font-size: 0.75rem;
+            }
+            
+            .search-section {
+                padding: 0.75rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            
+            .stat-card {
+                padding: 0.5rem;
+            }
+            
+            .stat-number {
+                font-size: 1rem;
+            }
+            
+            .stat-label {
+                font-size: 0.65rem;
+            }
+            
+            .category-header {
+                padding: 0.5rem;
+            }
+            
+            .category-content {
+                padding: 0.5rem;
+            }
+            
+            .category-title {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                height: 100vh;
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                height: 100vh;
+                width: 100%;
+                border-right: none;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .main-content {
+                display: none;
+            }
+
+            .object-header {
+                display: none;
+            }
+
+            .brand-section {
+                flex-shrink: 0;
+                padding: 0.5rem;
+                background: #8b5cf6;
+            }
+
+            .brand-title {
+                font-size: 1rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .brand-subtitle {
+                font-size: 0.75rem;
+            }
+
+            .brand-description {
+                display: none;
+            }
+
+            .search-section {
+                flex-shrink: 0;
+                padding: 0.5rem;
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .search-input {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+
+            .results-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                overflow: hidden;
+                background: white;
+            }
+
+            .results-header {
+                flex-shrink: 0;
+                background: #f1f5f9;
+                border-bottom: 1px solid #e2e8f0;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.7rem;
+                font-weight: 600;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .results-list {
+                flex: 1;
+                overflow-y: auto;
+                background: white;
+                padding: 0;
+                margin: 0;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .result-item {
+                padding: 0.75rem;
+                min-height: 50px;
+                font-size: 0.85rem;
+            }
+
+            .result-name {
+                font-size: 0.8rem;
+                margin-bottom: 0.2rem;
+            }
+
+            .result-desc {
+                font-size: 0.7rem;
+            }
+            
+            .stats-grid {
+                display: none;
+            }
+            
+            .method-item {
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .method-name {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .method-description {
+                font-size: 0.75rem;
+            }
+            
+            .vba-code {
+                padding: 0.75rem;
+                font-size: 0.75rem;
+                margin: 0.5rem 0;
+            }
+            
+            .copy-btn {
+                padding: 0.4rem;
+                font-size: 0.8rem;
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+
+            .category-header {
+                padding: 0.75rem;
+            }
+
+            .category-content {
+                padding: 0.75rem;
+            }
+
+            .object-header {
+                padding: 1rem;
+            }
+
+            .object-title {
+                font-size: 1.1rem;
+            }
+
+            .content-body {
+                padding: 1rem;
+            }
+
+            .brand-section {
+                padding: 1rem;
+            }
+
+            .brand-title {
+                font-size: 1.1rem;
+            }
+
+            .brand-subtitle {
+                font-size: 0.8rem;
+            }
+
+            .brand-description {
+                font-size: 0.7rem;
+                margin-top: 0.5rem;
+            }
+
+            .search-section {
+                padding: 0.75rem;
+            }
+
+            .search-input {
+                font-size: 0.85rem;
+                padding: 0.6rem;
+            }
+
+            .results-header {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="brand-section">
+                <div class="brand-title">CST Studio Suite</div>
+                <div class="brand-subtitle">VBA Objects Tool</div>
+                <div class="brand-description">
+                    Comprehensive reference for CST Studio Suite VBA objects, methods, and examples. 
+                    Use this tool to explore VBA APIs for electromagnetic simulation automation, 
+                    antenna design, and parametric modeling.
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-container">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search VBA objects, methods...">
+                </div>
+            </div>
+            
+            <div class="results-section">
+                <div class="results-header">
+                    <span id="resultsCount">Loading...</span>
+                </div>
+                <div class="results-list" id="resultsList">
+                    <!-- Results populated by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="object-header">
+                <div class="object-title" id="objectTitle">Select an Object</div>
+                <div class="object-subtitle" id="objectSubtitle">Choose a VBA object to explore its documentation</div>
+            </div>
+            
+            <div class="content-body" id="contentBody">
+                <div class="empty-state">
+                    <div class="empty-icon">🚀</div>
+                    <div class="empty-title">Welcome to VBA Explorer</div>
+                    <div class="empty-description">Select a VBA object from the sidebar to view its methods and examples</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vba_data.js"></script>
+    <script>
+        let currentResults = [];
+
+        function loadData() {
+            try {
+                console.log('Loading data...', typeof vbaData, Object.keys(vbaData || {}).length);
+                if (typeof vbaData === 'undefined') {
+                    throw new Error('vbaData is not loaded');
+                }
+                
+                // Load all objects properly with filtering
+                showAllObjects();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                const container = document.getElementById('resultsList');
+                if (container) {
+                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading data. Please refresh the page.</div>';
+                }
+                document.getElementById('resultsCount').textContent = 'Error';
+            }
+        }
+
+        function showAllObjects() {
+            currentResults = Object.keys(vbaData).filter(objName => {
+                // Filter out unwanted objects
+                return !objName.includes('Application Object') && 
+                       !objName.includes('CST Design Studio');
+            });
+            displayResults(currentResults);
+            updateResultsCount(currentResults.length);
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (!query) {
+                showAllObjects();
+                return;
+            }
+
+            currentResults = Object.keys(vbaData).filter(objName => {
+                // Filter out unwanted objects first
+                if (objName.includes('Application Object') || objName.includes('CST Design Studio')) {
+                    return false;
+                }
+                
+                const obj = vbaData[objName];
+                
+                if (objName.toLowerCase().includes(query)) return true;
+                if (obj.description && obj.description.toLowerCase().includes(query)) return true;
+                
+                for (const categoryName in obj.structured_content) {
+                    const category = obj.structured_content[categoryName];
+                    if (category.methods) {
+                        for (const method of category.methods) {
+                            if (typeof method === 'object' && method.name) {
+                                if (method.name.toLowerCase().includes(query)) return true;
+                            }
+                        }
+                    }
+                }
+                
+                return false;
+            });
+
+            displayResults(currentResults);
+            updateResultsCount(currentResults.length);
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('resultsList');
+            console.log('displayResults called with:', results.length, 'results');
+            
+            if (!container) {
+                console.error('Results container not found!');
+                return;
+            }
+            
+            if (!results.length) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; font-size: 0.9rem; color: #666;">No results found</div>';
+                return;
+            }
+
+            // Create simple, visible list items
+            let html = '';
+            results.slice(0, 50).forEach(objName => { // Limit to 50 for performance
+                const obj = vbaData[objName];
+                if (obj) {
+                    const desc = obj.description || 'CST VBA Object';
+                    html += `
+                        <div class="result-item" onclick="selectObject('${objName}', event)" style="
+                            padding: 12px 16px;
+                            border-bottom: 1px solid #eee;
+                            cursor: pointer;
+                            background: white;
+                            transition: background 0.2s;
+                            display: block;
+                        " onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                            <div style="font-weight: 600; font-size: 14px; color: #333; margin-bottom: 6px; display: block;">${objName}</div>
+                            <div style="font-size: 12px; color: #666; line-height: 1.4; display: block;">${desc.substring(0, 120)}${desc.length > 120 ? '...' : ''}</div>
+                        </div>
+                    `;
+                }
+            });
+            
+            console.log('Generated HTML length:', html.length);
+            container.innerHTML = html;
+            console.log('Results displayed successfully');
+        }
+
+        function selectObject(objName, event) {
+            const obj = vbaData[objName];
+            
+            document.querySelectorAll('.result-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            if (event && event.target) {
+                event.target.closest('.result-item').classList.add('selected');
+            }
+
+            selectedObject = obj;
+            
+            // On mobile, show object details in a modal or overlay
+            if (window.innerWidth <= 600) {
+                showMobileObjectDetails(obj);
+            } else {
+                displayObjectDetails(obj);
+            }
+        }
+
+        function showMobileObjectDetails(obj) {
+            // Create a mobile modal overlay
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                box-sizing: border-box;
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: white;
+                border-radius: 8px;
+                width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
+                position: relative;
+            `;
+            
+            let html = `
+                <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 10;">
+                    <button onclick="this.closest('.modal-overlay').remove()" style="float: right; background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; margin: 0;">×</button>
+                    <h2 style="margin: 0; font-size: 1rem; color: #1e293b;">${obj.name}</h2>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #64748b;">${obj.description || 'CST VBA Object'}</p>
+                </div>
+                <div style="padding: 1rem;">
+            `;
+            
+            if (obj && obj.structured_content) {
+                const categories = obj.structured_content;
+                for (const categoryName in categories) {
+                    const category = categories[categoryName];
+                    
+                    html += `
+                        <div style="margin-bottom: 1rem; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <div style="padding: 0.75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <h3 style="margin: 0; font-size: 0.9rem; color: #1e293b;">${categoryName}</h3>
+                            </div>
+                            <div style="padding: 0.75rem;">
+                    `;
+
+                    if (category.methods && category.methods.length > 0) {
+                        category.methods.forEach(method => {
+                            if (typeof method === 'object' && method.name) {
+                                html += `
+                                    <div style="margin-bottom: 0.75rem; padding: 0.5rem; background: #f1f5f9; border-radius: 4px;">
+                                        <div style="font-weight: 600; font-size: 0.8rem; color: #1e293b; margin-bottom: 0.25rem;">${method.name}</div>
+                                        <div style="font-size: 0.75rem; color: #475569;">${method.content || 'No description available'}</div>
+                                    </div>
+                                `;
+                            }
+                        });
+                    }
+
+                    if (category.content && Array.isArray(category.content) && category.content.length > 0) {
+                        const filteredContent = category.content.filter(line => !line.includes('CST Studio Suite'));
+                        if (filteredContent.length > 0) {
+                            const codeId = `mobile-content-code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                            const contentText = filteredContent.join('\n');
+                            html += `
+                                <div style="background: #1e293b; border-radius: 4px; padding: 0.75rem; margin-top: 0.75rem; position: relative;">
+                                    <button onclick="copyVBACode('${codeId}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: #475569; color: white; border: none; border-radius: 3px; padding: 0.25rem; cursor: pointer; font-size: 0.8rem;">📋</button>
+                                    <pre id="${codeId}" style="margin: 0; color: #e2e8f0; font-size: 0.7rem; white-space: pre-wrap; word-wrap: break-word; padding-right: 2rem;">${contentText}</pre>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    if (category.vba_macro) {
+                        const codeId = `mobile-vba-code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                        html += `
+                            <div style="background: #1e293b; border-radius: 4px; padding: 0.75rem; margin-top: 0.75rem; position: relative;">
+                                <button onclick="copyVBACode('${codeId}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: #475569; color: white; border: none; border-radius: 3px; padding: 0.25rem; cursor: pointer; font-size: 0.8rem;">📋</button>
+                                <pre id="${codeId}" style="margin: 0; color: #e2e8f0; font-size: 0.7rem; white-space: pre-wrap; word-wrap: break-word; padding-right: 2rem;">${category.vba_macro}</pre>
+                            </div>
+                        `;
+                    }
+
+                    html += '</div></div>';
+                }
+            }
+
+            if (html === '') {
+                html += '<div style="text-align: center; padding: 2rem; color: #64748b;">No structured content available for this object.</div>';
+            }
+            
+            html += '</div>';
+            
+            content.innerHTML = html;
+            modal.appendChild(content);
+            modal.className = 'modal-overlay';
+            document.body.appendChild(modal);
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        function displayObjectDetails(obj) {
+            document.getElementById('objectTitle').textContent = obj.name;
+            document.getElementById('objectSubtitle').textContent = obj.description || 'CST VBA Object';
+
+            let html = '';
+            if (obj && obj.structured_content) {
+                const categories = obj.structured_content;
+                for (const categoryName in categories) {
+                    const category = categories[categoryName];
+                    
+                    html += `
+                        <div class="category-card">
+                            <div class="category-header">
+                                <h3 class="category-title">${categoryName}</h3>
+                            </div>
+                            <div class="category-content">
+                    `;
+
+                    if (category.methods && category.methods.length > 0) {
+                        html += '<div class="method-grid">';
+                        category.methods.forEach(method => {
+                            if (typeof method === 'object' && method.name) {
+                                html += `
+                                    <div class="method-item">
+                                        <div class="method-name">${method.name}</div>
+                                        <div class="method-description">${method.content || 'No description available'}</div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        html += '</div>';
+                    }
+
+                    if (category.content && Array.isArray(category.content) && category.content.length > 0) {
+                        const filteredContent = category.content.filter(line => !line.includes('CST Studio Suite'));
+                        if (filteredContent.length > 0) {
+                            const codeId = `content-code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                            const contentText = filteredContent.join('\n');
+                            html += `
+                                <div class="vba-code">
+                                    <button class="copy-btn" onclick="copyVBACode('${codeId}')" title="Copy to clipboard">📋</button>
+                                    <div class="vba-code-content" id="${codeId}">${contentText}</div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    if (category.vba_macro) {
+                        const codeId = `vba-code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                        html += `
+                            <div class="vba-code">
+                                <button class="copy-btn" onclick="copyVBACode('${codeId}')" title="Copy to clipboard">📋</button>
+                                <div class="vba-code-content" id="${codeId}">${category.vba_macro}</div>
+                            </div>
+                        `;
+                    }
+
+                    html += '</div></div>';
+                }
+            }
+
+            if (html === '') {
+                html = '<div class="empty-state"><p>No structured content available for this object.</p></div>';
+            }
+
+            document.getElementById('contentBody').innerHTML = html;
+        }
+
+        function updateResultsCount(count) {
+            document.getElementById('resultsCount').textContent = `${count} Objects`;
+        }
+
+        function copyVBACode(codeId) {
+            const codeElement = document.getElementById(codeId);
+            const button = codeElement.parentElement.querySelector('.copy-btn');
+            
+            if (!codeElement) {
+                console.error('Code element not found');
+                return;
+            }
+            
+            const text = codeElement.textContent || codeElement.innerText;
+            const cleanText = text.trim();
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(cleanText).then(() => {
+                    showCopySuccess(button);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    fallbackCopyTextToClipboard(cleanText, button);
+                });
+            } else {
+                fallbackCopyTextToClipboard(cleanText, button);
+            }
+        }
+
+        function showCopySuccess(button) {
+            const originalContent = button.innerHTML;
+            button.innerHTML = '✓';
+            button.classList.add('copied');
+            button.title = 'Copied!';
+            
+            setTimeout(() => {
+                button.innerHTML = originalContent;
+                button.classList.remove('copied');
+                button.title = 'Copy to clipboard';
+            }, 2000);
+        }
+
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess(button);
+                } else {
+                    showCopyError(button);
+                }
+            } catch (err) {
+                console.error('Fallback: Could not copy text: ', err);
+                showCopyError(button);
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function showCopyError(button) {
+            button.innerHTML = '✗';
+            button.title = 'Copy failed';
+            setTimeout(() => {
+                button.innerHTML = '📋';
+                button.title = 'Copy to clipboard';
+            }, 2000);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', performSearch);
+        
+        // Multiple loading strategies to ensure data loads
+        window.addEventListener('load', loadData);
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Fallback loading after a short delay
+        setTimeout(() => {
+            if (document.getElementById('resultsCount').textContent === 'Loading...') {
+                loadData();
+            }
+        }, 500);
+    </script>
+</body>
+</html>

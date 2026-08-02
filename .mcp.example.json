@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "cst-studio": {
+      "command": "cst-studio-mcp",
+      "env": {
+        "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
+        "CST_WORK_DIR": "C:\\cst_projects",
+        "CST_VERSION": "2026",
+        "PYTHONPATH": "C:\\Program Files\\CST Studio Suite 2026\\AMD64\\python_cst_libraries",
+        "CST_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

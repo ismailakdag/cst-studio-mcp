@@ -1,0 +1,70 @@
+{
+  "stackups": [
+    {
+      "name": "2-Layer FR-4 1.6mm",
+      "description": "Standard 2-layer PCB, 1.6mm total thickness. General-purpose digital and low-frequency analog.",
+      "total_thickness_mm": 1.6,
+      "layers": [
+        {"name": "Top", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Core", "type": "dielectric", "thickness_mm": 1.53, "material": "FR-4", "epsilon_r": 4.4},
+        {"name": "Bottom", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0}
+      ]
+    },
+    {
+      "name": "4-Layer FR-4 1.6mm",
+      "description": "Standard 4-layer PCB, 1.6mm total thickness. Signal-Ground-Power-Signal stackup for mixed-signal designs.",
+      "total_thickness_mm": 1.6,
+      "layers": [
+        {"name": "Top", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg1", "type": "dielectric", "thickness_mm": 0.2, "material": "FR-4 Prepreg", "epsilon_r": 4.2},
+        {"name": "Inner1_GND", "type": "ground", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Core", "type": "dielectric", "thickness_mm": 1.0, "material": "FR-4", "epsilon_r": 4.4},
+        {"name": "Inner2_PWR", "type": "power", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg2", "type": "dielectric", "thickness_mm": 0.2, "material": "FR-4 Prepreg", "epsilon_r": 4.2},
+        {"name": "Bottom", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0}
+      ]
+    },
+    {
+      "name": "6-Layer FR-4 2.0mm",
+      "description": "6-layer PCB, 2.0mm total thickness. Sig-GND-Sig-Sig-PWR-Sig for high-density digital with controlled impedance.",
+      "total_thickness_mm": 2.0,
+      "layers": [
+        {"name": "Top", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg1", "type": "dielectric", "thickness_mm": 0.18, "material": "FR-4 Prepreg", "epsilon_r": 4.2},
+        {"name": "Inner1_GND", "type": "ground", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Core1", "type": "dielectric", "thickness_mm": 0.36, "material": "FR-4", "epsilon_r": 4.4},
+        {"name": "Inner2_SIG", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg2", "type": "dielectric", "thickness_mm": 0.55, "material": "FR-4 Prepreg", "epsilon_r": 4.2},
+        {"name": "Inner3_SIG", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Core2", "type": "dielectric", "thickness_mm": 0.36, "material": "FR-4", "epsilon_r": 4.4},
+        {"name": "Inner4_PWR", "type": "power", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg3", "type": "dielectric", "thickness_mm": 0.18, "material": "FR-4 Prepreg", "epsilon_r": 4.2},
+        {"name": "Bottom", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0}
+      ]
+    },
+    {
+      "name": "4-Layer Rogers RO4003C",
+      "description": "4-layer RF PCB using Rogers RO4003C substrate. Low-loss for microwave circuits up to 40 GHz.",
+      "total_thickness_mm": 1.524,
+      "layers": [
+        {"name": "Top", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg1", "type": "dielectric", "thickness_mm": 0.2, "material": "RO4450F Prepreg", "epsilon_r": 3.52},
+        {"name": "Inner1_GND", "type": "ground", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Core", "type": "dielectric", "thickness_mm": 0.813, "material": "Rogers RO4003C", "epsilon_r": 3.55},
+        {"name": "Inner2_PWR", "type": "power", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Prepreg2", "type": "dielectric", "thickness_mm": 0.2, "material": "RO4450F Prepreg", "epsilon_r": 3.52},
+        {"name": "Bottom", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0}
+      ]
+    },
+    {
+      "name": "2-Layer Rogers RT/duroid 5880",
+      "description": "2-layer RF PCB using Rogers RT/duroid 5880. Ultra-low-loss PTFE substrate for mm-wave and satellite applications.",
+      "total_thickness_mm": 0.787,
+      "layers": [
+        {"name": "Top", "type": "signal", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0},
+        {"name": "Substrate", "type": "dielectric", "thickness_mm": 0.787, "material": "Rogers RT/duroid 5880", "epsilon_r": 2.2},
+        {"name": "Bottom", "type": "ground", "thickness_mm": 0.035, "material": "Copper", "epsilon_r": 1.0}
+      ]
+    }
+  ]
+}

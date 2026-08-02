@@ -1,0 +1,49 @@
+{
+  "ferrites": [
+    {
+      "name": "YIG (Yttrium Iron Garnet)",
+      "epsilon_r": 15.0,
+      "saturation_magnetization_ka_m": 140,
+      "linewidth_oe": 25,
+      "tan_d": 0.0002,
+      "max_frequency_ghz": 40,
+      "notes": "Low-loss, used in YIG-tuned filters and oscillators"
+    },
+    {
+      "name": "NiZn Ferrite",
+      "epsilon_r": 12.0,
+      "saturation_magnetization_ka_m": 350,
+      "linewidth_oe": 200,
+      "tan_d": 0.002,
+      "max_frequency_ghz": 1.0,
+      "notes": "High permeability at low frequency, EMI suppression"
+    },
+    {
+      "name": "MnZn Ferrite",
+      "epsilon_r": 10.0,
+      "saturation_magnetization_ka_m": 500,
+      "linewidth_oe": 150,
+      "tan_d": 0.003,
+      "max_frequency_ghz": 0.5,
+      "notes": "High permeability, power transformers, EMI filters"
+    },
+    {
+      "name": "Barium Ferrite (BaFe12O19)",
+      "epsilon_r": 20.0,
+      "saturation_magnetization_ka_m": 380,
+      "linewidth_oe": 300,
+      "tan_d": 0.01,
+      "max_frequency_ghz": 100,
+      "notes": "Hard ferrite, high coercivity, mm-wave circulators"
+    },
+    {
+      "name": "Lithium Ferrite",
+      "epsilon_r": 14.0,
+      "saturation_magnetization_ka_m": 310,
+      "linewidth_oe": 50,
+      "tan_d": 0.0005,
+      "max_frequency_ghz": 20,
+      "notes": "Moderate loss, high power handling, phase shifters"
+    }
+  ]
+}

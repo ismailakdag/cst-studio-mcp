@@ -1,0 +1,171 @@
+{
+  "substrates": [
+    {
+      "name": "FR-4",
+      "manufacturer": "Various",
+      "epsilon_r": 4.4,
+      "tan_d": 0.02,
+      "standard_thicknesses_mm": [0.2, 0.4, 0.8, 1.0, 1.6, 2.0, 3.2],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 3.0,
+      "cost": "low",
+      "notes": "Standard PCB, not suitable for high-frequency RF. Properties vary significantly with manufacturer, resin content, and frequency."
+    },
+    {
+      "name": "Rogers RO4003C",
+      "manufacturer": "Rogers Corporation",
+      "epsilon_r": 3.55,
+      "epsilon_r_tolerance": 0.05,
+      "tan_d": 0.0027,
+      "standard_thicknesses_mm": [0.203, 0.305, 0.406, 0.508, 0.813, 1.524],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 40,
+      "cost": "medium",
+      "notes": "Hydrocarbon ceramic laminate. Drop-in replacement for FR-4 in RF applications. Compatible with FR-4 processing. Stable epsilon vs frequency and temperature."
+    },
+    {
+      "name": "Rogers RO4350B",
+      "manufacturer": "Rogers Corporation",
+      "epsilon_r": 3.66,
+      "epsilon_r_tolerance": 0.05,
+      "tan_d": 0.0037,
+      "standard_thicknesses_mm": [0.168, 0.254, 0.338, 0.508, 0.762, 1.524],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 40,
+      "cost": "medium",
+      "notes": "UL 94V-0 flame retardant hydrocarbon ceramic. Popular for commercial RF. Compatible with standard FR-4 fabrication processes."
+    },
+    {
+      "name": "Rogers RT/duroid 5880",
+      "manufacturer": "Rogers Corporation",
+      "epsilon_r": 2.2,
+      "epsilon_r_tolerance": 0.02,
+      "tan_d": 0.0009,
+      "standard_thicknesses_mm": [0.127, 0.254, 0.381, 0.508, 0.787, 1.575, 3.175],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 77,
+      "cost": "high",
+      "notes": "PTFE glass microfiber reinforced. Very low loss, excellent for microwave and mm-wave. Low epsilon reduces surface wave excitation on patch antennas."
+    },
+    {
+      "name": "Rogers RT/duroid 6002",
+      "manufacturer": "Rogers Corporation",
+      "epsilon_r": 2.94,
+      "epsilon_r_tolerance": 0.04,
+      "tan_d": 0.0012,
+      "standard_thicknesses_mm": [0.127, 0.254, 0.508, 0.762, 1.524, 2.540],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 77,
+      "cost": "high",
+      "notes": "PTFE ceramic filled. Low loss and isotropic. Preferred for space and defense phased arrays. Excellent dimensional stability."
+    },
+    {
+      "name": "Rogers TMM 10i",
+      "manufacturer": "Rogers Corporation",
+      "epsilon_r": 9.8,
+      "epsilon_r_tolerance": 0.245,
+      "tan_d": 0.002,
+      "standard_thicknesses_mm": [0.381, 0.508, 0.635, 1.270, 2.540],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 25,
+      "cost": "high",
+      "notes": "Thermoset ceramic-loaded plastic. High dielectric constant enables compact antenna designs. Isotropic and dimensionally stable."
+    },
+    {
+      "name": "Isola IS680",
+      "manufacturer": "Isola Group",
+      "epsilon_r": 3.45,
+      "epsilon_r_tolerance": 0.05,
+      "tan_d": 0.003,
+      "standard_thicknesses_mm": [0.102, 0.203, 0.254, 0.508, 0.762, 1.524],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 20,
+      "cost": "medium",
+      "notes": "Low-loss PTFE/hydrocarbon blend. Halogen-free, lead-free compatible. Good alternative to Rogers for cost-sensitive RF applications."
+    },
+    {
+      "name": "Taconic TLY-5",
+      "manufacturer": "Taconic",
+      "epsilon_r": 2.2,
+      "epsilon_r_tolerance": 0.02,
+      "tan_d": 0.0009,
+      "standard_thicknesses_mm": [0.127, 0.254, 0.381, 0.508, 0.787, 1.575],
+      "copper_cladding_oz": [0.5, 1.0, 2.0],
+      "max_frequency_ghz": 60,
+      "cost": "high",
+      "notes": "Woven PTFE/fiberglass. Similar performance to RT/duroid 5880. Woven reinforcement improves dimensional stability vs non-woven PTFE."
+    },
+    {
+      "name": "LTCC (DuPont 951)",
+      "manufacturer": "DuPont",
+      "epsilon_r": 7.8,
+      "epsilon_r_tolerance": 0.3,
+      "tan_d": 0.006,
+      "standard_thicknesses_mm": [0.096, 0.114, 0.165, 0.254],
+      "copper_cladding_oz": [],
+      "max_frequency_ghz": 100,
+      "cost": "very_high",
+      "notes": "Low Temperature Co-fired Ceramic. Multi-layer hermetic packaging. Silver or gold conductors co-fired. Used for SiP, embedded passives, and mm-wave modules."
+    },
+    {
+      "name": "Alumina 96%",
+      "manufacturer": "Various",
+      "epsilon_r": 9.4,
+      "epsilon_r_tolerance": 0.2,
+      "tan_d": 0.0004,
+      "standard_thicknesses_mm": [0.127, 0.254, 0.381, 0.508, 0.635, 1.270],
+      "copper_cladding_oz": [],
+      "max_frequency_ghz": 100,
+      "cost": "high",
+      "notes": "96% purity aluminum oxide ceramic. Thick-film and thin-film metallization. Used for hybrid microwave integrated circuits (MICs) and chip packages."
+    },
+    {
+      "name": "Alumina 99.5%",
+      "manufacturer": "Various",
+      "epsilon_r": 9.9,
+      "epsilon_r_tolerance": 0.1,
+      "tan_d": 0.0001,
+      "standard_thicknesses_mm": [0.127, 0.254, 0.381, 0.508, 0.635],
+      "copper_cladding_oz": [],
+      "max_frequency_ghz": 150,
+      "cost": "very_high",
+      "notes": "High-purity alumina. Extremely low loss. Used for precision microwave filters, resonators, and mm-wave substrates."
+    },
+    {
+      "name": "GaAs",
+      "manufacturer": "Various",
+      "epsilon_r": 12.9,
+      "epsilon_r_tolerance": 0.1,
+      "tan_d": 0.0004,
+      "standard_thicknesses_mm": [0.1, 0.15, 0.2, 0.35, 0.5, 0.625],
+      "copper_cladding_oz": [],
+      "max_frequency_ghz": 300,
+      "cost": "very_high",
+      "notes": "Gallium arsenide semi-insulating substrate. MMIC fabrication with integrated active devices. Excellent for mm-wave and sub-THz applications."
+    },
+    {
+      "name": "Silicon (High Resistivity)",
+      "manufacturer": "Various",
+      "epsilon_r": 11.9,
+      "epsilon_r_tolerance": 0.1,
+      "tan_d": 0.005,
+      "standard_thicknesses_mm": [0.2, 0.3, 0.525, 0.675, 0.725],
+      "copper_cladding_oz": [],
+      "max_frequency_ghz": 100,
+      "cost": "medium",
+      "notes": "High-resistivity silicon (>1 kohm-cm). RFIC and MEMS substrates. tan_d varies significantly with resistivity; HR-Si (>10 kohm-cm) achieves tan_d < 0.001."
+    },
+    {
+      "name": "Quartz (Fused Silica)",
+      "manufacturer": "Various",
+      "epsilon_r": 3.78,
+      "epsilon_r_tolerance": 0.02,
+      "tan_d": 0.0001,
+      "standard_thicknesses_mm": [0.1, 0.2, 0.3, 0.5, 1.0],
+      "copper_cladding_oz": [],
+      "max_frequency_ghz": 300,
+      "cost": "very_high",
+      "notes": "Amorphous SiO2. Extremely low loss and stable epsilon. Used for precision mm-wave filters, MEMS substrates, and optical-frequency components."
+    }
+  ]
+}

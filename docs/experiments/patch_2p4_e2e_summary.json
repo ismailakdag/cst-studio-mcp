@@ -1,0 +1,54 @@
+{
+  "parameters": {
+    "status": "ok",
+    "parameters": {
+      "fmax_GHz": "3.12",
+      "fmin_GHz": "1.68",
+      "metal_t": "0.035",
+      "inset": "8.8264779",
+      "feed_w": "3.2",
+      "gnd_y": "58.843186",
+      "gnd_x": "76.01995",
+      "patch_L": "29.421593",
+      "patch_W": "38.009975",
+      "sub_h": "1.6",
+      "tan_d": "0.02",
+      "eps_r": "4.4",
+      "freq_GHz": "2.4"
+    },
+    "count": 13
+  },
+  "s11_metrics": {
+    "min_db": -7.8142342,
+    "freq_at_min_ghz": 2.34816
+  },
+  "s11_status": "ok",
+  "views": [
+    [
+      "perspective",
+      true,
+      3557
+    ],
+    [
+      "front",
+      true,
+      3557
+    ],
+    [
+      "top",
+      true,
+      3557
+    ],
+    [
+      "left",
+      true,
+      3557
+    ],
+    [
+      "right",
+      true,
+      3557
+    ]
+  ],
+  "messages_path": "E:\\cstprojects\\patch_2p4_e2e\\Result\\output.txt"
+}

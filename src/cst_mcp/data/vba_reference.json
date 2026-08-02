@@ -1,0 +1,557 @@
+{
+  "objects": {
+    "Brick": {
+      "category": "geometry",
+      "description": "Create rectangular brick (box) shapes. The most common geometry primitive in CST.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the shape name"},
+        {"name": "Component", "args": "component: String", "description": "Set the component name"},
+        {"name": "Material", "args": "material: String", "description": "Assign a material to the brick"},
+        {"name": "Xrange", "args": "min: Double, max: Double", "description": "Set X extent (xmin to xmax)"},
+        {"name": "Yrange", "args": "min: Double, max: Double", "description": "Set Y extent (ymin to ymax)"},
+        {"name": "Zrange", "args": "min: Double, max: Double", "description": "Set Z extent (zmin to zmax)"},
+        {"name": "Create", "description": "Create the brick in the model"}
+      ],
+      "example": "With Brick\n  .Reset\n  .Name \"box1\"\n  .Component \"component1\"\n  .Material \"PEC\"\n  .Xrange \"-10\", \"10\"\n  .Yrange \"-10\", \"10\"\n  .Zrange \"0\", \"5\"\n  .Create\nEnd With"
+    },
+    "Cylinder": {
+      "category": "geometry",
+      "description": "Create cylindrical shapes, optionally hollow (with inner radius).",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the shape name"},
+        {"name": "Component", "args": "component: String", "description": "Set the component name"},
+        {"name": "Material", "args": "material: String", "description": "Assign a material"},
+        {"name": "Axis", "args": "axis: String", "description": "Set cylinder axis (\"x\", \"y\", or \"z\")"},
+        {"name": "Outerradius", "args": "radius: Double", "description": "Set the outer radius"},
+        {"name": "Innerradius", "args": "radius: Double", "description": "Set the inner radius (0 for solid)"},
+        {"name": "Xcenter", "args": "center: Double", "description": "X coordinate of center"},
+        {"name": "Ycenter", "args": "center: Double", "description": "Y coordinate of center"},
+        {"name": "Zcenter", "args": "center: Double", "description": "Z coordinate of center"},
+        {"name": "Zrange", "args": "min: Double, max: Double", "description": "Set extent along the axis"},
+        {"name": "Segments", "args": "n: Integer", "description": "Number of segments (0 for smooth)"},
+        {"name": "Create", "description": "Create the cylinder"}
+      ],
+      "example": "With Cylinder\n  .Reset\n  .Name \"cyl1\"\n  .Component \"component1\"\n  .Material \"PEC\"\n  .Axis \"z\"\n  .Outerradius \"5\"\n  .Innerradius \"0\"\n  .Xcenter \"0\"\n  .Ycenter \"0\"\n  .Zcenter \"0\"\n  .Zrange \"0\", \"10\"\n  .Segments \"0\"\n  .Create\nEnd With"
+    },
+    "Sphere": {
+      "category": "geometry",
+      "description": "Create sphere shapes, optionally hollow or truncated.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the shape name"},
+        {"name": "Component", "args": "component: String", "description": "Set the component name"},
+        {"name": "Material", "args": "material: String", "description": "Assign a material"},
+        {"name": "Axis", "args": "axis: String", "description": "Axis for top/bottom truncation"},
+        {"name": "CenterRadius", "args": "radius: Double", "description": "Set the outer radius"},
+        {"name": "InnerRadius", "args": "radius: Double", "description": "Set the inner radius (0 for solid)"},
+        {"name": "TopRadius", "args": "radius: Double", "description": "Truncation radius at top"},
+        {"name": "BottomRadius", "args": "radius: Double", "description": "Truncation radius at bottom"},
+        {"name": "Center", "args": "x: Double, y: Double, z: Double", "description": "Set center coordinates"},
+        {"name": "Segments", "args": "n: Integer", "description": "Number of segments (0 for smooth)"},
+        {"name": "Create", "description": "Create the sphere"}
+      ],
+      "example": "With Sphere\n  .Reset\n  .Name \"sphere1\"\n  .Component \"component1\"\n  .Material \"PEC\"\n  .Axis \"z\"\n  .CenterRadius \"10\"\n  .InnerRadius \"0\"\n  .TopRadius \"0\"\n  .BottomRadius \"0\"\n  .Center \"0\", \"0\", \"0\"\n  .Segments \"0\"\n  .Create\nEnd With"
+    },
+    "Cone": {
+      "category": "geometry",
+      "description": "Create conical shapes (truncated cones and full cones).",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the shape name"},
+        {"name": "Component", "args": "component: String", "description": "Set the component name"},
+        {"name": "Material", "args": "material: String", "description": "Assign a material"},
+        {"name": "Axis", "args": "axis: String", "description": "Cone axis (\"x\", \"y\", or \"z\")"},
+        {"name": "Topradius", "args": "radius: Double", "description": "Radius at top face"},
+        {"name": "Bottomradius", "args": "radius: Double", "description": "Radius at bottom face"},
+        {"name": "Xcenter", "args": "center: Double", "description": "X coordinate of center"},
+        {"name": "Ycenter", "args": "center: Double", "description": "Y coordinate of center"},
+        {"name": "Zcenter", "args": "center: Double", "description": "Z coordinate of center"},
+        {"name": "Zrange", "args": "min: Double, max: Double", "description": "Set extent along the axis"},
+        {"name": "Segments", "args": "n: Integer", "description": "Number of segments (0 for smooth)"},
+        {"name": "Create", "description": "Create the cone"}
+      ],
+      "example": "With Cone\n  .Reset\n  .Name \"cone1\"\n  .Component \"component1\"\n  .Material \"PEC\"\n  .Axis \"z\"\n  .Topradius \"0\"\n  .Bottomradius \"10\"\n  .Xcenter \"0\"\n  .Ycenter \"0\"\n  .Zcenter \"0\"\n  .Zrange \"0\", \"20\"\n  .Segments \"0\"\n  .Create\nEnd With"
+    },
+    "Torus": {
+      "category": "geometry",
+      "description": "Create torus (donut) shapes.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the shape name"},
+        {"name": "Component", "args": "component: String", "description": "Set the component name"},
+        {"name": "Material", "args": "material: String", "description": "Assign a material"},
+        {"name": "Axis", "args": "axis: String", "description": "Normal axis of the torus"},
+        {"name": "Outerradius", "args": "radius: Double", "description": "Major radius (center to tube center)"},
+        {"name": "Innerradius", "args": "radius: Double", "description": "Minor radius (tube radius)"},
+        {"name": "Xcenter", "args": "center: Double", "description": "X coordinate of center"},
+        {"name": "Ycenter", "args": "center: Double", "description": "Y coordinate of center"},
+        {"name": "Zcenter", "args": "center: Double", "description": "Z coordinate of center"},
+        {"name": "Segments", "args": "n: Integer", "description": "Number of segments (0 for smooth)"},
+        {"name": "Create", "description": "Create the torus"}
+      ],
+      "example": "With Torus\n  .Reset\n  .Name \"torus1\"\n  .Component \"component1\"\n  .Material \"PEC\"\n  .Axis \"z\"\n  .Outerradius \"10\"\n  .Innerradius \"3\"\n  .Xcenter \"0\"\n  .Ycenter \"0\"\n  .Zcenter \"0\"\n  .Segments \"0\"\n  .Create\nEnd With"
+    },
+    "Extrude": {
+      "category": "geometry",
+      "description": "Extrude a 2D profile into a 3D shape along an axis.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the shape name"},
+        {"name": "Component", "args": "component: String", "description": "Set the component name"},
+        {"name": "Material", "args": "material: String", "description": "Assign a material"},
+        {"name": "Mode", "args": "mode: String", "description": "Extrude mode (\"pointlist\" or \"picks\")"},
+        {"name": "Height", "args": "height: Double", "description": "Extrusion height"},
+        {"name": "Twist", "args": "angle: Double", "description": "Twist angle in degrees during extrusion"},
+        {"name": "Taper", "args": "angle: Double", "description": "Taper angle in degrees"},
+        {"name": "Point", "args": "x: Double, y: Double", "description": "Add a point to the 2D profile"},
+        {"name": "LineTo", "args": "x: Double, y: Double", "description": "Add a line segment to the profile"},
+        {"name": "RLine", "args": "dx: Double, dy: Double", "description": "Add a relative line segment"},
+        {"name": "Create", "description": "Create the extruded shape"}
+      ],
+      "example": "With Extrude\n  .Reset\n  .Name \"polygon1\"\n  .Component \"component1\"\n  .Material \"PEC\"\n  .Mode \"pointlist\"\n  .Height \"5\"\n  .Point \"-10\", \"-10\"\n  .LineTo \"10\", \"-10\"\n  .LineTo \"10\", \"10\"\n  .LineTo \"-10\", \"10\"\n  .LineTo \"-10\", \"-10\"\n  .Create\nEnd With"
+    },
+    "Polygon3D": {
+      "category": "geometry",
+      "description": "Create a 3D polygon (closed planar curve) that can be used for sheet bodies or as a profile.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the curve/shape name"},
+        {"name": "Curve", "args": "curve: String", "description": "Set the curve name"},
+        {"name": "Point", "args": "x: Double, y: Double, z: Double", "description": "Add a 3D point to the polygon"},
+        {"name": "Create", "description": "Create the 3D polygon"}
+      ],
+      "example": "With Polygon3D\n  .Reset\n  .Name \"poly1\"\n  .Curve \"curve1\"\n  .Point \"0\", \"0\", \"0\"\n  .Point \"10\", \"0\", \"0\"\n  .Point \"10\", \"10\", \"0\"\n  .Point \"0\", \"10\", \"0\"\n  .Point \"0\", \"0\", \"0\"\n  .Create\nEnd With"
+    },
+    "Solid": {
+      "category": "geometry",
+      "description": "Boolean operations on solid shapes (add, subtract, intersect, insert).",
+      "methods": [
+        {"name": "Add", "args": "solid1: String, solid2: String", "description": "Boolean union of two solids"},
+        {"name": "Subtract", "args": "solid1: String, solid2: String", "description": "Subtract solid2 from solid1"},
+        {"name": "Intersect", "args": "solid1: String, solid2: String", "description": "Boolean intersection"},
+        {"name": "Insert", "args": "solid1: String, solid2: String", "description": "Insert solid2 into solid1 (embed)"},
+        {"name": "MergeMaterialsOfComponent", "args": "component: String", "description": "Merge all same-material shapes in a component"},
+        {"name": "SetMaterial", "args": "solid: String, material: String", "description": "Change material of an existing solid"},
+        {"name": "Rename", "args": "oldName: String, newName: String", "description": "Rename a solid"},
+        {"name": "Delete", "args": "solid: String", "description": "Delete a solid from the model"}
+      ],
+      "example": "Solid.Add \"component1:box1\", \"component1:box2\"\n\nSolid.Subtract \"component1:substrate\", \"component1:hole\"\n\nSolid.SetMaterial \"component1:patch\", \"Copper\""
+    },
+    "Transform": {
+      "category": "geometry",
+      "description": "Transform (translate, rotate, scale, mirror) existing shapes.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "solid: String", "description": "Set the solid to transform (component:name)"},
+        {"name": "TranslateVector", "args": "x: Double, y: Double, z: Double", "description": "Set translation vector"},
+        {"name": "RotateVector", "args": "x: Double, y: Double, z: Double", "description": "Set rotation axis"},
+        {"name": "RotateAngle", "args": "angle: Double", "description": "Set rotation angle in degrees"},
+        {"name": "ScaleVector", "args": "x: Double, y: Double, z: Double", "description": "Set scale factors"},
+        {"name": "MirrorPlane", "args": "normal: String", "description": "Set mirror plane (\"x\", \"y\", or \"z\")"},
+        {"name": "Origin", "args": "x: Double, y: Double, z: Double", "description": "Set transformation origin"},
+        {"name": "Copy", "args": "flag: Boolean", "description": "If True, transform a copy; original is kept"},
+        {"name": "MultipleObjects", "args": "flag: Boolean", "description": "Enable multiple copy mode"},
+        {"name": "Repetitions", "args": "n: Integer", "description": "Number of copies in multiple mode"},
+        {"name": "Transform", "args": "type: String, what: String", "description": "Execute: type=\"Shape\", what=\"Translate\"/\"Rotate\"/\"Scale\"/\"Mirror\""}
+      ],
+      "example": "With Transform\n  .Reset\n  .Name \"component1:patch\"\n  .TranslateVector \"10\", \"0\", \"0\"\n  .Copy \"True\"\n  .MultipleObjects \"True\"\n  .Repetitions \"3\"\n  .Transform \"Shape\", \"Translate\"\nEnd With"
+    },
+    "Material": {
+      "category": "material",
+      "description": "Define and manage materials with electromagnetic properties.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set the material name"},
+        {"name": "Type", "args": "type: String", "description": "Material type: \"Normal\", \"Lossy metal\", \"Anisotropic\", \"PEC\", \"Vacuum\""},
+        {"name": "Epsilon", "args": "value: Double", "description": "Set relative permittivity (epsilon_r)"},
+        {"name": "Mu", "args": "value: Double", "description": "Set relative permeability (mu_r)"},
+        {"name": "TanD", "args": "value: Double", "description": "Set electric loss tangent"},
+        {"name": "TanDM", "args": "value: Double", "description": "Set magnetic loss tangent"},
+        {"name": "Sigma", "args": "value: Double", "description": "Set electric conductivity (S/m)"},
+        {"name": "Colour", "args": "r: Double, g: Double, b: Double", "description": "Set RGB color (0-1 each)"},
+        {"name": "Transparency", "args": "value: Double", "description": "Set transparency (0=opaque, 1=transparent)"},
+        {"name": "Create", "description": "Create the material"},
+        {"name": "Delete", "args": "name: String", "description": "Delete a material"}
+      ],
+      "example": "With Material\n  .Reset\n  .Name \"MySubstrate\"\n  .Type \"Normal\"\n  .Epsilon \"4.4\"\n  .Mu \"1\"\n  .TanD \"0.02\"\n  .Colour \"0.2\", \"0.5\", \"0.2\"\n  .Transparency \"0.5\"\n  .Create\nEnd With"
+    },
+    "Port": {
+      "category": "excitation",
+      "description": "Define waveguide ports for S-parameter calculation. Waveguide ports compute modes and provide broadband excitation.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "PortNumber", "args": "n: Integer", "description": "Set port number"},
+        {"name": "Label", "args": "label: String", "description": "Set a descriptive label"},
+        {"name": "NumberOfModes", "args": "n: Integer", "description": "Number of modes to compute"},
+        {"name": "Orientation", "args": "dir: String", "description": "Port normal direction: \"xmin\", \"xmax\", \"ymin\", \"ymax\", \"zmin\", \"zmax\""},
+        {"name": "Xrange", "args": "min: Double, max: Double", "description": "X extent of the port"},
+        {"name": "Yrange", "args": "min: Double, max: Double", "description": "Y extent of the port"},
+        {"name": "Zrange", "args": "min: Double, max: Double", "description": "Z extent of the port"},
+        {"name": "XrangeAdd", "args": "addMin: Double, addMax: Double", "description": "Extend X range beyond structure"},
+        {"name": "YrangeAdd", "args": "addMin: Double, addMax: Double", "description": "Extend Y range beyond structure"},
+        {"name": "ZrangeAdd", "args": "addMin: Double, addMax: Double", "description": "Extend Z range beyond structure"},
+        {"name": "Create", "description": "Create the port"}
+      ],
+      "example": "With Port\n  .Reset\n  .PortNumber \"1\"\n  .Label \"Input\"\n  .NumberOfModes \"1\"\n  .Orientation \"xmin\"\n  .Xrange \"-15\", \"15\"\n  .Yrange \"-15\", \"15\"\n  .Zrange \"0\", \"5\"\n  .Create\nEnd With"
+    },
+    "DiscretePort": {
+      "category": "excitation",
+      "description": "Define discrete (lumped) ports for circuit-level excitation. Used for feeding antennas, defining lumped elements, and circuit co-simulation.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "PortNumber", "args": "n: Integer", "description": "Set port number"},
+        {"name": "Label", "args": "label: String", "description": "Set a descriptive label"},
+        {"name": "Type", "args": "type: String", "description": "Port type: \"SParameter\", \"Voltage\", \"Current\""},
+        {"name": "Impedance", "args": "value: Double", "description": "Reference impedance in ohms"},
+        {"name": "Point1", "args": "x: Double, y: Double, z: Double", "description": "Set first terminal point"},
+        {"name": "Point2", "args": "x: Double, y: Double, z: Double", "description": "Set second terminal point"},
+        {"name": "SetP1", "args": "face: Boolean, x: Double, y: Double, z: Double", "description": "Set first terminal with face pick flag"},
+        {"name": "SetP2", "args": "face: Boolean, x: Double, y: Double, z: Double", "description": "Set second terminal with face pick flag"},
+        {"name": "Monitor", "args": "flag: Boolean", "description": "Enable voltage/current monitoring"},
+        {"name": "Radius", "args": "value: Double", "description": "Set wire radius for the port"},
+        {"name": "Create", "description": "Create the discrete port"}
+      ],
+      "example": "With DiscretePort\n  .Reset\n  .PortNumber \"1\"\n  .Label \"Feed\"\n  .Type \"SParameter\"\n  .Impedance \"50\"\n  .Point1 \"0\", \"0\", \"0\"\n  .Point2 \"0\", \"0\", \"1.6\"\n  .Radius \"0.5\"\n  .Monitor \"True\"\n  .Create\nEnd With"
+    },
+    "LumpedElement": {
+      "category": "excitation",
+      "description": "Insert lumped R, L, C elements between two points in the model.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "SetName", "args": "name: String", "description": "Set the element name"},
+        {"name": "Type", "args": "type: String", "description": "Element type: \"RLC Serial\", \"RLC Parallel\", \"Diode\", \"GeneralCircuit\""},
+        {"name": "SetR", "args": "value: Double", "description": "Set resistance in ohms"},
+        {"name": "SetL", "args": "value: Double", "description": "Set inductance in nH"},
+        {"name": "SetC", "args": "value: Double", "description": "Set capacitance in pF"},
+        {"name": "SetP1", "args": "face: Boolean, x: Double, y: Double, z: Double", "description": "Set first terminal point"},
+        {"name": "SetP2", "args": "face: Boolean, x: Double, y: Double, z: Double", "description": "Set second terminal point"},
+        {"name": "Create", "description": "Create the lumped element"}
+      ],
+      "example": "With LumpedElement\n  .Reset\n  .SetName \"Matching_Cap\"\n  .Type \"RLC Serial\"\n  .SetR \"0\"\n  .SetL \"0\"\n  .SetC \"2.2\"\n  .SetP1 \"False\", \"5\", \"0\", \"1.6\"\n  .SetP2 \"False\", \"5\", \"0\", \"0\"\n  .Create\nEnd With"
+    },
+    "PlaneWave": {
+      "category": "excitation",
+      "description": "Define a plane wave excitation for RCS and scattering simulations.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Normal", "args": "theta: Double, phi: Double", "description": "Set incidence direction (spherical angles in degrees)"},
+        {"name": "EVector", "args": "theta: Double, phi: Double", "description": "Set E-field polarization direction"},
+        {"name": "Polarization", "args": "pol: String", "description": "Set polarization: \"Linear\", \"Circular\", \"Elliptical\""},
+        {"name": "ReferenceFrequency", "args": "freq: Double", "description": "Set reference frequency"},
+        {"name": "PhaseDifference", "args": "phase: Double", "description": "Phase difference for circular/elliptical polarization"},
+        {"name": "CircularDirection", "args": "dir: String", "description": "\"Left\" or \"Right\" for circular polarization"},
+        {"name": "SetUserDecouplingPlane", "args": "flag: Boolean", "description": "Enable user-defined decoupling plane"},
+        {"name": "Store", "description": "Store the plane wave definition"}
+      ],
+      "example": "With PlaneWave\n  .Reset\n  .Normal \"0\", \"0\"\n  .EVector \"90\", \"0\"\n  .Polarization \"Linear\"\n  .ReferenceFrequency \"10\"\n  .Store\nEnd With"
+    },
+    "FloquetPort": {
+      "category": "excitation",
+      "description": "Define Floquet ports for periodic structure analysis (unit cell simulations, phased arrays, frequency selective surfaces).",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Port", "args": "location: String", "description": "Port location: \"zmin\" or \"zmax\""},
+        {"name": "SetDialogTheta", "args": "theta: Double", "description": "Set scan angle theta (degrees)"},
+        {"name": "SetDialogPhi", "args": "phi: Double", "description": "Set scan angle phi (degrees)"},
+        {"name": "SetSortCode", "args": "code: String", "description": "Mode sorting: \"+beta/pw\" or \"+beta/pw/freq\""},
+        {"name": "SetCustomizedListFlag", "args": "flag: Boolean", "description": "Enable custom mode list"},
+        {"name": "AddMode", "args": "TE_TM: String, m: Integer, n: Integer", "description": "Add a Floquet mode (TE/TM, m, n indices)"},
+        {"name": "SetNumberOfModes", "args": "n: Integer", "description": "Set number of modes to compute"}
+      ],
+      "example": "With FloquetPort\n  .Reset\n  .Port \"zmax\"\n  .SetDialogTheta \"0\"\n  .SetDialogPhi \"0\"\n  .SetNumberOfModes \"2\"\nEnd With"
+    },
+    "Boundary": {
+      "category": "boundary",
+      "description": "Set boundary conditions for the simulation domain (open, PEC, PMC, periodic, etc.).",
+      "methods": [
+        {"name": "Xmin", "args": "type: String", "description": "Boundary at Xmin: \"open\", \"open (add space)\", \"electric\", \"magnetic\", \"periodic\", \"expanded open\", \"conducting wall\", \"unit cell\""},
+        {"name": "Xmax", "args": "type: String", "description": "Boundary at Xmax"},
+        {"name": "Ymin", "args": "type: String", "description": "Boundary at Ymin"},
+        {"name": "Ymax", "args": "type: String", "description": "Boundary at Ymax"},
+        {"name": "Zmin", "args": "type: String", "description": "Boundary at Zmin"},
+        {"name": "Zmax", "args": "type: String", "description": "Boundary at Zmax"},
+        {"name": "Xsymmetry", "args": "type: String", "description": "X symmetry plane: \"none\", \"electric\", \"magnetic\""},
+        {"name": "Ysymmetry", "args": "type: String", "description": "Y symmetry plane"},
+        {"name": "Zsymmetry", "args": "type: String", "description": "Z symmetry plane"},
+        {"name": "ApplyInAllDirections", "args": "flag: Boolean", "description": "Apply same BC to all directions"},
+        {"name": "OpenAddSpaceFactor", "args": "factor: Double", "description": "Factor for 'open (add space)' distance"}
+      ],
+      "example": "With Boundary\n  .Xmin \"open (add space)\"\n  .Xmax \"open (add space)\"\n  .Ymin \"open (add space)\"\n  .Ymax \"open (add space)\"\n  .Zmin \"electric\"\n  .Zmax \"open (add space)\"\n  .Xsymmetry \"none\"\n  .Ysymmetry \"none\"\n  .Zsymmetry \"none\"\nEnd With"
+    },
+    "Background": {
+      "category": "boundary",
+      "description": "Set the background material properties for the simulation domain.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Type", "args": "type: String", "description": "Background type: \"Normal\", \"PEC\""},
+        {"name": "Epsilon", "args": "value: Double", "description": "Relative permittivity of background"},
+        {"name": "Mu", "args": "value: Double", "description": "Relative permeability of background"},
+        {"name": "TanD", "args": "value: Double", "description": "Electric loss tangent"},
+        {"name": "XminSpace", "args": "value: Double", "description": "Additional space at Xmin"},
+        {"name": "XmaxSpace", "args": "value: Double", "description": "Additional space at Xmax"},
+        {"name": "YminSpace", "args": "value: Double", "description": "Additional space at Ymin"},
+        {"name": "YmaxSpace", "args": "value: Double", "description": "Additional space at Ymax"},
+        {"name": "ZminSpace", "args": "value: Double", "description": "Additional space at Zmin"},
+        {"name": "ZmaxSpace", "args": "value: Double", "description": "Additional space at Zmax"},
+        {"name": "Apply", "description": "Apply the background settings"}
+      ],
+      "example": "With Background\n  .Reset\n  .Type \"Normal\"\n  .Epsilon \"1.0\"\n  .Mu \"1.0\"\n  .XminSpace \"0\"\n  .XmaxSpace \"0\"\n  .YminSpace \"0\"\n  .YmaxSpace \"0\"\n  .ZminSpace \"0\"\n  .ZmaxSpace \"0\"\n  .Apply\nEnd With"
+    },
+    "Mesh": {
+      "category": "mesh",
+      "description": "Configure the hexahedral (FPBA) mesh settings for time domain and frequency domain solvers.",
+      "methods": [
+        {"name": "MeshType", "args": "type: String", "description": "Mesh type: \"PBA\", \"Staircase\", \"Tetrahedral\""},
+        {"name": "SetCreator", "args": "creator: String", "description": "Mesh creator: \"High Frequency\""},
+        {"name": "LinesPerWavelength", "args": "n: Integer", "description": "Mesh lines per wavelength (typically 10-20)"},
+        {"name": "MinimumStepNumber", "args": "n: Integer", "description": "Minimum number of mesh steps across any dimension"},
+        {"name": "RatioLimit", "args": "ratio: Double", "description": "Maximum ratio between adjacent mesh cells"},
+        {"name": "AutoGeneration", "args": "flag: Boolean", "description": "Enable automatic mesh generation"},
+        {"name": "SmallFeatureSize", "args": "size: Double", "description": "Smallest feature to resolve"},
+        {"name": "Automesh", "args": "flag: Boolean", "description": "Enable automatic meshing"},
+        {"name": "Update", "description": "Update/regenerate the mesh"}
+      ],
+      "example": "With Mesh\n  .MeshType \"PBA\"\n  .SetCreator \"High Frequency\"\n  .LinesPerWavelength \"15\"\n  .MinimumStepNumber \"5\"\n  .RatioLimit \"10\"\n  .AutoGeneration \"True\"\n  .Automesh \"True\"\n  .Update\nEnd With"
+    },
+    "MeshAdaption3D": {
+      "category": "mesh",
+      "description": "Configure adaptive mesh refinement for the frequency domain solver. Iteratively refines mesh based on error estimates.",
+      "methods": [
+        {"name": "SetType", "args": "type: String", "description": "Adaptation type: \"ExpertSystem\", \"Energy-based\""},
+        {"name": "SetAdaptionStrategy", "args": "strategy: String", "description": "Strategy: \"ExpertSystem\" or \"Energy-based\""},
+        {"name": "MinPasses", "args": "n: Integer", "description": "Minimum number of adaptation passes"},
+        {"name": "MaxPasses", "args": "n: Integer", "description": "Maximum number of adaptation passes"},
+        {"name": "SetAccuracy", "args": "accuracy: Double", "description": "Target accuracy (convergence threshold for S-parameters)"},
+        {"name": "MeshIncrement", "args": "percent: Integer", "description": "Mesh growth percentage per pass"},
+        {"name": "SetFrequencyRange", "args": "fmin: Double, fmax: Double", "description": "Frequency range for adaptation"}
+      ],
+      "example": "With MeshAdaption3D\n  .SetType \"ExpertSystem\"\n  .MinPasses \"2\"\n  .MaxPasses \"6\"\n  .SetAccuracy \"0.01\"\n  .MeshIncrement \"10\"\nEnd With"
+    },
+    "Solver": {
+      "category": "solver",
+      "description": "Configure and run the time domain solver (transient solver). Primary solver for wideband S-parameters, antenna radiation, and time-domain analysis.",
+      "methods": [
+        {"name": "FrequencyRange", "args": "fmin: Double, fmax: Double", "description": "Set simulation frequency range"},
+        {"name": "TimeBetweenUpdates", "args": "seconds: Integer", "description": "Time between solver status updates"},
+        {"name": "MaximumNumberOfTimesteps", "args": "n: Integer", "description": "Maximum number of time steps"},
+        {"name": "CalculateModesOnly", "args": "flag: Boolean", "description": "Only calculate port modes, no full simulation"},
+        {"name": "StimulationPort", "args": "port: String", "description": "Set excitation port: \"All\", or port number"},
+        {"name": "StimulationMode", "args": "mode: String", "description": "Set excitation mode number"},
+        {"name": "SteadyStateLimit", "args": "level: String", "description": "Energy decay criterion in dB (e.g. \"-40\")"},
+        {"name": "MeshAdaption", "args": "flag: Boolean", "description": "Enable adaptive mesh refinement"},
+        {"name": "AutoNormImpedance", "args": "flag: Boolean", "description": "Auto-normalize port impedances"},
+        {"name": "NormingImpedance", "args": "value: Double", "description": "Reference impedance for S-parameters"},
+        {"name": "UseDistributedComputing", "args": "flag: Boolean", "description": "Enable distributed computing / GPU"},
+        {"name": "Start", "description": "Start the solver"}
+      ],
+      "example": "With Solver\n  .FrequencyRange \"1\", \"10\"\n  .StimulationPort \"All\"\n  .StimulationMode \"All\"\n  .SteadyStateLimit \"-40\"\n  .MeshAdaption \"False\"\n  .AutoNormImpedance \"True\"\n  .NormingImpedance \"50\"\n  .Start\nEnd With"
+    },
+    "FDSolver": {
+      "category": "solver",
+      "description": "Configure and run the frequency domain solver. Best for narrowband analysis, periodic structures, and electrically large models.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Stimulation", "args": "port: String, mode: String", "description": "Set excitation port and mode"},
+        {"name": "SetMethod", "args": "method: String", "description": "Solver method: \"Tetrahedral Mesh\", \"Hexahedral Mesh\", \"Surface Mesh\""},
+        {"name": "AutoNormImpedance", "args": "flag: Boolean", "description": "Auto-normalize port impedances"},
+        {"name": "NormingImpedance", "args": "value: Double", "description": "Reference impedance for S-parameters"},
+        {"name": "ModesOnly", "args": "flag: Boolean", "description": "Only calculate port modes"},
+        {"name": "SweepType", "args": "type: String", "description": "Frequency sweep type: \"Discrete\", \"Interpolated\", \"Automatic\""},
+        {"name": "SetNumberOfResultDataSamples", "args": "n: Integer", "description": "Number of frequency samples in results"},
+        {"name": "AccuracyTet", "args": "value: Double", "description": "Tetrahedral solver accuracy"},
+        {"name": "AccuracyHex", "args": "value: Double", "description": "Hexahedral solver accuracy"},
+        {"name": "Start", "description": "Start the solver"}
+      ],
+      "example": "With FDSolver\n  .Reset\n  .Stimulation \"1\", \"1\"\n  .SetMethod \"Tetrahedral Mesh\"\n  .AutoNormImpedance \"True\"\n  .NormingImpedance \"50\"\n  .SweepType \"Interpolated\"\n  .AccuracyTet \"1e-4\"\n  .Start\nEnd With"
+    },
+    "EigenmodeSolver": {
+      "category": "solver",
+      "description": "Compute resonant modes (eigenfrequencies) of a structure. Used for cavity resonators, filters, and modal analysis.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "SetMethod", "args": "method: String", "description": "Solver method: \"AKS\", \"JDM\", \"Tetrahedral\""},
+        {"name": "SetNumberOfModes", "args": "n: Integer", "description": "Number of eigenmodes to find"},
+        {"name": "SetFrequencyTarget", "args": "flag: Boolean, freq: Double", "description": "Search near a target frequency"},
+        {"name": "SetMeshAdaptation", "args": "flag: Boolean", "description": "Enable adaptive mesh refinement"},
+        {"name": "SetLowerBoundForQ", "args": "value: Double", "description": "Lower bound for Q-factor calculation"},
+        {"name": "SetAccuracy", "args": "value: Double", "description": "Solver accuracy"},
+        {"name": "Start", "description": "Start the eigenmode solver"}
+      ],
+      "example": "With EigenmodeSolver\n  .Reset\n  .SetMethod \"AKS\"\n  .SetNumberOfModes \"5\"\n  .SetFrequencyTarget \"True\", \"2.45\"\n  .SetAccuracy \"1e-6\"\n  .Start\nEnd With"
+    },
+    "IESolver": {
+      "category": "solver",
+      "description": "Configure the integral equation (MoM/MLFMM) solver. Efficient for electrically large open structures, antennas on platforms, and RCS.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "SetSolverType", "args": "type: String", "description": "Solver type: \"MoM\", \"MLFMM\""},
+        {"name": "UseFastFrequencySweep", "args": "flag: Boolean", "description": "Enable fast frequency sweep (CMA or ACA)"},
+        {"name": "SetAccuracy", "args": "value: Double", "description": "Solver accuracy"},
+        {"name": "SetPreconditioner", "args": "type: String", "description": "Preconditioner type: \"ILU\", \"None\", \"Block Diagonal\""},
+        {"name": "CalcFarFields", "args": "flag: Boolean", "description": "Calculate far-field patterns"},
+        {"name": "SetMeshType", "args": "type: String", "description": "Mesh type: \"Surface\", \"Volume\""},
+        {"name": "Start", "description": "Start the IE solver"}
+      ],
+      "example": "With IESolver\n  .Reset\n  .SetSolverType \"MLFMM\"\n  .UseFastFrequencySweep \"True\"\n  .SetAccuracy \"1e-3\"\n  .CalcFarFields \"True\"\n  .Start\nEnd With"
+    },
+    "Monitor": {
+      "category": "monitor",
+      "description": "Define field monitors to record E-field, H-field, farfield, power flow, and other quantities at specified frequencies.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Name", "args": "name: String", "description": "Set monitor name"},
+        {"name": "FieldType", "args": "type: String", "description": "Field type: \"Efield\", \"Hfield\", \"Farfield\", \"Powerflow\", \"Current\", \"Powerloss\", \"Eenergy\", \"Henergy\""},
+        {"name": "Domain", "args": "domain: String", "description": "Monitor domain: \"Frequency\", \"Time\""},
+        {"name": "Frequency", "args": "freq: Double", "description": "Monitor frequency (for frequency domain monitors)"},
+        {"name": "Tstart", "args": "time: Double", "description": "Start time (for time domain monitors)"},
+        {"name": "Tstep", "args": "step: Double", "description": "Time step (for time domain monitors)"},
+        {"name": "Tend", "args": "time: Double", "description": "End time (for time domain monitors)"},
+        {"name": "UseSubvolume", "args": "flag: Boolean", "description": "Restrict monitor to a subvolume"},
+        {"name": "SetSubvolume", "args": "xmin: Double, xmax: Double, ymin: Double, ymax: Double, zmin: Double, zmax: Double", "description": "Define subvolume bounds"},
+        {"name": "Create", "description": "Create the monitor"}
+      ],
+      "example": "With Monitor\n  .Reset\n  .Name \"farfield (f=2.45)\"\n  .FieldType \"Farfield\"\n  .Domain \"Frequency\"\n  .Frequency \"2.45\"\n  .Create\nEnd With\n\nWith Monitor\n  .Reset\n  .Name \"e-field (f=2.45)\"\n  .FieldType \"Efield\"\n  .Domain \"Frequency\"\n  .Frequency \"2.45\"\n  .Create\nEnd With"
+    },
+    "ParameterSweep": {
+      "category": "optimization",
+      "description": "Configure parametric sweeps over design variables. Runs the solver for each parameter combination.",
+      "methods": [
+        {"name": "SetSimulationType", "args": "type: String", "description": "Simulation type to sweep"},
+        {"name": "AddSequence", "args": "name: String", "description": "Add a new sweep sequence"},
+        {"name": "AddParameter_Linear", "args": "sequence: String, param: String, start: Double, end: Double, steps: Integer", "description": "Add linear parameter sweep"},
+        {"name": "AddParameter_Logarithmic", "args": "sequence: String, param: String, start: Double, end: Double, samples: Integer", "description": "Add logarithmic parameter sweep"},
+        {"name": "AddParameter_List", "args": "sequence: String, param: String, values: String", "description": "Add parameter sweep with explicit value list"},
+        {"name": "DeleteAllSequences", "description": "Delete all sweep sequences"},
+        {"name": "Start", "description": "Start the parameter sweep"}
+      ],
+      "example": "With ParameterSweep\n  .SetSimulationType \"Transient\"\n  .AddSequence \"Sweep_Width\"\n  .AddParameter_Linear \"Sweep_Width\", \"patch_w\", \"30\", \"40\", \"5\"\n  .Start\nEnd With"
+    },
+    "Optimizer": {
+      "category": "optimization",
+      "description": "Configure and run the optimizer to automatically tune design parameters for target performance.",
+      "methods": [
+        {"name": "SetSimulationType", "args": "type: String", "description": "Simulation type: \"Transient\", \"Frequency Domain\", etc."},
+        {"name": "SetOptimizerType", "args": "type: String", "description": "Algorithm: \"Trust Region Framework\", \"Nelder Mead Simplex\", \"CMA-ES\", \"Genetic Algorithm\", \"Particle Swarm\""},
+        {"name": "SetMinMaxGoal", "args": "goalName: String", "description": "Set a min/max optimization goal"},
+        {"name": "AddGoal", "args": "name: String", "description": "Add an optimization goal"},
+        {"name": "SelectGoal", "args": "name: String", "description": "Select an optimization goal for configuration"},
+        {"name": "SetGoalOperator", "args": "op: String", "description": "Goal operator: \"<\", \">\", \"=\", \"min\", \"max\", \"move\""},
+        {"name": "SetGoalTarget", "args": "value: Double", "description": "Set goal target value"},
+        {"name": "SetGoal1DResultName", "args": "resultName: String", "description": "Set the result to optimize (e.g. \"S1,1\")"},
+        {"name": "SetGoalRange", "args": "min: Double, max: Double", "description": "Set the frequency range for the goal"},
+        {"name": "AddParameter", "args": "param: String, min: Double, max: Double", "description": "Add a parameter to optimize with min/max bounds"},
+        {"name": "SetMaxIterations", "args": "n: Integer", "description": "Maximum number of optimization iterations"},
+        {"name": "Start", "description": "Start the optimizer"}
+      ],
+      "example": "With Optimizer\n  .SetSimulationType \"Transient\"\n  .SetOptimizerType \"Trust Region Framework\"\n  .AddParameter \"patch_w\", \"28\", \"42\"\n  .AddParameter \"patch_l\", \"25\", \"38\"\n  .AddGoal \"S11_min\"\n  .SelectGoal \"S11_min\"\n  .SetGoalOperator \"<\"\n  .SetGoalTarget \"-15\"\n  .SetGoal1DResultName \"S1,1\"\n  .SetGoalRange \"2.4\", \"2.5\"\n  .SetMaxIterations \"50\"\n  .Start\nEnd With"
+    },
+    "Result1D": {
+      "category": "postprocessing",
+      "description": "Access, manipulate, and export 1D result data (S-parameters, impedance, VSWR, gain vs frequency, etc.).",
+      "methods": [
+        {"name": "Initialize", "args": "n: Integer", "description": "Initialize with n data points"},
+        {"name": "Load", "args": "fileName: String", "description": "Load result data from a file"},
+        {"name": "LoadPlainFile", "args": "fileName: String", "description": "Load from plain text file (two columns)"},
+        {"name": "Save", "args": "fileName: String", "description": "Save result data to a file"},
+        {"name": "GetN", "description": "Get number of data points (returns Integer)"},
+        {"name": "GetX", "args": "index: Integer", "description": "Get X value at index (returns Double)"},
+        {"name": "GetY", "args": "index: Integer", "description": "Get Y value at index (returns Double)"},
+        {"name": "SetX", "args": "index: Integer, value: Double", "description": "Set X value at index"},
+        {"name": "SetY", "args": "index: Integer, value: Double", "description": "Set Y value at index"},
+        {"name": "AppendXY", "args": "x: Double, y: Double", "description": "Append a data point"},
+        {"name": "ScalarMult", "args": "factor: Double", "description": "Multiply all Y values by a scalar"},
+        {"name": "Add", "args": "result: Result1D", "description": "Add another Result1D point-wise"},
+        {"name": "Copy", "description": "Return a copy of the result (returns Result1D)"},
+        {"name": "GetGlobalMaximum", "description": "Get maximum Y value (returns Double)"},
+        {"name": "GetGlobalMinimum", "description": "Get minimum Y value (returns Double)"}
+      ],
+      "example": "Dim res As Object\nSet res = Result1D(\"d1(1)1(1)\")\nDim nPoints As Long\nnPoints = res.GetN\nDim i As Long\nFor i = 0 To nPoints - 1\n  Debug.Print res.GetX(i), res.GetY(i)\nNext i"
+    },
+    "FarfieldPlot": {
+      "category": "postprocessing",
+      "description": "Configure and display far-field radiation pattern plots. Access gain, directivity, efficiency, and pattern data.",
+      "methods": [
+        {"name": "Reset", "description": "Reset all internal settings to defaults"},
+        {"name": "Plottype", "args": "type: String", "description": "Plot type: \"3d\", \"polar\", \"cartesian\""},
+        {"name": "SetPlotMode", "args": "mode: String", "description": "Plot quantity: \"Gain\", \"Directivity\", \"Efield\", \"Hfield\", \"RCS\", \"Prad\""},
+        {"name": "SetScaleLinear", "args": "flag: Boolean", "description": "Use linear scale (False for dB)"},
+        {"name": "Vary", "args": "variable: String", "description": "Variable to vary: \"angle1\" or \"angle2\""},
+        {"name": "Phi", "args": "angle: Double", "description": "Set fixed phi angle for 2D cuts"},
+        {"name": "Theta", "args": "angle: Double", "description": "Set fixed theta angle for 2D cuts"},
+        {"name": "Step", "args": "step: Double", "description": "Angular step size in degrees"},
+        {"name": "SetColorByValue", "args": "flag: Boolean", "description": "Color 3D plot by field magnitude"},
+        {"name": "GetFarfieldCut", "description": "Extract the current cut data"},
+        {"name": "SetMainLobeDirection", "description": "Find and display main lobe direction"},
+        {"name": "GetMainLobeDirection", "description": "Get main lobe theta and phi angles"},
+        {"name": "Plot", "description": "Render the plot"}
+      ],
+      "example": "With FarfieldPlot\n  .Reset\n  .Plottype \"polar\"\n  .SetPlotMode \"Gain\"\n  .SetScaleLinear \"False\"\n  .Vary \"angle1\"\n  .Phi \"0\"\n  .Step \"1\"\n  .Plot\nEnd With"
+    },
+    "Units": {
+      "category": "settings",
+      "description": "Set the units for the simulation. Must be configured before creating geometry.",
+      "methods": [
+        {"name": "Geometry", "args": "unit: String", "description": "Geometry unit: \"mm\", \"um\", \"nm\", \"m\", \"cm\", \"mil\", \"in\", \"ft\""},
+        {"name": "Frequency", "args": "unit: String", "description": "Frequency unit: \"Hz\", \"kHz\", \"MHz\", \"GHz\", \"THz\""},
+        {"name": "Time", "args": "unit: String", "description": "Time unit: \"s\", \"ms\", \"us\", \"ns\", \"ps\", \"fs\""},
+        {"name": "Voltage", "args": "unit: String", "description": "Voltage unit: \"V\", \"mV\", \"uV\""},
+        {"name": "Current", "args": "unit: String", "description": "Current unit: \"A\", \"mA\", \"uA\""},
+        {"name": "Temperature", "args": "unit: String", "description": "Temperature unit: \"Kelvin\", \"Celsius\", \"Fahrenheit\""}
+      ],
+      "example": "With Units\n  .Geometry \"mm\"\n  .Frequency \"GHz\"\n  .Time \"ns\"\n  .Voltage \"V\"\n  .Current \"A\"\n  .Temperature \"Kelvin\"\nEnd With"
+    },
+    "Component": {
+      "category": "settings",
+      "description": "Manage components (groups of solids) in the model tree.",
+      "methods": [
+        {"name": "New", "args": "name: String", "description": "Create a new component"},
+        {"name": "Delete", "args": "name: String", "description": "Delete a component and all its solids"},
+        {"name": "Rename", "args": "oldName: String, newName: String", "description": "Rename a component"},
+        {"name": "GetNextFreeName", "description": "Get next available default component name"}
+      ],
+      "example": "Component.New \"Antenna\"\nComponent.New \"Feed\"\nComponent.New \"Ground\""
+    },
+    "StoreParameter": {
+      "category": "settings",
+      "description": "Define named parameters (design variables) that can be referenced in geometry dimensions, enabling parametric design and optimization.",
+      "methods": [
+        {"name": "Add", "args": "name: String, value: Double", "description": "Add or update a named parameter"},
+        {"name": "Delete", "args": "name: String", "description": "Delete a named parameter"},
+        {"name": "Rename", "args": "oldName: String, newName: String", "description": "Rename a parameter"}
+      ],
+      "example": "StoreParameter \"patch_w\", \"38.04\"\nStoreParameter \"patch_l\", \"29.44\"\nStoreParameter \"sub_h\", \"1.524\"\nStoreParameter \"feed_inset\", \"7.5\""
+    },
+    "Pick": {
+      "category": "interaction",
+      "description": "Programmatically select faces, edges, and points on geometry for operations that require picked elements.",
+      "methods": [
+        {"name": "ClearAllPicks", "description": "Clear all current selections"},
+        {"name": "PickFaceFromId", "args": "solid: String, faceId: Integer", "description": "Pick a face by its ID"},
+        {"name": "PickEdgeFromId", "args": "solid: String, edgeId: Integer, vertexId: Integer", "description": "Pick an edge by its ID"},
+        {"name": "PickEndpointFromId", "args": "solid: String, vertexId: Integer", "description": "Pick a vertex by its ID"},
+        {"name": "PickMidpointFromId", "args": "solid: String, edgeId: Integer", "description": "Pick the midpoint of an edge"},
+        {"name": "PickCenterpointFromId", "args": "solid: String, faceId: Integer", "description": "Pick the center of a face"},
+        {"name": "GetPickedFaceArea", "description": "Get the area of the picked face (returns Double)"},
+        {"name": "GetNumberOfPickedFaces", "description": "Get number of picked faces (returns Integer)"}
+      ],
+      "example": "Pick.ClearAllPicks\nPick.PickFaceFromId \"component1:substrate\", \"1\"\nPick.PickFaceFromId \"component1:substrate\", \"2\""
+    },
+    "WCS": {
+      "category": "interaction",
+      "description": "Working Coordinate System management. Define local coordinate systems for geometry construction and transformations.",
+      "methods": [
+        {"name": "ActivateWCS", "args": "mode: String", "description": "Activate WCS: \"local\" or \"global\""},
+        {"name": "SetNormal", "args": "x: Double, y: Double, z: Double", "description": "Set the WCS normal (W direction)"},
+        {"name": "SetOrigin", "args": "x: Double, y: Double, z: Double", "description": "Set the WCS origin"},
+        {"name": "SetUVector", "args": "x: Double, y: Double, z: Double", "description": "Set the WCS U direction"},
+        {"name": "AlignWCSWithSelected", "args": "mode: String", "description": "Align WCS with selection: \"Face\", \"Edge\", \"3Points\""},
+        {"name": "Store", "args": "name: String", "description": "Store current WCS with a name"},
+        {"name": "Restore", "args": "name: String", "description": "Restore a previously stored WCS"},
+        {"name": "Delete", "args": "name: String", "description": "Delete a stored WCS"}
+      ],
+      "example": "With WCS\n  .ActivateWCS \"local\"\n  .SetOrigin \"0\", \"0\", \"10\"\n  .SetNormal \"0\", \"0\", \"1\"\n  .SetUVector \"1\", \"0\", \"0\"\nEnd With"
+    }
+  }
+}
