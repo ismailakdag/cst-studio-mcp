@@ -1,8 +1,17 @@
-## Full tool catalog (178 tools)
+## Full tool catalog (180 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
 VBA for geometry/ports/transforms is cross-checked against the CST help dump in [`vba_cst/`](vba_cst/).
+
+### Explicit connection (2)
+
+Attach to CST explicitly; disconnect without closing user projects.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_connect` | Explicitly attach to a running CST Design Environment or start one. Disabled mode never connects. |
+| `cst_disconnect` | Detach this MCP session without closing CST, projects, or a running solver. |
 
 ### Workflows (start here) (8)
 

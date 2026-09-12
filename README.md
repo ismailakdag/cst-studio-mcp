@@ -9,7 +9,7 @@ structured MCP tools on your Windows machine.
 | | |
 |--|--|
 | **Package** | `cst-studio-mcp` · entry point `cst-studio-mcp` |
-| **Tools** | ~178 (workflows, geometry, antennas, solvers, results, PCB, …) |
+| **Tools** | 180 (workflows, geometry, antennas, solvers, results, PCB, …) |
 | **Python** | 3.10+ (3.12 recommended) |
 | **OS** | Windows 10/11 + licensed CST Studio Suite |
 | **Docs** | Interactive EN/TR browser: [`docs/index.html`](docs/index.html) |
@@ -44,7 +44,7 @@ Agent (Cursor / Claude / …)
 11. [Development & tests](#development--tests)
 12. [Troubleshooting](#troubleshooting)
 13. [License](#license)
-14. [Full tool catalog](#full-tool-catalog-178-tools)
+14. [Full tool catalog](#full-tool-catalog-180-tools)
 
 ---
 
@@ -417,11 +417,20 @@ MIT
 
 
 <!-- TOOL_CATALOG_START -->
-## Full tool catalog (178 tools)
+## Full tool catalog (180 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
 VBA for geometry/ports/transforms is cross-checked against the CST help dump in [`vba_cst/`](vba_cst/).
+
+### Explicit connection (2)
+
+Attach to CST explicitly; disconnect without closing user projects.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_connect` | Explicitly attach to a running CST Design Environment or start one. Disabled mode never connects. |
+| `cst_disconnect` | Detach this MCP session without closing CST, projects, or a running solver. |
 
 ### Workflows (start here) (8)
 

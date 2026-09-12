@@ -16,6 +16,9 @@ from cst_mcp.config import CSTConfig  # noqa: E402
 from cst_mcp.cst_client import CSTClient  # noqa: E402
 
 CATEGORIES: list[dict] = [
+    {"id": "connection", "title_en": "Explicit connection", "title_tr": "Açık bağlantı yönetimi",
+     "blurb_en": "Attach to CST explicitly; disconnect without closing user projects.",
+     "blurb_tr": "CST bağlantısını açıkça kurun; kullanıcı projelerini kapatmadan ayrılın.", "module": "connection"},
     {
         "id": "workflows",
         "title_en": "Workflows (start here)",
@@ -193,6 +196,7 @@ def collect_tools() -> list[dict]:
         arrays,
         boolean,
         boundaries,
+        connection,
         diagnostics,
         geometry,
         import_export,
@@ -219,6 +223,7 @@ def collect_tools() -> list[dict]:
     }
     # fix: explicit map more reliable
     module_map = {
+        "connection": connection,
         "workflows": workflows,
         "project": project,
         "geometry": geometry,
@@ -246,7 +251,7 @@ def collect_tools() -> list[dict]:
     for cat in CATEGORIES:
         mod = module_map[cat["module"]]
         for t in mod.TOOLS:
-            schema = t.inputSchema if isinstance(t.inputSchema, dict) else {}
+            schema = getattr(t, "inputSchema", getattr(t, "input_schema", {}))
             props = schema.get("properties") or {}
             required = schema.get("required") or []
             params = []
@@ -346,7 +351,7 @@ def patch_readme(table_md: str, total: int) -> None:
         text = pre + block + post
     else:
         text = text.rstrip() + "\n\n" + block + "\n"
-    text = text.replace("~173", str(total)).replace("173 tools", f"{total} tools")
+    text = text.replace("~173", str(total)).replace("~178", str(total)).replace("173 tools", f"{total} tools").replace("178 tools", f"{total} tools").replace("#full-tool-catalog-178-tools", f"#full-tool-catalog-{total}-tools")
     # ensure docs mention bilingual
     if "EN/TR" not in text and "bilingual" not in text.lower():
         text = text.replace(

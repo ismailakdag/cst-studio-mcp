@@ -1,8 +1,33 @@
 {
   "name": "cst-studio-mcp",
   "version": "1.0.0",
-  "total_tools": 178,
+  "total_tools": 180,
   "categories": [
+    {
+      "id": "connection",
+      "title_en": "Explicit connection",
+      "title_tr": "Açık bağlantı yönetimi",
+      "blurb_en": "Attach to CST explicitly; disconnect without closing user projects.",
+      "blurb_tr": "CST bağlantısını açıkça kurun; kullanıcı projelerini kapatmadan ayrılın.",
+      "module": "connection",
+      "count": 2,
+      "tools": [
+        {
+          "name": "cst_connect",
+          "description": "Explicitly attach to a running CST Design Environment or start one. Disabled mode never connects.",
+          "category_id": "connection",
+          "params": [],
+          "required": []
+        },
+        {
+          "name": "cst_disconnect",
+          "description": "Detach this MCP session without closing CST, projects, or a running solver.",
+          "category_id": "connection",
+          "params": [],
+          "required": []
+        }
+      ]
+    },
     {
       "id": "workflows",
       "title_en": "Workflows (start here)",
