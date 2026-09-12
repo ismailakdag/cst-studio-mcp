@@ -163,13 +163,13 @@ Nothing in the library hard-codes a drive letter. Discovery order:
 | `CST_WORK_DIR` | Optional | Projects, exports, reports | `%USERPROFILE%\cst_projects` |
 | `CST_VERSION` | Optional | Year for auto-detect (default `2026`) | `2026` |
 | `CST_QUIET` | Optional | Quiet Design Environment (`1`/`0`, default quiet) | `1` |
-| `CST_CONNECT_MODE` | Optional | Startup behavior: `auto`, `manual`, or `disabled` (default `auto`) | `auto` |
+| `CST_CONNECT_MODE` | Optional | Startup behavior: `auto`, `manual`, or `disabled` (default `manual`) | `manual` |
 | `CST_LOG_LEVEL` | Optional | Logging level | `INFO` |
 
 `auto` attaches to a running Design Environment or starts one when the MCP process starts.
 Use `disabled` for catalog inspection, client setup checks, and offline VBA generation: it does
 not import the CST Python package or connect to CST. `manual` skips the startup connection while
-leaving the CST Python package available to workflows that explicitly request a connection.
+leaving CST available to the explicit `cst_connect` tool and connection workflows. It is the default, so adding an MCP server never implicitly launches CST. `cst_disconnect` detaches the MCP session; it does not close the application or its projects.
 
 Template file: **[`.mcp.example.json`](.mcp.example.json)**  
 Local machine paths: **`.mcp.json`** (edit paths only; keep out of shared commits if needed).
@@ -190,7 +190,7 @@ Local machine paths: **`.mcp.json`** (edit paths only; keep out of shared commit
         "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
         "CST_WORK_DIR": "C:\\cst_projects",
         "CST_VERSION": "2026",
-        "CST_CONNECT_MODE": "auto",
+        "CST_CONNECT_MODE": "manual",
         "PYTHONPATH": "C:\\Program Files\\CST Studio Suite 2026\\AMD64\\python_cst_libraries",
         "CST_LOG_LEVEL": "INFO"
       }
@@ -255,7 +255,7 @@ same process definition in this shape:
       "env": {
         "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
         "CST_WORK_DIR": "C:\\cst_projects",
-        "CST_CONNECT_MODE": "auto"
+        "CST_CONNECT_MODE": "manual"
       }
     }
   }
@@ -286,7 +286,7 @@ python -m pytest tests/ -q
 
 From an MCP client, call:
 
-1. `cst_connection_status` — expect `connected` with `CST_CONNECT_MODE=auto`, or `offline` with it set to `disabled`
+1. `cst_connect` — explicitly attach to CST when ready (or opt into `CST_CONNECT_MODE=auto`); then `cst_connection_status` reports the session. With `disabled`, the server remains offline.
 2. Prefer workflows for smoke tests (see below)
 
 ---

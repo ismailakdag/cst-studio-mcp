@@ -30,7 +30,7 @@ class CSTConfig:
     version: str = DEFAULT_VERSION
     log_level: str = "INFO"
     quiet_mode: bool = True
-    connect_mode: str = "auto"
+    connect_mode: str = "manual"
     work_dir_error: str | None = None
 
     @classmethod
@@ -60,7 +60,7 @@ class CSTConfig:
 
         quiet = os.environ.get("CST_QUIET", "1").strip().lower() not in {"0", "false", "no"}
         log_level = os.environ.get("CST_LOG_LEVEL", "INFO")
-        connect_mode = os.environ.get("CST_CONNECT_MODE", "auto").strip().lower()
+        connect_mode = os.environ.get("CST_CONNECT_MODE", "manual").strip().lower()
         if connect_mode not in CONNECT_MODES:
             logger.warning(
                 "Invalid CST_CONNECT_MODE=%r; using 'manual' for safe startup",

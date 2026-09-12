@@ -16,7 +16,8 @@ from cst_mcp import server as server_module
 
 
 @pytest.mark.asyncio
-async def test_real_stdio_initialize_list_and_call(tmp_path: Path):
+@pytest.mark.parametrize("noisy_vendor", [False, True])
+async def test_real_stdio_initialize_list_and_call(tmp_path: Path, noisy_vendor):
     repo_root = Path(__file__).resolve().parents[1]
     source_dir = repo_root / "src"
     env = os.environ.copy()
@@ -31,9 +32,27 @@ async def test_real_stdio_initialize_list_and_call(tmp_path: Path):
             ),
         }
     )
+    script = """
+import os
+from cst_mcp import server as module
+real_create = module.create_server
+def noisy_create():
+    print('vendor Python startup diagnostic', flush=True)
+    os.write(1, b'vendor native startup diagnostic\\n')
+    server, client = real_create()
+    original_status = client.status
+    def noisy_status():
+        print('vendor Python call diagnostic', flush=True)
+        os.write(1, b'vendor native call diagnostic\\n')
+        return original_status()
+    client.status = noisy_status
+    return server, client
+module.create_server = noisy_create
+module.main()
+"""
     params = StdioServerParameters(
         command=sys.executable,
-        args=["-m", "cst_mcp.server"],
+        args=["-c", script] if noisy_vendor else ["-m", "cst_mcp.server"],
         cwd=repo_root,
         env=env,
         encoding="utf-8",

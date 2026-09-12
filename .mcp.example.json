@@ -7,7 +7,7 @@
         "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
         "CST_WORK_DIR": "C:\\cst_projects",
         "CST_VERSION": "2026",
-        "CST_CONNECT_MODE": "auto",
+        "CST_CONNECT_MODE": "manual",
         "PYTHONPATH": "C:\\Program Files\\CST Studio Suite 2026\\AMD64\\python_cst_libraries",
         "CST_LOG_LEVEL": "INFO"
       }

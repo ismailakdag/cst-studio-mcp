@@ -29,6 +29,14 @@ def test_config_work_dir(tmp_path: Path, monkeypatch):
     assert cfg.work_dir.is_dir()
 
 
+def test_default_mode_never_connects_on_startup(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("CST_CONNECT_MODE", raising=False)
+    monkeypatch.setenv("CST_PATH", str(tmp_path / "missing"))
+    monkeypatch.setenv("CST_WORK_DIR", str(tmp_path))
+    assert CSTConfig.from_env().connect_on_startup is False
+    assert CSTConfig().connect_mode == "manual"
+
+
 def test_disabled_mode_does_not_import_cst(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("CST_WORK_DIR", str(tmp_path))
     monkeypatch.setenv("CST_CONNECT_MODE", "disabled")

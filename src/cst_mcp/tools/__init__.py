@@ -9,6 +9,7 @@ from cst_mcp.tools import (
     arrays,
     boolean,
     boundaries,
+    connection,
     diagnostics,
     geometry,
     import_export,
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 
 # Full ported modules + our high-level workflows
 _MODULES = (
-    project,
+    connection,    project,
     geometry,
     boolean,
     transforms,

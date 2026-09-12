@@ -35,52 +35,43 @@ def create_server(config: CSTConfig | None = None) -> tuple[Server, CSTClient]:
     return server, client
 
 
-async def run_server() -> None:
-    server, client = create_server()
-    if client.config.connect_on_startup:
-        try:
-            # Some vendor Python builds print during import/connection. stdout
-            # is reserved for JSON-RPC, so route such diagnostics to stderr.
-            with contextlib.redirect_stdout(sys.stderr):
-                conn = client.connect()
-            logger.info("cst-studio-mcp %s start: %s", __version__, conn.get("status"))
-        except Exception:
-            logger.exception("CST startup connection failed; continuing in offline mode")
-    else:
-        logger.info(
-            "cst-studio-mcp %s start: CST connection mode is %s",
-            __version__,
-            client.config.connect_mode,
-        )
-
-    try:
-        logger.info("status: %s", client.status())
-    except Exception:
-        logger.exception("Could not read initial CST status; continuing MCP startup")
-
-    # Keep a private handle to protocol stdout. During the entire server run,
-    # ordinary print() calls are redirected to stderr and cannot corrupt the
-    # newline-delimited JSON-RPC stream consumed by MCP clients.
+@contextlib.contextmanager
+def protocol_output():
+    """Reserve JSON-RPC stdout, including against native writes to descriptor 1."""
+    stdout_fd = sys.stdout.fileno()
     protocol_stdout = io.TextIOWrapper(
-        os.fdopen(os.dup(sys.stdout.fileno()), "wb"),
-        encoding="utf-8",
-        errors="replace",
-        newline="\n",
-        write_through=True,
+        os.fdopen(os.dup(stdout_fd), "wb"),
+        encoding="utf-8", errors="replace", newline="\n", write_through=True,
     )
+    sys.stdout.flush()
     try:
+        os.dup2(sys.stderr.fileno(), stdout_fd)
+        with contextlib.redirect_stdout(sys.stderr):
+            yield protocol_stdout
+    finally:
+        sys.stderr.flush()
+        os.dup2(protocol_stdout.fileno(), stdout_fd)
+        protocol_stdout.close()
+
+
+async def run_server() -> None:
+    # Isolate vendor output before creating the client or probing CST. A slow
+    # CST startup is opt-in; the default MCP handshake has no CST side effects.
+    with protocol_output() as protocol_stdout:
+        server, client = create_server()
+        if client.config.connect_on_startup:
+            try:
+                conn = client.connect()
+                logger.info("cst-studio-mcp %s start: %s", __version__, conn.get("status"))
+            except Exception:
+                logger.exception("CST startup connection failed; continuing in offline mode")
+        else:
+            logger.info("cst-studio-mcp %s start: %s mode", __version__, client.config.connect_mode)
+
         import anyio
 
-        async_stdout = anyio.wrap_file(protocol_stdout)
-        with contextlib.redirect_stdout(sys.stderr):
-            async with stdio_server(stdout=async_stdout) as (read_stream, write_stream):
-                await server.run(
-                    read_stream,
-                    write_stream,
-                    server.create_initialization_options(),
-                )
-    finally:
-        protocol_stdout.close()
+        async with stdio_server(stdout=anyio.wrap_file(protocol_stdout)) as streams:
+            await server.run(*streams, server.create_initialization_options())
 
 
 def main() -> None:
