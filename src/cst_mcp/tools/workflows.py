@@ -18,7 +18,8 @@ TOOLS: list[Tool] = [
         description=(
             "END-TO-END / Uçtan uca: size a rectangular microstrip patch, build "
             "substrate/ground/patch/feed, frequency, open BCs, waveguide port, farfield "
-            "monitor. Does NOT run the solver. "
+            "monitor. Does not connect to or start CST; call cst_connect first for live "
+            "execution, otherwise it returns offline VBA. Does NOT run the solver. "
             "Simülasyon çalıştırmaz — next: cst_workflow_run_and_s11 or cst_run_simulation."
         ),
         inputSchema={
@@ -485,8 +486,6 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
             )
             steps: list[dict[str, Any]] = []
             if args.get("create_project", True):
-                if not client.connected:
-                    steps.append(client.connect())
                 # A new project is a separate tab. Preserve any open user project;
                 # Project.close() discards unsaved changes according to CST's API.
                 path = args.get("project_path") or str(
