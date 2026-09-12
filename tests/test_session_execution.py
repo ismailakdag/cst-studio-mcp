@@ -181,6 +181,20 @@ def test_blocking_timeout_reports_solver_state_without_aborting() -> None:
     assert not any(name == "abort_solver" for name, _ in model.calls)
 
 
+def test_cst_runtime_timed_out_message_is_classified_as_timeout() -> None:
+    class TimedOutModel(FakeModel3D):
+        def run_solver(self, *, timeout: int | None = None) -> None:
+            self.calls.append(("run_solver", timeout))
+            self.running = True
+            raise RuntimeError("The CST command timed out")
+
+    model = TimedOutModel()
+    session, _ = make_session(model)
+    result = session.run_solver(timeout_s=5)
+    assert result["status"] == "timeout"
+    assert result["running"] is True
+
+
 def test_solver_status_is_read_only_and_json_safe() -> None:
     model = FakeModel3D(running=True)
     session, _ = make_session(model)

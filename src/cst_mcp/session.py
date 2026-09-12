@@ -480,6 +480,11 @@ class CSTSession:
             raise ValueError("timeout_s must be greater than zero")
         return max(1, int(timeout_s))
 
+    @staticmethod
+    def _is_timeout_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return isinstance(exc, TimeoutError) or "timeout" in message or "timed out" in message
+
     def is_solver_running(self, timeout_s: float = 30.0) -> bool:
         if not self.has_project:
             return False
@@ -563,7 +568,7 @@ class CSTSession:
             result = self.model3d.run_solver(timeout=timeout)
             return {"status": "executed", "result": str(result) if result else "ok"}
         except Exception as exc:  # noqa: BLE001
-            if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower():
+            if self._is_timeout_error(exc):
                 state = self.solver_status(timeout_s=min(30.0, timeout_s))
                 return {
                     "status": "timeout",
@@ -590,7 +595,7 @@ class CSTSession:
             result = self.model3d.start_solver(timeout=timeout)
             return {"status": "started", "result": str(result) if result else "ok"}
         except Exception as exc:  # noqa: BLE001
-            if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower():
+            if self._is_timeout_error(exc):
                 state = self.solver_status(timeout_s=min(30.0, timeout_s))
                 return {
                     "status": "timeout",
