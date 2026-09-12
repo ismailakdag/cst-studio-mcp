@@ -8,7 +8,6 @@ from mcp.server import Server
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
-from cst_mcp.vba_builder import VBABuilder, VBAScript
 
 _VALID_SOLVER_TYPES = [
     "Time Domain",
@@ -38,6 +37,12 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "solver_type": _SOLVER_TYPE_SCHEMA,
+                "timeout_s": {
+                    "type": "number",
+                    "default": 3600,
+                    "exclusiveMinimum": 0,
+                    "description": "Maximum CST Python API call duration in seconds.",
+                },
             },
             "required": [],
         },
@@ -53,6 +58,12 @@ TOOLS: list[Tool] = [
             "type": "object",
             "properties": {
                 "solver_type": _SOLVER_TYPE_SCHEMA,
+                "timeout_s": {
+                    "type": "number",
+                    "default": 30,
+                    "exclusiveMinimum": 0,
+                    "description": "Maximum CST Python API start-command duration in seconds.",
+                },
             },
             "required": [],
         },
@@ -60,13 +71,15 @@ TOOLS: list[Tool] = [
     Tool(
         name="cst_get_simulation_status",
         description=(
-            "Check the status and progress of a running CST simulation. "
-            "Returns information such as whether a simulation is running, "
-            "progress percentage, mesh cell count, and current time step."
+            "Read whether a CST simulation is running and return any solver-run "
+            "metadata exposed by the CST Python API. This does not show a dialog "
+            "or change the simulation."
         ),
         inputSchema={
             "type": "object",
-            "properties": {},
+            "properties": {
+                "timeout_s": {"type": "number", "default": 30, "exclusiveMinimum": 0},
+            },
             "required": [],
         },
     ),
@@ -78,7 +91,9 @@ TOOLS: list[Tool] = [
         ),
         inputSchema={
             "type": "object",
-            "properties": {},
+            "properties": {
+                "timeout_s": {"type": "number", "default": 30, "exclusiveMinimum": 0},
+            },
             "required": [],
         },
     ),
@@ -90,7 +105,9 @@ TOOLS: list[Tool] = [
         ),
         inputSchema={
             "type": "object",
-            "properties": {},
+            "properties": {
+                "timeout_s": {"type": "number", "default": 30, "exclusiveMinimum": 0},
+            },
             "required": [],
         },
     ),
@@ -103,7 +120,9 @@ TOOLS: list[Tool] = [
         ),
         inputSchema={
             "type": "object",
-            "properties": {},
+            "properties": {
+                "timeout_s": {"type": "number", "default": 30, "exclusiveMinimum": 0},
+            },
             "required": [],
         },
     ),
@@ -112,38 +131,23 @@ TOOLS: list[Tool] = [
 _TOOL_NAMES = {tool.name for tool in TOOLS}
 
 
-def _build_solver_start_vba(solver_type: str | None) -> str:
-    """Build VBA code to start the appropriate solver.
+_SOLVER_VBA_NAMES = {
+    "Time Domain": "HF Time Domain",
+    "Frequency Domain": "HF Frequency Domain",
+    "Eigenmode": "HF Eigenmode",
+    "Integral Equation": "HF IntegralEq",
+}
 
-    CST uses different VBA objects depending on the solver type:
-    - Time Domain:      Solver.Start
-    - Frequency Domain: FDSolver.Start
-    - Eigenmode:        EigenmodeSolver.Start
-    - Integral Equation: IESolver.Start
-    """
+
+def _select_solver(solver_type: str | None, client: CSTClient) -> dict | None:
+    """Select an explicitly requested solver before using the Python run API."""
     if solver_type is None:
-        # Use the currently configured solver via the generic Solver object
-        vba = VBABuilder("Solver")
-        vba.raw_line("Solver.Start")
-        return vba.build()
-
-    solver_map = {
-        "Time Domain": "Solver",
-        "Frequency Domain": "FDSolver",
-        "Eigenmode": "EigenmodeSolver",
-        "Integral Equation": "IESolver",
-    }
-
-    obj = solver_map.get(solver_type)
-    if obj is None:
-        raise ValueError(
-            f"Invalid solver_type '{solver_type}'. "
-            f"Valid options: {_VALID_SOLVER_TYPES}"
-        )
-
-    vba = VBABuilder(obj)
-    vba.raw_line(f"{obj}.Start")
-    return vba.build()
+        return None
+    vba_name = _SOLVER_VBA_NAMES[solver_type]
+    return client.execute_vba(
+        f'ChangeSolverType "{vba_name}"',
+        history_label="select_solver_type",
+    )
 
 
 async def handle(
@@ -158,16 +162,16 @@ async def handle(
             return _handle_run_simulation(arguments, client, async_mode=True)
 
         if name == "cst_get_simulation_status":
-            return _handle_get_status(client)
+            return _handle_get_status(arguments, client)
 
         if name == "cst_pause_simulation":
-            return _handle_simple_solver_command("Pause", client)
+            return _handle_simple_solver_command("pause", arguments, client)
 
         if name == "cst_resume_simulation":
-            return _handle_simple_solver_command("Resume", client)
+            return _handle_simple_solver_command("resume", arguments, client)
 
         if name == "cst_stop_simulation":
-            return _handle_simple_solver_command("Stop", client)
+            return _handle_simple_solver_command("abort", arguments, client)
 
         return [
             TextContent(
@@ -193,24 +197,50 @@ def _handle_run_simulation(
             TextContent(
                 type="text",
                 text=json.dumps({
+                    "status": "error",
                     "error": f"Invalid solver_type '{solver_type}'",
                     "valid_options": _VALID_SOLVER_TYPES,
                 }),
             )
         ]
 
-    vba_code = _build_solver_start_vba(solver_type)
-    result = client.execute_vba(vba_code)
+    timeout_default = 30.0 if async_mode else 3600.0
+    timeout_s = float(arguments.get("timeout_s", timeout_default))
+    state = client.solver_status(timeout_s=min(timeout_s, 30.0))
+    if state.get("status") == "ok" and state.get("running"):
+        state.update(
+            {
+                "status": "busy",
+                "message": "A solver is already running; no second solve was started.",
+                "solver_type": solver_type or "current",
+                "mode": "async" if async_mode else "blocking",
+            }
+        )
+        return [TextContent(type="text", text=json.dumps(state, indent=2))]
+    if state.get("status") not in {"ok", "offline"}:
+        return [TextContent(type="text", text=json.dumps(state, indent=2))]
+
+    selection = _select_solver(solver_type, client)
+    if selection is not None and selection.get("status") not in {"executed", "offline"}:
+        result = selection
+    else:
+        result = (
+            client.start_solver(timeout_s=timeout_s)
+            if async_mode
+            else client.run_solver(timeout_s=timeout_s)
+        )
 
     result["solver_type"] = solver_type or "current"
     result["mode"] = "async" if async_mode else "blocking"
+    if selection is not None:
+        result["solver_selection"] = selection
 
     if async_mode and result.get("status") == "offline":
         result["note"] = (
             "In connected mode this command would launch the simulation "
             "and return immediately. Use cst_get_simulation_status to poll progress."
         )
-    elif async_mode and result.get("status") == "executed":
+    elif async_mode and result.get("status") == "started":
         result["note"] = (
             "Simulation launched. Use cst_get_simulation_status to monitor progress."
         )
@@ -218,66 +248,20 @@ def _handle_run_simulation(
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def _handle_get_status(client: CSTClient) -> list[TextContent]:
+def _handle_get_status(arguments: dict, client: CSTClient) -> list[TextContent]:
     """Handle cst_get_simulation_status."""
-    if client.connected:
-        # In connected mode, query the solver for status information
-        script = VBAScript()
-        script.add_comment("Query simulation status")
-        # CST exposes solver status through VBA macros
-        status_vba = (
-            'Dim running As Boolean\n'
-            'Dim progress As Double\n'
-            'running = Solver.IsRunning\n'
-            'progress = Solver.GetProgress\n'
-            'SelectTreeItem "Design Parameters"\n'
-            'MsgBox "Running: " & running & vbCrLf & '
-            '"Progress: " & progress & "%"'
-        )
-        script.add_raw(status_vba)
-        result = client.execute_vba(script.build())
-        result["description"] = (
-            "Queried CST solver status. Check 'result' field for details."
-        )
-        return [TextContent(type="text", text=json.dumps(result, indent=2))]
-
-    # Offline mode — provide guidance
-    result = {
-        "status": "offline",
-        "message": (
-            "Simulation status checking requires connected mode with CST running. "
-            "In CST Studio, check the progress bar at the bottom of the main window, "
-            "or use the Solver menu to view simulation progress."
-        ),
-        "vba_example": (
-            "' Check if solver is running:\n"
-            "Dim running As Boolean\n"
-            "running = Solver.IsRunning\n"
-            "\n"
-            "' Get progress percentage:\n"
-            "Dim progress As Double\n"
-            "progress = Solver.GetProgress"
-        ),
-        "available_fields": {
-            "running": "Boolean — whether a simulation is currently active",
-            "progress": "Double — completion percentage (0-100)",
-            "mesh_cells": "Long — number of mesh cells (after meshing)",
-            "current_step": "Long — current time step (time domain only)",
-        },
-    }
+    result = client.solver_status(timeout_s=float(arguments.get("timeout_s", 30)))
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
 def _handle_simple_solver_command(
-    command: str, client: CSTClient
+    command: str, arguments: dict, client: CSTClient
 ) -> list[TextContent]:
     """Handle pause, resume, and stop commands."""
-    vba = VBABuilder("Solver")
-    vba.raw_line(f"Solver.{command}")
-    vba_code = vba.build()
-
-    result = client.execute_vba(vba_code)
-    result["command"] = command.lower()
+    timeout_s = float(arguments.get("timeout_s", 30))
+    method = getattr(client, f"{command}_solver")
+    result = method(timeout_s=timeout_s)
+    result["command"] = "stop" if command == "abort" else command
 
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 

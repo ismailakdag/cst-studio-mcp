@@ -257,16 +257,28 @@ def _set_mesh_density(arguments: dict, client: CSTClient) -> list[TextContent]:
     validate_positive(min_cells, "min_cells")
     validate_positive(ratio_limit, "ratio_limit")
 
-    vba = VBABuilder("Mesh")
-    vba.set_number("LinesPerWavelength", cells_per_wavelength)
-    vba.set_number("MinimumStepNumber", min_cells)
-    vba.set_number("RatioLimit", ratio_limit)
-    script = vba.build()
+    # CST 2026 global mesh density is controlled through MeshSettings.Set.
+    # The legacy Mesh.LinesPerWavelength path can execute without changing the
+    # modern PBA mesh, which makes a successful call look like a refinement.
+    script = "\n".join(
+        [
+            "With MeshSettings",
+            f'  .Set "StepsPerWaveNear", "{cells_per_wavelength}"',
+            f'  .Set "StepsPerWaveFar", "{cells_per_wavelength}"',
+            f'  .Set "StepsPerBoxNear", "{min_cells}"',
+            f'  .Set "StepsPerBoxFar", "{min_cells}"',
+            "End With",
+            "With Mesh",
+            f'  .RatioLimit "{ratio_limit:g}"',
+            "End With",
+        ]
+    )
 
     result = client.execute_vba(script)
     result["cells_per_wavelength"] = cells_per_wavelength
     result["min_cells"] = min_cells
     result["ratio_limit"] = ratio_limit
+    result["density_api"] = "MeshSettings.Set"
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 

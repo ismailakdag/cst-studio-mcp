@@ -8,8 +8,8 @@ parameter store/rebuild, and result export use the official Python API.
 from __future__ import annotations
 
 import logging
-import os
-import tempfile
+import math
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -46,11 +46,20 @@ class CSTSession:
 
     @property
     def is_connected(self) -> bool:
-        return self._de is not None
+        if self._de is None:
+            return False
+        checker = getattr(self._de, "is_connected", None)
+        if not callable(checker):
+            return True
+        try:
+            return bool(checker())
+        except Exception:  # noqa: BLE001
+            logger.debug("Design Environment connection check failed", exc_info=True)
+            return False
 
     @property
     def has_project(self) -> bool:
-        return self._project is not None
+        return self._project is not None and self.is_connected
 
     @property
     def project_path(self) -> str | None:
@@ -68,6 +77,19 @@ class CSTSession:
 
     def connect(self) -> dict[str, Any]:
         """Connect to a running CST or launch a new Design Environment."""
+        if self.is_connected:
+            return {
+                "status": "connected",
+                "message": "Already connected",
+                "project_path": self._project_path,
+            }
+
+        # A failed/stale connection must not leave a project handle associated
+        # with the next Design Environment we attach to.
+        self._de = None
+        self._project = None
+        self._project_path = None
+
         if not self.config.cst_available:
             hint = (
                 "CST Python library not importable. "
@@ -100,20 +122,22 @@ class CSTSession:
                     self._de = cst.interface.DesignEnvironment()
                     msg = "Launched new Design Environment"
 
-            if self.config.quiet_mode and hasattr(self._de, "set_quiet_mode"):
-                try:
-                    self._de.set_quiet_mode(True)
-                except Exception:  # noqa: BLE001
-                    logger.debug("set_quiet_mode failed", exc_info=True)
-
-            # Attach to already-open project if any
+            # Attach to the active project when possible.  Depending on the CST
+            # binding build, get_open_projects() may return Project handles or
+            # path strings, so normalize both documented shapes.
             open_projects = []
             try:
                 open_projects = list(self._de.get_open_projects() or [])
             except Exception:  # noqa: BLE001
                 pass
             if open_projects and self._project is None:
-                self._project = open_projects[0]
+                active = None
+                try:
+                    if self._de.has_active_project():
+                        active = self._de.active_project()
+                except Exception:  # noqa: BLE001
+                    logger.debug("active_project lookup failed", exc_info=True)
+                self._project = active or self._project_from_open_ref(self._de, open_projects[0])
                 self._project_path = self._safe_filename(self._project)
 
             return {
@@ -128,16 +152,18 @@ class CSTSession:
             }
         except Exception as exc:  # noqa: BLE001
             self._de = None
+            self._project = None
+            self._project_path = None
             self._last_error = str(exc)
             logger.exception("CST connect failed")
             return {"status": "offline", "message": f"Connect failed: {exc}"}
 
     def disconnect(self) -> dict[str, Any]:
-        if self._de is not None:
-            try:
-                self._de.close()
-            except Exception:  # noqa: BLE001
-                pass
+        """Release local API handles without closing the user's CST application.
+
+        The official ``DesignEnvironment.close()`` closes the Design Environment
+        itself.  A client disconnect must therefore only forget its handles.
+        """
         self._de = None
         self._project = None
         self._project_path = None
@@ -161,7 +187,6 @@ class CSTSession:
 
     def new_project(self, path: str, project_type: str = "MWS") -> dict[str, Any]:
         path = str(Path(path).expanduser())
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
 
         if not self.is_connected:
             return {
@@ -171,15 +196,24 @@ class CSTSession:
                 "message": "Not connected — project not created in CST.",
             }
 
+        project_type = project_type.upper()
+        factory_name = self._FACTORIES.get(project_type)
+        if factory_name is None:
+            return {
+                "status": "error",
+                "message": f"Unsupported project type: {project_type}",
+                "type": project_type,
+            }
+
         try:
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
             # Prefer a fresh unique path if target already exists (CST often refuses overwrite)
             target = Path(path)
             if target.exists():
                 alt = target.with_name(f"{target.stem}_{int(time.time())}{target.suffix}")
                 path = str(alt)
 
-            factory_name = self._FACTORIES.get(project_type.upper(), "new_mws")
-            factory = getattr(self._de, factory_name, self._de.new_mws)
+            factory = getattr(self._de, factory_name)
             project = factory()
             try:
                 project.save(path)
@@ -202,7 +236,7 @@ class CSTSession:
                     }
             self._project = project
             self._project_path = path
-            return {"status": "created", "path": path, "type": project_type.upper()}
+            return {"status": "created", "path": path, "type": project_type}
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc)}
 
@@ -237,8 +271,8 @@ class CSTSession:
         if self._project is not None:
             try:
                 self._project.close()
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as exc:  # noqa: BLE001
+                return {"status": "error", "message": str(exc), "path": self._project_path}
         self._project = None
         self._project_path = None
         return {"status": "closed"}
@@ -358,22 +392,70 @@ class CSTSession:
             "message": " ; ".join(errors) if errors else "silent VBA unavailable",
             "vba": wrapped,
         }
+
+    def _run_model3d_vba(self, vba_code: str) -> dict[str, Any]:
+        """Execute modeler VBA without history, with no implicit dialog handling."""
+        if not self.is_connected or not self.has_project:
+            return {"status": "offline", "vba": vba_code}
+        execute = getattr(self.model3d, "_execute_vba_code", None)
+        if not callable(execute):
+            return {
+                "status": "error",
+                "message": "This CST binding does not expose model3d._execute_vba_code",
+            }
+        try:
+            execute(self._ensure_sub_main(vba_code))
+            return {"status": "executed", "entrypoint": "model3d._execute_vba_code"}
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "error", "message": str(exc), "vba": vba_code}
+
+    @staticmethod
+    def _parameter_vba(params: dict[str, float | str]) -> str:
+        lines: list[str] = []
+        for name, value in params.items():
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                raise ValueError(f"Invalid CST parameter name: {name!r}")
+            if isinstance(value, float) and not math.isfinite(value):
+                raise ValueError(f"Parameter {name!r} must be finite")
+            raw_value = str(value)
+            if any(char in raw_value for char in ("\r", "\n", "\x00")):
+                raise ValueError(f"Parameter {name!r} contains an invalid control character")
+            safe_value = raw_value.replace('"', '""')
+            lines.append(f'StoreParameter "{name}", "{safe_value}"')
+        return "\n".join(lines)
+
     def store_parameters(self, params: dict[str, float | str]) -> dict[str, Any]:
         if not self.has_project:
             return {"status": "error", "message": "No project open"}
         try:
-            m3d = self.model3d
-            for name, value in params.items():
-                m3d.StoreParameter(name, str(value))
-            return {"status": "ok", "params": params}
+            state = self.solver_status()
+            if state.get("status") != "ok":
+                return state
+            if state.get("running"):
+                return {"status": "busy", "message": "Parameters were not changed", "running": True}
+            result = self.run_history(self._parameter_vba(params), label="store_parameters")
+            if result.get("status") != "executed":
+                return result
+            return {"status": "ok", "params": params, "execution": result}
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc)}
 
-    def rebuild(self) -> dict[str, Any]:
+    def rebuild(self, timeout_s: float = 30.0) -> dict[str, Any]:
         if not self.has_project:
             return {"status": "error", "message": "No project open"}
         try:
-            self.model3d.Rebuild()
+            state = self.solver_status(timeout_s=min(30.0, timeout_s))
+            if state.get("status") != "ok":
+                return state
+            if state.get("running"):
+                return {"status": "busy", "message": "Model was not rebuilt", "running": True}
+            rebuild = getattr(self.model3d, "full_history_rebuild", None)
+            if not callable(rebuild):
+                return {
+                    "status": "error",
+                    "message": "This CST binding does not expose model3d.full_history_rebuild",
+                }
+            rebuild(timeout=self._api_timeout(timeout_s))
             return {"status": "ok"}
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc)}
@@ -382,28 +464,85 @@ class CSTSession:
         if not self.has_project:
             return {"status": "error", "message": "No project open"}
         try:
-            self.model3d.DeleteResults()
-            return {"status": "ok"}
+            state = self.solver_status()
+            if state.get("status") != "ok":
+                return state
+            if state.get("running"):
+                return {"status": "busy", "message": "Results were not deleted", "running": True}
+            result = self._run_model3d_vba("DeleteResults")
+            return {**result, "status": "ok"} if result.get("status") == "executed" else result
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc)}
 
-    def is_solver_running(self) -> bool:
+    @staticmethod
+    def _api_timeout(timeout_s: float) -> int:
+        if timeout_s <= 0:
+            raise ValueError("timeout_s must be greater than zero")
+        return max(1, int(timeout_s))
+
+    def is_solver_running(self, timeout_s: float = 30.0) -> bool:
         if not self.has_project:
             return False
         try:
-            return bool(self.model3d.is_solver_running())
+            return bool(self.model3d.is_solver_running(timeout=self._api_timeout(timeout_s)))
         except Exception:  # noqa: BLE001
+            logger.debug("is_solver_running failed", exc_info=True)
             return False
+
+    def solver_status(self, timeout_s: float = 30.0) -> dict[str, Any]:
+        """Return solver state through the read-only CST Python API."""
+        if not self.is_connected or not self.has_project:
+            return {"status": "offline", "message": "Solver status requires connected mode"}
+
+        timeout = self._api_timeout(timeout_s)
+        try:
+            m3d = self.model3d
+            out: dict[str, Any] = {
+                "status": "ok",
+                "running": bool(m3d.is_solver_running(timeout=timeout)),
+            }
+            get_name = getattr(m3d, "get_active_solver_name", None)
+            if callable(get_name):
+                try:
+                    out["active_solver"] = str(get_name(timeout=timeout))
+                except Exception:  # noqa: BLE001
+                    logger.debug("get_active_solver_name failed", exc_info=True)
+            get_info = getattr(m3d, "get_solver_run_info", None)
+            if callable(get_info):
+                try:
+                    info = get_info(timeout=timeout)
+                    if isinstance(info, dict):
+                        out["run_info"] = {
+                            str(key): value
+                            if value is None or isinstance(value, (str, int, float, bool))
+                            else str(value)
+                            for key, value in info.items()
+                        }
+                except Exception:  # noqa: BLE001
+                    logger.debug("get_solver_run_info failed", exc_info=True)
+            return out
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "error", "message": str(exc), "running": None}
 
     def wait_solver(self, timeout_s: float = 3600, poll_s: float = 2.0) -> dict[str, Any]:
         if not self.has_project:
             return {"status": "error", "message": "No project open"}
+        if timeout_s <= 0 or poll_s <= 0:
+            return {"status": "error", "message": "timeout_s and poll_s must be greater than zero"}
         deadline = time.monotonic() + timeout_s
-        while self.is_solver_running():
+        while True:
+            state = self.solver_status(timeout_s=min(30.0, timeout_s))
+            if state.get("status") != "ok":
+                return state
+            if not state.get("running"):
+                return {"status": "ok"}
             if time.monotonic() > deadline:
-                return {"status": "error", "message": f"Solver still running after {timeout_s}s"}
+                return {
+                    "status": "timeout",
+                    "message": f"Solver still running after {timeout_s}s",
+                    "running": True,
+                }
             time.sleep(poll_s)
-        return {"status": "ok"}
 
     def run_solver(self, timeout_s: float = 3600) -> dict[str, Any]:
         """Run solver via Python API (blocks until complete)."""
@@ -411,14 +550,78 @@ class CSTSession:
             return {"status": "offline", "message": "Solver requires connected mode"}
 
         try:
-            if self.is_solver_running():
-                waited = self.wait_solver(timeout_s=timeout_s)
-                if waited.get("status") != "ok":
-                    return waited
-            result = self.model3d.run_solver()
+            timeout = self._api_timeout(timeout_s)
+            state = self.solver_status(timeout_s=min(30, timeout))
+            if state.get("status") != "ok":
+                return state
+            if state.get("running"):
+                return {
+                    "status": "busy",
+                    "message": "A solver is already running; no second solve was started.",
+                    "running": True,
+                }
+            result = self.model3d.run_solver(timeout=timeout)
             return {"status": "executed", "result": str(result) if result else "ok"}
         except Exception as exc:  # noqa: BLE001
+            if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower():
+                state = self.solver_status(timeout_s=min(30.0, timeout_s))
+                return {
+                    "status": "timeout",
+                    "message": str(exc),
+                    "running": state.get("running"),
+                }
             return {"status": "error", "message": str(exc)}
+
+    def start_solver(self, timeout_s: float = 30.0) -> dict[str, Any]:
+        """Start the configured solver asynchronously through the official API."""
+        if not self.is_connected or not self.has_project:
+            return {"status": "offline", "message": "Solver requires connected mode"}
+        try:
+            timeout = self._api_timeout(timeout_s)
+            state = self.solver_status(timeout_s=timeout)
+            if state.get("status") != "ok":
+                return state
+            if state.get("running"):
+                return {
+                    "status": "busy",
+                    "message": "A solver is already running; no second solve was started.",
+                    "running": True,
+                }
+            result = self.model3d.start_solver(timeout=timeout)
+            return {"status": "started", "result": str(result) if result else "ok"}
+        except Exception as exc:  # noqa: BLE001
+            if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower():
+                state = self.solver_status(timeout_s=min(30.0, timeout_s))
+                return {
+                    "status": "timeout",
+                    "message": str(exc),
+                    "running": state.get("running"),
+                }
+            return {"status": "error", "message": str(exc)}
+
+    def _solver_control(self, method_name: str, timeout_s: float = 30.0) -> dict[str, Any]:
+        if not self.is_connected or not self.has_project:
+            return {"status": "offline", "message": "Solver control requires connected mode"}
+        try:
+            timeout = self._api_timeout(timeout_s)
+            method = getattr(self.model3d, method_name)
+            result = method(timeout=timeout)
+            return {
+                "status": "executed",
+                "command": method_name.removesuffix("_solver"),
+                "result": str(result) if result else "ok",
+            }
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "error", "message": str(exc)}
+
+    def pause_solver(self, timeout_s: float = 30.0) -> dict[str, Any]:
+        return self._solver_control("pause_solver", timeout_s)
+
+    def resume_solver(self, timeout_s: float = 30.0) -> dict[str, Any]:
+        return self._solver_control("resume_solver", timeout_s)
+
+    def abort_solver(self, timeout_s: float = 30.0) -> dict[str, Any]:
+        return self._solver_control("abort_solver", timeout_s)
 
     def export_tree_csv(self, tree_path: str, filepath: str | None = None) -> dict[str, Any]:
         """Export a result tree item to CSV using model3d.ASCIIExport."""
@@ -483,6 +686,7 @@ class CSTSession:
         params: dict[str, float | str],
         *,
         export_s11: bool = True,
+        export_path: str | None = None,
         port: int = 1,
         timeout_s: float = 3600,
     ) -> dict[str, Any]:
@@ -491,21 +695,42 @@ class CSTSession:
             return {"status": "error", "message": "No project open"}
 
         try:
-            m3d = self.model3d
-            for name, value in params.items():
-                m3d.StoreParameter(name, str(value))
-            try:
-                m3d.DeleteResults()
-            except Exception:  # noqa: BLE001
-                logger.debug("DeleteResults failed", exc_info=True)
-            m3d.Rebuild()
-            if self.is_solver_running():
-                self.wait_solver(timeout_s=timeout_s)
-            m3d.run_solver()
+            state = self.solver_status(timeout_s=min(30.0, timeout_s))
+            if state.get("status") != "ok":
+                return state
+            if state.get("running"):
+                return {
+                    "status": "busy",
+                    "message": "A solver is already running; parameters were not changed.",
+                    "running": True,
+                }
+            update = self._run_model3d_vba(self._parameter_vba(params) + "\nDeleteResults")
+            if update.get("status") != "executed":
+                return {**update, "stage": "parameters"}
+            rebuild = getattr(self.model3d, "full_history_rebuild", None)
+            if not callable(rebuild):
+                return {
+                    "status": "error",
+                    "stage": "rebuild",
+                    "message": "This CST binding does not expose model3d.full_history_rebuild",
+                }
+            rebuild(timeout=self._api_timeout(min(30.0, timeout_s)))
+            solved = self.run_solver(timeout_s=timeout_s)
+            if solved.get("status") != "executed":
+                return {**solved, "stage": "solve", "params": params}
 
-            out: dict[str, Any] = {"status": "ok", "params": params}
+            out: dict[str, Any] = {"status": "ok", "params": params, "solver": solved}
             if export_s11:
-                out["s_parameters"] = self.get_s_parameters(port, port)
+                if export_path:
+                    tree = f"1D Results\\S-Parameters\\S{port},{port}"
+                    exported = self.export_tree_csv(tree, export_path)
+                    if exported.get("status") != "exported":
+                        return {**exported, "stage": "export", "params": params, "solver": solved}
+                    out["s_parameters"] = ResultsReader(self.config.work_dir).read_sparam_file(
+                        Path(export_path)
+                    )
+                else:
+                    out["s_parameters"] = self.get_s_parameters(port, port)
             return out
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc)}
@@ -729,7 +954,6 @@ class CSTSession:
         from cst_mcp.execution.farfield import (
             farfield_tree_candidates,
             parse_farfield_pattern_csv,
-            parse_farfield_summary_text,
         )
 
         candidates = farfield_tree_candidates(frequency_ghz, monitor_name)
@@ -1097,6 +1321,13 @@ class CSTSession:
             "solver_running": self.is_solver_running() if self.has_project else False,
             "last_error": self._last_error,
         }
+
+    @staticmethod
+    def _project_from_open_ref(design_environment: Any, project_ref: Any) -> Any:
+        """Normalize get_open_projects() entries across CST binding versions."""
+        if hasattr(project_ref, "model3d"):
+            return project_ref
+        return design_environment.get_open_project(project_ref)
 
     @staticmethod
     def _safe_filename(project: Any) -> str | None:

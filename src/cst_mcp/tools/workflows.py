@@ -10,7 +10,7 @@ from cst_mcp.domain.antennas.patch import design_patch
 from cst_mcp.execution.port_helpers import feed_line_y_range, microstrip_waveguide_port_vba
 from cst_mcp.execution.vba_builder import fmt_num, vba_str
 from cst_mcp.tools.registry import as_json, err
-from cst_mcp.vba_builder import VBABuilder, VBAScript
+from cst_mcp.vba_builder import VBABuilder
 
 TOOLS: list[Tool] = [
     Tool(
@@ -243,14 +243,14 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
     names as expressions so the user can edit parameters + Rebuild later.
     """
     d = design
-    w, l, h = d.width_mm, d.length_mm, d.height_mm
+    w, length, h = d.width_mm, d.length_mm, d.height_mm
     gx, gy = d.ground_x_mm, d.ground_y_mm
     fw = d.feed_width_mm
     inset = d.inset_mm
     f0 = d.frequency_ghz
     fmin, fmax = f0 * 0.7, f0 * 1.3
     feed_y0, feed_y1 = feed_line_y_range(
-        ground_y=gy, patch_length=l, inset=inset, feed_type=d.feed_type
+        ground_y=gy, patch_length=length, inset=inset, feed_type=d.feed_type
     )
     mon = f"farfield (f={f0})"
     metal_t = 0.035
@@ -262,7 +262,7 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
         "tan_d": d.tan_delta,
         "sub_h": h,
         "patch_W": w,
-        "patch_L": l,
+        "patch_L": length,
         "gnd_x": gx,
         "gnd_y": gy,
         "feed_w": fw,
@@ -487,10 +487,8 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
             if args.get("create_project", True):
                 if not client.connected:
                     steps.append(client.connect())
-                # Always start a fresh project when building a full antenna so
-                # leftover solids from a previous run do not collide.
-                if client.has_project:
-                    steps.append(client.close_project())
+                # A new project is a separate tab. Preserve any open user project;
+                # Project.close() discards unsaved changes according to CST's API.
                 path = args.get("project_path") or str(
                     client.config.work_dir / f"patch_{d.frequency_ghz}GHz.cst"
                 )
@@ -582,6 +580,8 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
 
         if name == "cst_workflow_simulate_and_report":
             solve = client.run_solver(timeout_s=float(args.get("timeout_s") or 3600))
+            if solve.get("status") not in {"executed", "ok"}:
+                return as_json(solve)
             report = client.design_report(
                 port=int(args.get("port") or 1),
                 frequency_ghz=(

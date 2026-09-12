@@ -85,39 +85,6 @@ class CSTClient(CSTSession):
         log = CSTClient._dialog_watcher.get_log()
         return {"status": "ok", "count": len(log), "log": log}
 
-    # -- project helpers with dialog safety -----------------------------------
-
-    def new_project(self, path: str, project_type: str = "MWS") -> dict[str, Any]:
-        self.start_dialog_watcher()
-        try:
-            return super().new_project(path, project_type)
-        finally:
-            self.stop_dialog_watcher()
-
-    def save_project(self, path: str | None = None) -> dict[str, Any]:
-        self.start_dialog_watcher()
-        try:
-            return super().save_project(path)
-        finally:
-            self.stop_dialog_watcher()
-
-    def run_history(self, vba: str, label: str | None = None) -> dict[str, Any]:
-        """Execute with background dialog watcher (connected mode)."""
-        if self.is_connected and self.has_project:
-            watcher = DialogWatcher(poll_interval=0.5)
-            watcher.start()
-            try:
-                result = super().run_history(vba, label=label)
-            finally:
-                watcher.stop()
-            log = watcher.get_log()
-            if log:
-                result = dict(result)
-                result["dialogs_dismissed"] = len(log)
-                result["dialog_log"] = log
-            return result
-        return super().run_history(vba, label=label)
-
     def status(self) -> dict[str, Any]:
         base = super().status()
         base["dialog_watcher"] = (

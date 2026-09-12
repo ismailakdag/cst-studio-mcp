@@ -965,11 +965,10 @@ async def _optimization_loop(
     costs: list[float] = []
     history: list[dict] = []
 
-    # Delete any stale results up front to prevent dialog popups
-    client.delete_results()
-
-    # Start dialog watcher to auto-dismiss any popups during the loop
-    client.start_dialog_watcher()
+    # Refuse to continue when existing results cannot be cleared safely.
+    cleared = client.delete_results()
+    if cleared.get("status") != "ok":
+        return {**cleared, "stage": "delete_results"}
 
     # Temp file for S11 export
     work_dir = client._config.work_dir or tempfile.gettempdir()
@@ -989,7 +988,7 @@ async def _optimization_loop(
         # Use Python API: StoreParameter → DeleteResults → Rebuild → solve → export
         # This avoids history bloat and ensures the geometry actually rebuilds.
         result = client.set_params_rebuild_solve(params, export_path=s11_file, port=port)
-        if result.get("status") == "error":
+        if result.get("status") != "ok":
             logger.error("Solve iteration failed: %s", result.get("message"))
             return 100.0, []
 
@@ -1101,13 +1100,12 @@ async def _optimization_loop(
             logger.info("All bands pass — converged at iteration %d", iteration)
             break
 
-    # Apply best parameters + final solve + export
-    # Use add_to_history for the final application so it's visible in the project
-    final_params_vba = _set_params_vba(best_params)
-    client.execute_vba(final_params_vba, history_label="optimization_best_params")
-
-    # Then do a proper rebuild + solve + export via Python API
-    client.set_params_rebuild_solve(best_params, export_path=s11_file, port=port)
+    # Apply the best parameters, rebuild, solve, and export through the guarded
+    # session operation.  A separate history write here could mutate parameters
+    # after a timed-out solve is still running.
+    final_run = client.set_params_rebuild_solve(best_params, export_path=s11_file, port=port)
+    if final_run.get("status") != "ok":
+        return {**final_run, "stage": "final_solve"}
 
     # Final evaluation
     try:
@@ -1125,10 +1123,6 @@ async def _optimization_loop(
     except OSError:
         pass
 
-    # Stop dialog watcher and collect its log
-    watcher_result = client.stop_dialog_watcher()
-    dialog_log = watcher_result.get("log", [])
-
     overall = "PASS" if final_cost == 0.0 else "FAIL"
 
     result: dict = {
@@ -1142,10 +1136,6 @@ async def _optimization_loop(
         "resonances": resonances,
         "history": history,
     }
-    if dialog_log:
-        result["dismissed_dialogs"] = len(dialog_log)
-        result["dialog_log"] = dialog_log
-
     return result
 
 
