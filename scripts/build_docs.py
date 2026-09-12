@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 import json
 import sys
 from pathlib import Path
@@ -10,10 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp.server import Server  # noqa: E402
 
-from cst_mcp.config import CSTConfig  # noqa: E402
-from cst_mcp.cst_client import CSTClient  # noqa: E402
 
 CATEGORIES: list[dict] = [
     {"id": "connection", "title_en": "Explicit connection", "title_tr": "Açık bağlantı yönetimi",
@@ -413,7 +409,7 @@ See also the Installation / Farfield sections in `docs/index.html` and root `REA
 """,
         encoding="utf-8",
     )
-    print(f"OK: {catalog['total_tools']} tools → docs/index.html + catalog")
+    print(f"OK: {catalog['total_tools']} tools -> docs/index.html + catalog")
 
 
 if __name__ == "__main__":

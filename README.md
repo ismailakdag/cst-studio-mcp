@@ -14,6 +14,10 @@ structured MCP tools on your Windows machine.
 | **OS** | Windows 10/11 + licensed CST Studio Suite |
 | **Docs** | Interactive EN/TR browser: [`docs/index.html`](docs/index.html) |
 
+Project presentation: [`presentation/index.html`](presentation/index.html), a self-contained
+Turkish architecture and validation overview. See [the reliability review](docs/RELIABILITY_REVIEW.md)
+for the tested scope and remaining live-CST checks.
+
 ```
 Agent (Cursor / Claude / …)
         │  MCP stdio
@@ -162,7 +166,7 @@ Nothing in the library hard-codes a drive letter. Discovery order:
 | `PYTHONPATH` | **Strongly recommended** | Official CST Python package path | `…\AMD64\python_cst_libraries` |
 | `CST_WORK_DIR` | Optional | Projects, exports, reports | `%USERPROFILE%\cst_projects` |
 | `CST_VERSION` | Optional | Year for auto-detect (default `2026`) | `2026` |
-| `CST_QUIET` | Optional | Quiet Design Environment (`1`/`0`, default quiet) | `1` |
+| `CST_QUIET` | Legacy | Accepted for compatibility; connecting no longer changes the user's CST UI mode | `1` |
 | `CST_CONNECT_MODE` | Optional | Startup behavior: `auto`, `manual`, or `disabled` (default `manual`) | `manual` |
 | `CST_LOG_LEVEL` | Optional | Logging level | `INFO` |
 
@@ -592,7 +596,7 @@ Run, pause, resume, stop simulations.
 |------|--------------|
 | `cst_run_simulation` | Start a CST simulation with the current solver settings. This is a blocking call that waits for the simulation to complete. Use cst_run_s… |
 | `cst_run_simulation_async` | Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Use cst_get_simulation_sta… |
-| `cst_get_simulation_status` | Check the status and progress of a running CST simulation. Returns information such as whether a simulation is running, progress percenta… |
+| `cst_get_simulation_status` | Read whether a CST simulation is running and return any solver-run metadata exposed by the CST Python API. This does not show a dialog or… |
 | `cst_pause_simulation` | Pause a currently running CST simulation. The simulation can be resumed later with cst_resume_simulation. |
 | `cst_resume_simulation` | Resume a previously paused CST simulation. Use after cst_pause_simulation to continue from where it stopped. |
 | `cst_stop_simulation` | Stop and abort a running CST simulation. Unlike pause, a stopped simulation cannot be resumed — it must be restarted from the beginning. |

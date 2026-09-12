@@ -173,7 +173,7 @@ Run, pause, resume, stop simulations.
 |------|--------------|
 | `cst_run_simulation` | Start a CST simulation with the current solver settings. This is a blocking call that waits for the simulation to complete. Use cst_run_s… |
 | `cst_run_simulation_async` | Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Use cst_get_simulation_sta… |
-| `cst_get_simulation_status` | Check the status and progress of a running CST simulation. Returns information such as whether a simulation is running, progress percenta… |
+| `cst_get_simulation_status` | Read whether a CST simulation is running and return any solver-run metadata exposed by the CST Python API. This does not show a dialog or… |
 | `cst_pause_simulation` | Pause a currently running CST simulation. The simulation can be resumed later with cst_resume_simulation. |
 | `cst_resume_simulation` | Resume a previously paused CST simulation. Use after cst_pause_simulation to continue from where it stopped. |
 | `cst_stop_simulation` | Stop and abort a running CST simulation. Unlike pause, a stopped simulation cannot be resumed — it must be restarted from the beginning. |

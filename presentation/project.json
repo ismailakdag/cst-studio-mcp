@@ -1,0 +1,41 @@
+{
+  "id": "cst-studio-mcp",
+  "title": "CST Studio MCP",
+  "headline": "Araç çağrısından <em>güvenilir işleme.</em>",
+  "intro": "CST Studio Suite ile MCP istemcileri arasındaki bağlantıyı, hata raporlamasını ve simülasyon yaşam döngüsünü sağlamlaştırıyoruz.",
+  "repo": "https://github.com/ismailakdag/cst-studio-mcp",
+  "flow": [
+    "MCP istemcisi",
+    "Doğrulanan araç çağrısı",
+    "CST oturumu ve sonuçlar"
+  ],
+  "diagram_alt": "MCP istemcisi, sunucu ve CST arasındaki üç katman",
+  "diagram_caption": "Mimari akış. Başarılı araç çağrısı, tamamlanmış ve doğrulanmış simülasyonla aynı durum değildir.",
+  "status": "Düzeltmeler birleştirildi; 56 test iki MCP SDK sürümünde geçti.",
+  "finding_title": "İşlem durumunu doğru söyleyen bir sunucu.",
+  "finding": "İlk inceleme, istemci el sıkışmasından önce CST bağlantısı kurulduğunu, bazı hataların başarılı çağrı gibi döndüğünü ve solver yaşam döngüsünde tutarsızlıklar olduğunu gösterdi.",
+  "work": [
+    {
+      "title": "İstemci bağlantısı",
+      "body": "Standart MCP el sıkışması, araç listesi ve çağrı akışı; stdio kanalının log çıktısından ayrılması."
+    },
+    {
+      "title": "CST yaşam döngüsü",
+      "body": "Bloklayan ve asenkron solver çağrılarının ayrılması; durum sorgularının salt okunur olması."
+    },
+    {
+      "title": "Gerçek hata bilgisi",
+      "body": "Hataların istemciye hata olarak aktarılması; zaman aşımında belirsiz işlem durumunun gizlenmemesi."
+    }
+  ],
+  "verified": [
+    "MCP SDK 1.29.0 ve 2.2.0 ile 56'şar test geçti; 180 araç şeması doğrulandı.",
+    "Gerçek stdio alt sürecinde el sıkışması, araç listesi, çağrılar ve Python/native log ayrımı test edildi.",
+    "Sahte CST ile busy, timeout, bilinmeyen solver durumu, güvenli ayrılma ve sonuç hatası aktarımı doğrulandı."
+  ],
+  "limits": [
+    "180 aracın tamamı gerçek CST üzerinde çalıştırılmış değildir; bütün istemci ve CST sürümleri için doğruluk iddiası yoktur.",
+    "Çalışan deney korundu; gerçek CST üzerinde yeni uçtan uca çözüm bu çalışmada yapılmadı."
+  ],
+  "next": "Yeni bağlantılarda önce MCP sunucusunu ekleyin, sonra cst_connect ile açıkça bağlanın. Gerçek CST doğrulaması daha sonra boş bir oturum ve geçici bir proje üzerinde yapılmalı. Doğrulama kapsamı depodaki docs/RELIABILITY_REVIEW.md kaydındadır."
+}

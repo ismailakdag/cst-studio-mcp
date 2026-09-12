@@ -39,7 +39,7 @@
       "tools": [
         {
           "name": "cst_workflow_patch_antenna",
-          "description": "END-TO-END / Uçtan uca: size a rectangular microstrip patch, build substrate/ground/patch/feed, frequency, open BCs, waveguide port, farfield monitor. Does NOT run the solver. Simülasyon çalıştırmaz — next: cst_workflow_run_and_s11 or cst_run_simulation.",
+          "description": "END-TO-END / Uçtan uca: size a rectangular microstrip patch, build substrate/ground/patch/feed, frequency, open BCs, waveguide port, farfield monitor. Does not connect to or start CST; call cst_connect first for live execution, otherwise it returns offline VBA. Does NOT run the solver. Simülasyon çalıştırmaz — next: cst_workflow_run_and_s11 or cst_run_simulation.",
           "category_id": "workflows",
           "params": [
             {
@@ -3982,6 +3982,14 @@
                 "Integral Equation"
               ],
               "required": false
+            },
+            {
+              "name": "timeout_s",
+              "type": "number",
+              "description": "Maximum CST Python API call duration in seconds.",
+              "default": 3600,
+              "enum": null,
+              "required": false
             }
           ],
           "required": []
@@ -4003,36 +4011,80 @@
                 "Integral Equation"
               ],
               "required": false
+            },
+            {
+              "name": "timeout_s",
+              "type": "number",
+              "description": "Maximum CST Python API start-command duration in seconds.",
+              "default": 30,
+              "enum": null,
+              "required": false
             }
           ],
           "required": []
         },
         {
           "name": "cst_get_simulation_status",
-          "description": "Check the status and progress of a running CST simulation. Returns information such as whether a simulation is running, progress percentage, mesh cell count, and current time step.",
+          "description": "Read whether a CST simulation is running and return any solver-run metadata exposed by the CST Python API. This does not show a dialog or change the simulation.",
           "category_id": "simulation",
-          "params": [],
+          "params": [
+            {
+              "name": "timeout_s",
+              "type": "number",
+              "description": "",
+              "default": 30,
+              "enum": null,
+              "required": false
+            }
+          ],
           "required": []
         },
         {
           "name": "cst_pause_simulation",
           "description": "Pause a currently running CST simulation. The simulation can be resumed later with cst_resume_simulation.",
           "category_id": "simulation",
-          "params": [],
+          "params": [
+            {
+              "name": "timeout_s",
+              "type": "number",
+              "description": "",
+              "default": 30,
+              "enum": null,
+              "required": false
+            }
+          ],
           "required": []
         },
         {
           "name": "cst_resume_simulation",
           "description": "Resume a previously paused CST simulation. Use after cst_pause_simulation to continue from where it stopped.",
           "category_id": "simulation",
-          "params": [],
+          "params": [
+            {
+              "name": "timeout_s",
+              "type": "number",
+              "description": "",
+              "default": 30,
+              "enum": null,
+              "required": false
+            }
+          ],
           "required": []
         },
         {
           "name": "cst_stop_simulation",
           "description": "Stop and abort a running CST simulation. Unlike pause, a stopped simulation cannot be resumed — it must be restarted from the beginning.",
           "category_id": "simulation",
-          "params": [],
+          "params": [
+            {
+              "name": "timeout_s",
+              "type": "number",
+              "description": "",
+              "default": 30,
+              "enum": null,
+              "required": false
+            }
+          ],
           "required": []
         }
       ]

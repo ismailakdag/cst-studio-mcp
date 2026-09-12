@@ -59,7 +59,7 @@ def _content_is_error(content: list[TextContent]) -> bool:
         payload = json.loads(content[0].text)
     except (TypeError, json.JSONDecodeError):
         return False
-    return isinstance(payload, dict) and payload.get("status") == "error"
+    return isinstance(payload, dict) and payload.get("status") in {"error", "busy", "timeout"}
 
 
 def ok(**payload: Any) -> list[TextContent]:

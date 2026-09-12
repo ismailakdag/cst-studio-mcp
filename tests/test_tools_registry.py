@@ -55,7 +55,8 @@ async def test_list_tools_full_surface(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_registry_marks_tool_error_envelope_as_mcp_error():
+@pytest.mark.parametrize("status", ["error", "busy", "timeout"])
+async def test_registry_marks_tool_error_envelope_as_mcp_error(status):
     callbacks = {}
 
     class FakeServer:
@@ -69,7 +70,7 @@ async def test_registry_marks_tool_error_envelope_as_mcp_error():
         return [
             TextContent(
                 type="text",
-                text=json.dumps({"status": "error", "message": "mock failure"}),
+                text=json.dumps({"status": status, "message": "mock failure", "running": None}),
             )
         ]
 
@@ -89,6 +90,8 @@ async def test_registry_marks_tool_error_envelope_as_mcp_error():
     result = await callbacks["call"]("mock_tool", {})
     assert getattr(result, "isError", getattr(result, "is_error", None)) is True
     assert json.loads(result.content[0].text)["message"] == "mock failure"
+    assert json.loads(result.content[0].text)["status"] == status
+    assert json.loads(result.content[0].text)["running"] is None
 
     unknown = await callbacks["call"]("does_not_exist", {})
     assert getattr(unknown, "isError", getattr(unknown, "is_error", None)) is True

@@ -7,10 +7,9 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-from cst_mcp.session import CSTSession
 from cst_mcp.cst_client import CSTClient
-from cst_mcp.tools import simulation
-from cst_mcp.tools import mesh
+from cst_mcp.session import CSTSession
+from cst_mcp.tools import mesh, simulation
 
 
 class FakeModel3D:
