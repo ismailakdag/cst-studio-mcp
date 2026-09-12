@@ -18,9 +18,12 @@ class FakeModel3D:
         self.running = running
         self.calls: list[tuple[str, object]] = []
         self.raise_timeout = False
+        self.raise_status_error = False
 
     def is_solver_running(self, *, timeout: int | None = None) -> bool:
         self.calls.append(("is_solver_running", timeout))
+        if self.raise_status_error:
+            raise RuntimeError("CST status channel unavailable")
         return self.running
 
     def get_active_solver_name(self, *, timeout: int | None = None) -> str:
@@ -205,6 +208,18 @@ def test_solver_status_is_read_only_and_json_safe() -> None:
     assert not any(name in {"run_solver", "start_solver", "abort_solver"} for name, _ in model.calls)
 
 
+def test_solver_query_failure_is_unknown_and_status_exposes_error() -> None:
+    model = FakeModel3D()
+    model.raise_status_error = True
+    session, _ = make_session(model)
+
+    assert session.is_solver_running(timeout_s=6) is None
+    result = session.status()
+    assert result["solver_running"] is None
+    assert result["solver_status"] == "error"
+    assert result["solver_status_error"] == "CST status channel unavailable"
+
+
 def test_parameter_solve_does_not_mutate_while_busy() -> None:
     model = FakeModel3D(running=True)
     session, _ = make_session(model)
@@ -251,6 +266,22 @@ def test_parameter_solve_honors_optimizer_export_path(tmp_path, monkeypatch) -> 
     assert result["status"] == "ok"
     assert output.is_file()
     assert result["s_parameters"]["metrics"]["min_db"] == -12.0
+
+
+def test_parameter_solve_propagates_s_parameter_error(monkeypatch) -> None:
+    model = FakeModel3D()
+    session, _ = make_session(model)
+    monkeypatch.setattr(
+        session,
+        "get_s_parameters",
+        lambda *args, **kwargs: {"status": "error", "message": "S11 result missing"},
+    )
+
+    result = session.set_params_rebuild_solve({"gap": 0.3}, export_s11=True)
+    assert result["status"] == "error"
+    assert result["stage"] == "s_parameters"
+    assert result["message"] == "S11 result missing"
+    assert result["solver"]["status"] == "executed"
 
 
 def test_simulation_adapter_uses_session_api_without_modal_vba() -> None:

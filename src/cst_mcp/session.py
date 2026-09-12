@@ -485,14 +485,15 @@ class CSTSession:
         message = str(exc).lower()
         return isinstance(exc, TimeoutError) or "timeout" in message or "timed out" in message
 
-    def is_solver_running(self, timeout_s: float = 30.0) -> bool:
+    def is_solver_running(self, timeout_s: float = 30.0) -> bool | None:
+        """Return solver activity, or ``None`` when CST cannot answer."""
         if not self.has_project:
             return False
         try:
             return bool(self.model3d.is_solver_running(timeout=self._api_timeout(timeout_s)))
         except Exception:  # noqa: BLE001
             logger.debug("is_solver_running failed", exc_info=True)
-            return False
+            return None
 
     def solver_status(self, timeout_s: float = 30.0) -> dict[str, Any]:
         """Return solver state through the read-only CST Python API."""
@@ -731,11 +732,20 @@ class CSTSession:
                     exported = self.export_tree_csv(tree, export_path)
                     if exported.get("status") != "exported":
                         return {**exported, "stage": "export", "params": params, "solver": solved}
-                    out["s_parameters"] = ResultsReader(self.config.work_dir).read_sparam_file(
+                    s_parameters = ResultsReader(self.config.work_dir).read_sparam_file(
                         Path(export_path)
                     )
                 else:
-                    out["s_parameters"] = self.get_s_parameters(port, port)
+                    s_parameters = self.get_s_parameters(port, port)
+                if s_parameters.get("status") != "ok":
+                    return {
+                        **s_parameters,
+                        "status": "error",
+                        "stage": "s_parameters",
+                        "params": params,
+                        "solver": solved,
+                    }
+                out["s_parameters"] = s_parameters
             return out
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc)}
@@ -1312,7 +1322,13 @@ class CSTSession:
         return report
 
     def status(self) -> dict[str, Any]:
-        return {
+        project_open = self.has_project
+        solver_state = (
+            self.solver_status()
+            if project_open
+            else {"status": "unavailable", "running": False}
+        )
+        result = {
             "mode": self.mode,
             "cst_available": self.config.cst_available,
             "cst_path": str(self.config.cst_path) if self.config.cst_path else None,
@@ -1321,11 +1337,15 @@ class CSTSession:
             ),
             "cst_version": self.config.version,
             "work_dir": str(self.config.work_dir),
-            "project_open": self.has_project,
+            "project_open": project_open,
             "project_path": self._project_path,
-            "solver_running": self.is_solver_running() if self.has_project else False,
+            "solver_running": solver_state.get("running"),
+            "solver_status": solver_state.get("status"),
             "last_error": self._last_error,
         }
+        if solver_state.get("status") == "error":
+            result["solver_status_error"] = solver_state.get("message", "Unknown CST API error")
+        return result
 
     @staticmethod
     def _project_from_open_ref(design_environment: Any, project_ref: Any) -> Any:
