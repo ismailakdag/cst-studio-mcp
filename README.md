@@ -182,7 +182,7 @@ Local machine paths: **`.mcp.json`** (edit paths only; keep out of shared commit
 
 ## MCP client setup
 
-### Generic MCP config
+### Claude Desktop / Cursor JSON config
 
 ```json
 {
@@ -217,6 +217,29 @@ Or:
 ```
 
 (with `PYTHONPATH` including CST libs).
+
+### Codex
+
+Add the server to your Codex `config.toml`. Literal single-quoted TOML strings keep Windows
+backslashes intact; replace the example paths with your local installation paths.
+
+```toml
+[mcp_servers.cst-studio]
+command = 'C:\path\to\cst-studio-mcp\.venv\Scripts\cst-studio-mcp.exe'
+args = []
+
+[mcp_servers.cst-studio.env]
+CST_PATH = 'C:\Program Files\CST Studio Suite 2026'
+CST_WORK_DIR = 'C:\cst_projects'
+CST_VERSION = '2026'
+CST_CONNECT_MODE = 'manual'
+PYTHONPATH = 'C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries'
+```
+
+Reload the MCP configuration, confirm the `cst-studio` tools are available, and call
+`cst_connect` only when you are ready to attach to CST. See the
+[official Codex MCP documentation](https://learn.chatgpt.com/docs/extend/mcp) for current
+configuration locations and controls.
 
 ### Cursor
 

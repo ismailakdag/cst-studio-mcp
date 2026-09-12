@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CST Studio Suite'u MCP uyumlu istemcilere bağlayan, Windows üzerinde yerel çalışan açık kaynak MCP sunucusu.">
+  <meta name="theme-color" content="#173548">
+  <meta property="og:title" content="CST Studio MCP">
+  <meta property="og:description" content="CST otomasyonunu MCP istemcinize yerel, açık ve denetlenebilir bir bağlantıyla taşıyın.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cst-mcp.akdag.dev/">
+  <title>CST Studio MCP — Yerel CST otomasyonu</title>
+  <link rel="canonical" href="https://cst-mcp.akdag.dev/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">İçeriğe geç</a>
+
+  <header class="site-header" data-header>
+    <div class="shell header-inner">
+      <a class="brand" href="#top" aria-label="CST Studio MCP ana sayfa">
+        <span class="brand-mark" aria-hidden="true">C<span>M</span></span>
+        <span>CST Studio MCP</span>
+      </a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="sr-only">Menüyü aç</span>
+        <span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Ana menü">
+        <a href="#nasil-calisir">Nasıl çalışır?</a>
+        <a href="#kurulum">Kurulum</a>
+        <a href="#dogrulama">Doğrulama</a>
+        <a href="/docs/">180 araç</a>
+        <a class="nav-repo" href="https://github.com/ismailakdag/cst-studio-mcp">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="shell hero-grid">
+        <div class="hero-copy">
+          <h1>CST Studio’yu<br>MCP istemcinize <em>bağlayın.</em></h1>
+          <p class="hero-lede">CST Studio MCP, Model Context Protocol (MCP) araç çağrılarını Windows bilgisayarınızdaki CST işlemlerine taşır. Bağlantı siz <code>cst_connect</code> çağrısını verene kadar başlamaz.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#kurulum">Kuruluma geç <span aria-hidden="true">↓</span></a>
+            <a class="button button-secondary" href="/docs/">Araç kataloğunu aç <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="availability"><span aria-hidden="true"></span><strong>Yerel sunucu:</strong> Bu adres şu anda bir uzak MCP (remote MCP) uç noktası sunmaz.</p>
+        </div>
+
+        <div class="signal-panel" aria-label="MCP istemcisinden yerel sunucu üzerinden CST Studio'ya giden bağlantı akışı">
+          <div class="signal-heading">
+            <span>Yerel işlem hattı</span>
+            <span class="signal-status"><i aria-hidden="true"></i> Elle bağlanır</span>
+          </div>
+          <div class="signal-flow" aria-hidden="true">
+            <div class="signal-node">
+              <span class="node-index">01</span>
+              <strong>MCP istemcisi</strong>
+              <small>Codex, Claude veya uyumlu bir istemci</small>
+            </div>
+            <div class="signal-line"><span></span></div>
+            <div class="signal-node signal-node-accent">
+              <span class="node-index">02</span>
+              <strong>Yerel MCP sunucusu</strong>
+              <small>standart girdi/çıktı (stdio) · Python</small>
+            </div>
+            <div class="signal-line"><span></span></div>
+            <div class="signal-node">
+              <span class="node-index">03</span>
+              <strong>CST Studio Suite</strong>
+              <small>Windows · yerel lisans · açık oturum</small>
+            </div>
+          </div>
+          <div class="signal-foot">
+            <span>CST, Windows bilgisayarınızda çalışır</span>
+            <span>Varsayılan: <code>manual</code></span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-rule" aria-hidden="true"><span></span></div>
+    </section>
+
+    <section class="section thesis" id="nasil-calisir">
+      <div class="shell split-heading">
+        <p class="section-number">01 / Yaklaşım</p>
+        <div>
+          <h2>Yerel çalışır.<br><em>Kontrol sizde kalır.</em></h2>
+          <p class="section-intro">Sunucu, MCP istemcisi ile CST’nin Python otomasyon katmanı arasında açık bir köprü kurar. CST’yi kendiliğinden başlatmaz; bağlantıyı <code>cst_connect</code> çağrısıyla açıkça siz başlatırsınız.</p>
+        </div>
+      </div>
+      <div class="shell principle-grid">
+        <article>
+          <span class="principle-mark" aria-hidden="true">↳</span>
+          <h3>Açık bağlantı adımı</h3>
+          <p>İstemci sunucuyu yükledikten sonra <code>cst_connect</code> aracını çağırırsınız. Böylece kurulum sırasında CST veya başka bir istemci beklenmedik biçimde açılmaz.</p>
+        </article>
+        <article>
+          <span class="principle-mark" aria-hidden="true">⌁</span>
+          <h3>Yerel standart girdi ve çıktı</h3>
+          <p>MCP mesajları standart girdi ve çıktı üzerinden taşınır. CST kurulumu ve proje dosyaları Windows makinenizde çalışır.</p>
+        </article>
+        <article>
+          <span class="principle-mark" aria-hidden="true">180</span>
+          <h3>Tek araç kataloğu</h3>
+          <p>Modelleme, malzeme, sınır, port, çözücü, sonuç ve iş akışı araçları aynı şema kataloğundan yayınlanır.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section install" id="kurulum">
+      <div class="shell split-heading">
+        <p class="section-number">02 / Kurulum</p>
+        <div>
+          <h2>Dört adımda<br><em>yerel bağlantı.</em></h2>
+          <p class="section-intro">Aşağıdaki akış Windows PowerShell içindir. Örnek yollar temsilidir; kendi kurulum ve çalışma klasörünüzü yazın.</p>
+        </div>
+      </div>
+
+      <div class="shell install-layout">
+        <ol class="steps" aria-label="Kurulum adımları">
+          <li>
+            <div class="step-label"><span>01</span><h3>Depoyu ve sanal ortamı hazırlayın</h3></div>
+            <div class="code-block">
+              <div class="code-head"><span>PowerShell</span><button class="copy-button" type="button" data-copy="install-code">Kopyala</button></div>
+              <pre id="install-code"><code>git clone https://github.com/ismailakdag/cst-studio-mcp.git
+cd cst-studio-mcp
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .</code></pre>
+            </div>
+          </li>
+          <li>
+            <div class="step-label"><span>02</span><h3>CST Python yolunu kontrol edin</h3></div>
+            <p>CST sürümünüzün <code>AMD64\python_cst_libraries</code> klasörünü bulun. Yapılandırmadaki <code>CST_PATH</code> ana CST klasörünü, <code>PYTHONPATH</code> ise bu Python kitaplığı klasörünü göstermelidir.</p>
+          </li>
+          <li>
+            <div class="step-label"><span>03</span><h3>MCP istemcinize ekleyin</h3></div>
+            <p>İstemcinize uygun örneği seçin. Her iki yapılandırma da CST bağlantısını siz <code>cst_connect</code> çağrısını verene kadar kapalı tutar.</p>
+            <div class="code-block code-block-tall">
+              <div class="code-head"><span>Claude Desktop / Cursor · JSON</span><button class="copy-button" type="button" data-copy="config-code">Kopyala</button></div>
+              <pre id="config-code"><code>{
+  "mcpServers": {
+    "cst-studio": {
+      "command": "C:\\path\\to\\cst-studio-mcp\\.venv\\Scripts\\cst-studio-mcp.exe",
+      "args": [],
+      "env": {
+        "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
+        "CST_WORK_DIR": "C:\\cst_projects",
+        "CST_VERSION": "2026",
+        "CST_CONNECT_MODE": "manual",
+        "PYTHONPATH": "C:\\Program Files\\CST Studio Suite 2026\\AMD64\\python_cst_libraries"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+            <div class="code-block code-block-tall">
+              <div class="code-head"><span>Codex · config.toml</span><button class="copy-button" type="button" data-copy="codex-config-code">Kopyala</button></div>
+              <pre id="codex-config-code"><code>[mcp_servers.cst-studio]
+command = 'C:\path\to\cst-studio-mcp\.venv\Scripts\cst-studio-mcp.exe'
+args = []
+
+[mcp_servers.cst-studio.env]
+CST_PATH = 'C:\Program Files\CST Studio Suite 2026'
+CST_WORK_DIR = 'C:\cst_projects'
+CST_VERSION = '2026'
+CST_CONNECT_MODE = 'manual'
+PYTHONPATH = 'C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries'</code></pre>
+            </div>
+            <p class="config-help">Codex yapılandırmasının güncel ayrıntıları için <a class="text-link" href="https://learn.chatgpt.com/docs/extend/mcp">resmî MCP belgesini açın <span aria-hidden="true">↗</span></a>.</p>
+          </li>
+          <li>
+            <div class="step-label"><span>04</span><h3>İstemciyi yenileyin ve bağlanın</h3></div>
+            <p>MCP istemcisini yeniden yükleyin. Araçlar göründüğünde <code>cst_connect</code> çağrısını verin; bağlantıyı bitirmek için <code>cst_disconnect</code> kullanın.</p>
+          </li>
+        </ol>
+
+        <aside class="requirements" aria-labelledby="requirements-title">
+          <h3 id="requirements-title">Gereksinimler</h3>
+          <dl>
+            <div><dt>İşletim sistemi</dt><dd>64 bit Windows 10 veya 11</dd></div>
+            <div><dt>CST</dt><dd>Yerel ve lisanslı CST Studio Suite 2024–2026</dd></div>
+            <div><dt>Python</dt><dd>3.10–3.13</dd></div>
+            <div><dt>İstemci</dt><dd>Standart girdi ve çıktı (stdio) tabanlı MCP sunucularını destekleyen bir istemci</dd></div>
+          </dl>
+          <p class="requirements-note"><strong>Remote MCP planı ayrıdır.</strong> <code>cst-mcp.akdag.dev</code> bugün tanıtım ve dokümantasyon sitesidir.</p>
+          <a class="text-link" href="https://github.com/ismailakdag/cst-studio-mcp#installation">Ayrıntılı README dosyasını aç <span aria-hidden="true">↗</span></a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section verification" id="dogrulama">
+      <div class="shell split-heading">
+        <p class="section-number">03 / Kanıt</p>
+        <div>
+          <h2>Ne doğrulandı,<br><em>ne henüz doğrulanmadı?</em></h2>
+          <p class="section-intro">Test kapsamı, yazılım protokolü ile canlı CST davranışını birbirinden ayırır. Aşağıdaki sayılar gerçek otomatik test sonuçlarıdır.</p>
+        </div>
+      </div>
+
+      <div class="shell evidence-wrap">
+        <div class="table-scroll" tabindex="0" aria-label="Doğrulama sonuçları tablosu">
+        <table>
+          <thead><tr><th>Kapsam</th><th>Sonuç</th><th>Anlamı</th></tr></thead>
+          <tbody>
+            <tr><td>MCP yazılım geliştirme kiti (SDK) 1.29.0</td><td><span class="pass">56 test geçti</span></td><td>Başlatma, araç listeleme, çağrı ve hata yanıtları doğrulandı.</td></tr>
+            <tr><td>MCP SDK 2.2.0</td><td><span class="pass">56 test geçti</span></td><td>Aynı takım güncel ana SDK serisinde de geçti.</td></tr>
+            <tr><td>Araç kataloğu</td><td><span class="pass">180 şema</span></td><td>Yayınlanan araç adları ve giriş şemaları üretildi ve denetlendi.</td></tr>
+            <tr><td>Canlı CST uçtan uca</td><td><span class="pending">Henüz yapılmadı</span></td><td>180 aracın tamamı gerçek bir CST oturumunda çalıştırılmış sayılmaz.</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="evidence-note">
+          <p>Gerçek stdio alt süreciyle <code>initialize</code>, <code>tools/list</code> ve <code>tools/call</code> akışı; Python ve yerel dosya tanıtıcısı günlükleriyle birlikte sınandı. CST davranışı, çalışan bir kullanıcı oturumuna dokunmadan sahte istemcilerle test edildi.</p>
+          <a class="text-link" href="/docs/RELIABILITY_REVIEW.md">Güvenilirlik incelemesini oku <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section catalog" id="dokumantasyon">
+      <div class="shell catalog-grid">
+        <div>
+          <p class="section-number">04 / Katalog</p>
+          <h2>Modelden sonuca,<br><em>180 araç.</em></h2>
+          <p class="section-intro">Aranabilir katalog her aracın açıklamasını, zorunlu parametrelerini ve JSON giriş şemasını tek yerde gösterir.</p>
+          <div class="catalog-actions">
+            <a class="button button-primary" href="/docs/">Araçları incele <span aria-hidden="true">↗</span></a>
+            <a class="button button-secondary button-on-dark" href="/presentation/">Teknik sunumu aç <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <ul class="catalog-list" aria-label="Araç kategorileri">
+          <li><span>01</span>Bağlantı ve oturum</li>
+          <li><span>02</span>Geometri ve malzemeler</li>
+          <li><span>03</span>Sınırlar, portlar ve ağ</li>
+          <li><span>04</span>Çözücü ve parametre taraması</li>
+          <li><span>05</span>Sonuçlar ve dışa aktarma</li>
+          <li><span>06</span>İş akışları ve doğrulama</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div class="shell closing-inner">
+        <p>Açık kaynak · Yerel çalışır · Elle bağlanır</p>
+        <h2>CST otomasyonunu<br><em>görünür bir iş akışına dönüştürün.</em></h2>
+        <a class="button button-copper" href="https://github.com/ismailakdag/cst-studio-mcp">GitHub deposunu aç <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div><strong>AKDAG.</strong><span>CST Studio MCP</span></div>
+      <p>İsmail Akdağ · Araştırma ve bilimsel yazılım</p>
+      <nav aria-label="Alt menü"><a href="/docs/">Dokümantasyon</a><a href="/presentation/">Sunum</a><a href="https://github.com/ismailakdag/cst-studio-mcp">GitHub</a></nav>
+    </div>
+  </footer>
+  <div class="copy-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

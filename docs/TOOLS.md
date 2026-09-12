@@ -337,4 +337,3 @@ Raw VBA execution and built-in VBA object reference.
 | `cst_execute_vba` | Execute raw VBA code in CST Studio Suite. The code is validated for safety (shell access, file I/O, and external process execution are bl… |
 | `cst_vba_help` | Get VBA reference documentation for a CST Studio object. Returns the object description and a list of its common methods and properties. |
 | `cst_list_vba_objects` | List available CST Studio VBA objects, optionally filtered by category. Returns object names with brief descriptions. |
-

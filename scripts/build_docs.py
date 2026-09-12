@@ -367,7 +367,7 @@ def main() -> None:
     )
     (docs / "index.html").write_text(render_html(catalog), encoding="utf-8")
     tables = render_readme_tables(catalog)
-    (docs / "TOOLS.md").write_text(tables + "\n", encoding="utf-8")
+    (docs / "TOOLS.md").write_text(tables.rstrip() + "\n", encoding="utf-8")
     patch_readme(tables, catalog["total_tools"])
 
     # Comparison note vs vba_cst
