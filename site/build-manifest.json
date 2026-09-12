@@ -14,9 +14,9 @@
     "docs/tools.json": "8e7b29ffdf6ce46f0dcc243d925fa7749841439ae63e696c40c52241fead439c",
     "docs/TOOLS.md": "bbf93c2dca4a5306595ed0ee544ba618aee666c3f2ea54cc804fbab3aee6b06c",
     "docs/VBA_ALIGNMENT.md": "57ac37cfaa70a77f74ace71b3179b9b8936e685478f897f3198e3b6ca77d7f0b",
-    "en/index.html": "d9d64116418391ef724c3e46fc82e8331151c47c8ccc98254192831eff0a9ed7",
+    "en/index.html": "2087371ab803fadf5ec065efddf2572570685019957a54babbdf52e6452f0bcb",
     "favicon.svg": "3608cfd1823965e8c09b6b88d08169ed3ba08616d288fbca2453dcd4a765b6f5",
-    "index.html": "f959d74805eb856a8ec542307c2573bf99ba6a7e336012d546e19c3026a19fde",
+    "index.html": "9e204b72c43da5066478254f780050221738a603e3125aa0b752c3382323c80e",
     "presentation/index-en.html": "adbe542b223dc6e42ce590634182eb13e1b29b134da12d3a42615d6d6fb5860d",
     "presentation/index.html": "eaadbb0df8c1aae5f3efbb676723afea7cba2499a0c78926d3041133fa38427c",
     "presentation/inter-OFL.txt": "5dd548d31a85f756e01d63e00d7faf1e324103ed3e9102fcbbabf2cc2db6dd39",
@@ -27,7 +27,7 @@
     "presentation/source-serif-OFL.txt": "0fd8b796c1c6220a559a5682cfd00d1c8488b428369f7cb70deb671888cef85f",
     "robots.txt": "87c6fd3eda26befab0a27cdcb24713e69c0962400c6308cbdba3ecda6b3b4fb3",
     "sitemap.xml": "0b8c5c07f25e64b908e5bd981b959f97709a41430e89fa546b46eeb5741c0073",
-    "styles.css": "5a60fc0fcd17b5e61075e1edc265b6be2101d335f53198c6b35b3ff543d468cb",
+    "styles.css": "f773baac521c286da1f173af4d95397d4c731b8b2686bb263f3e601367a10440",
     "vercel.json": "29fa726b16c559f7d95270e9289d9a5b12e6267dbdef97b286155a5144a36058"
   }
 }

@@ -223,3 +223,5 @@ td:first-child { color: var(--blue); font-weight: 700; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.agent-prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -197,6 +197,14 @@ PYTHONPATH = 'C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries'
       </div>
     </section>
 
+    <section class="section agent-prompt" id="ajan-kurulumu">
+      <div class="shell"><h2>Ask your agent to set it up.</h2><p class="section-intro">Give this request to an agent with access to your computer and MCP client configuration.</p>
+        <div class="code-block" style="margin-left:0"><div class="code-head"><span>Agent request</span><button class="copy-button" type="button" data-copy="agent-prompt-code">Copy</button></div><pre id="agent-prompt-code"><code>Visit https://cst-mcp.akdag.dev/en and read the setup instructions and the linked official GitHub README. Install CST Studio MCP on this computer and add it to my MCP client. First check the operating system, CST/Python paths, and existing configuration. Preserve existing server entries and avoid duplicates. Use a Python virtual environment and set CST_CONNECT_MODE=manual.
+
+Test initialize, tools/list, and an offline status query over a real MCP connection. Then use cst_connect to test the CST connection and confirm it with a read-only status query. Do not change existing projects or running simulations, or start or stop a solver. If the client needs a reload, explain the required step without interrupting active tasks. Clearly report missing CST installation, licensing, or access. Finish with a short summary of changed files, applied settings, and tests that passed or failed.</code></pre></div>
+      </div>
+    </section>
+
     <section class="section verification" id="dogrulama">
       <div class="shell split-heading">
         <p class="section-number">03 / Evidence</p>
