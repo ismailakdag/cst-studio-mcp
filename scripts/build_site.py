@@ -101,6 +101,16 @@ def set_presentation_base() -> None:
         if count != 1:
             raise RuntimeError(f"Could not add presentation base URL: {path}")
         path.write_text(updated, encoding="utf-8", newline="")
+    manifest_path = SITE / "presentation/manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["source_files_sha256"] = manifest["files_sha256"]
+    manifest["publication_transform"] = "Added /presentation/ base URL for deployed navigation."
+    manifest["files_sha256"] = {
+        name: hashlib.sha256((manifest_path.parent / name).read_bytes()).hexdigest()
+        for name in manifest["source_files_sha256"]
+        if (manifest_path.parent / name).is_file()
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def extract_fonts() -> None:
