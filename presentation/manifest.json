@@ -1,10 +1,12 @@
 {
   "project": "cst-studio-mcp",
   "design_reference": "https://www.ismailakdag.com/",
-  "generator_sha256": "e1bc8c0044fe850d91ac593a45f138c98d704e4007629f8777a8fa05357c98c9",
+  "generator_sha256": "f397a13bd5c2409134b9938c669ea9d4ae6ccdb3597641f212e07757b5bd5712",
   "files_sha256": {
-    "index.html": "d7685f56ab811f2f0fbab279b87d78c76663b09bafa4b8ee0b7112d9227a3889",
+    "index-en.html": "da1af4cdc47d4f5236e2bdfccd2db205e45e8ccc2ff9525174bbaa2e16cc1d69",
+    "index.html": "a0708fae01742b95a8477d30a8da9b7305bc1e26b16d00e4eff312bf155712b1",
     "inter-OFL.txt": "5dd548d31a85f756e01d63e00d7faf1e324103ed3e9102fcbbabf2cc2db6dd39",
+    "project-en.json": "5dd56092a01ad8f344ab4293a8e187b034a8609c8ebbbe8665ba2834d258eb8f",
     "project.json": "d6b7618c33c0ec117f2c17fc32ae45aaa73b37fbe817d82a98d284ae4d6daede",
     "source-serif-OFL.txt": "0fd8b796c1c6220a559a5682cfd00d1c8488b428369f7cb70deb671888cef85f"
   }

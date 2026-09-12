@@ -3,6 +3,7 @@
   const menuButton = document.querySelector(".menu-button");
   const nav = document.querySelector(".site-nav");
   const toast = document.querySelector(".copy-toast");
+  const isEnglish = document.documentElement.lang.toLowerCase().startsWith("en");
   let toastTimer;
 
   const updateHeader = () => header?.classList.toggle("is-scrolled", window.scrollY > 8);
@@ -53,11 +54,11 @@
       try {
         await copyText(target.textContent);
         const original = button.textContent;
-        button.textContent = "Kopyalandı";
-        showToast("Kod panoya kopyalandı.");
+        button.textContent = isEnglish ? "Copied" : "Kopyalandı";
+        showToast(isEnglish ? "Code copied to the clipboard." : "Kod panoya kopyalandı.");
         setTimeout(() => { button.textContent = original; }, 1800);
       } catch {
-        showToast("Kopyalama başarısız oldu; metni seçerek kopyalayın.");
+        showToast(isEnglish ? "Copy failed; select and copy the text." : "Kopyalama başarısız oldu; metni seçerek kopyalayın.");
       }
     });
   });

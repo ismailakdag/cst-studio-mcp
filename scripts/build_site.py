@@ -31,14 +31,17 @@ PUBLIC_DOC_FILES = (
 )
 PUBLIC_PRESENTATION_FILES = (
     "index.html",
+    "index-en.html",
     "inter-OFL.txt",
     "manifest.json",
     "project.json",
+    "project-en.json",
     "README.md",
     "source-serif-OFL.txt",
 )
 AUTHORED_SITE_FILES = (
     "index.html",
+    "en/index.html",
     "styles.css",
     "app.js",
     "favicon.svg",
@@ -65,13 +68,39 @@ def reset_generated_dir(path: Path) -> None:
     path.mkdir(parents=True)
 
 
-def copy_allowlist(source: Path, target: Path, names: tuple[str, ...]) -> None:
+def copy_allowlist(
+    source: Path,
+    target: Path,
+    names: tuple[str, ...],
+    *,
+    optional: tuple[str, ...] = (),
+) -> None:
     reset_generated_dir(target)
     for name in names:
         source_file = source / name
         if not source_file.is_file():
+            if name in optional:
+                continue
             raise FileNotFoundError(f"Required public source is missing: {source_file}")
         shutil.copy2(source_file, target / name)
+
+
+def set_presentation_base() -> None:
+    """Make presentation-relative assets resolve below the deployed subdirectory."""
+    for path in (SITE / "presentation").glob("index*.html"):
+        html = path.read_text(encoding="utf-8")
+        if re.search(r"<base\s", html, flags=re.IGNORECASE):
+            continue
+        updated, count = re.subn(
+            r"(<head(?:\s[^>]*)?>)",
+            r'\1\n  <base href="/presentation/">',
+            html,
+            count=1,
+            flags=re.IGNORECASE,
+        )
+        if count != 1:
+            raise RuntimeError(f"Could not add presentation base URL: {path}")
+        path.write_text(updated, encoding="utf-8", newline="")
 
 
 def extract_fonts() -> None:
@@ -106,7 +135,11 @@ def extract_fonts() -> None:
             "}"
         )
 
-    (font_dir / "fonts.css").write_text("\n\n".join(css_blocks) + "\n", encoding="utf-8")
+    (font_dir / "fonts.css").write_text(
+        "\n\n".join(css_blocks) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     shutil.copy2(PRESENTATION / "inter-OFL.txt", font_dir / "LICENSE-Inter.txt")
     shutil.copy2(
         PRESENTATION / "source-serif-OFL.txt",
@@ -139,6 +172,7 @@ def write_manifest() -> None:
     manifest_path.write_text(
         json.dumps({"sha256": entries}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
 
@@ -148,7 +182,13 @@ def main() -> None:
         raise FileNotFoundError(f"Missing authored site files: {', '.join(missing)}")
 
     copy_allowlist(DOCS, SITE / "docs", PUBLIC_DOC_FILES)
-    copy_allowlist(PRESENTATION, SITE / "presentation", PUBLIC_PRESENTATION_FILES)
+    copy_allowlist(
+        PRESENTATION,
+        SITE / "presentation",
+        PUBLIC_PRESENTATION_FILES,
+        optional=("index-en.html",),
+    )
+    set_presentation_base()
     extract_fonts()
     validate_public_text()
     write_manifest()

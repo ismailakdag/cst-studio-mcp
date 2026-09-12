@@ -1,7 +1,7 @@
 {
   "sha256": {
-    "app.js": "6529a4fb3f520b1402c7d7c3377f45e91b5c7e399c740fc9d527e683de414a6a",
-    "assets/fonts/fonts.css": "4a6876d686f0ed3260d9f5188fb59ebb943c20352913051b819ead1e047e74ed",
+    "app.js": "95350f2dfefa7d9787051600eb143b192a1b13c0258a816561e0cbbb7f53a725",
+    "assets/fonts/fonts.css": "285c56c9047feb7c69ae0377346660563c15bccffc74ac711fe5f7fc4a5977e0",
     "assets/fonts/inter-latin-ext.woff2": "34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956",
     "assets/fonts/inter-latin.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
     "assets/fonts/LICENSE-Inter.txt": "5dd548d31a85f756e01d63e00d7faf1e324103ed3e9102fcbbabf2cc2db6dd39",
@@ -14,17 +14,20 @@
     "docs/tools.json": "8e7b29ffdf6ce46f0dcc243d925fa7749841439ae63e696c40c52241fead439c",
     "docs/TOOLS.md": "bbf93c2dca4a5306595ed0ee544ba618aee666c3f2ea54cc804fbab3aee6b06c",
     "docs/VBA_ALIGNMENT.md": "57ac37cfaa70a77f74ace71b3179b9b8936e685478f897f3198e3b6ca77d7f0b",
+    "en/index.html": "d9d64116418391ef724c3e46fc82e8331151c47c8ccc98254192831eff0a9ed7",
     "favicon.svg": "3608cfd1823965e8c09b6b88d08169ed3ba08616d288fbca2453dcd4a765b6f5",
-    "index.html": "95fd695370b80c24e01a56e37af0ee2e7c8b0cbb3bdaa08ab4bbbdf47472d1c5",
-    "presentation/index.html": "d7685f56ab811f2f0fbab279b87d78c76663b09bafa4b8ee0b7112d9227a3889",
+    "index.html": "f959d74805eb856a8ec542307c2573bf99ba6a7e336012d546e19c3026a19fde",
+    "presentation/index-en.html": "adbe542b223dc6e42ce590634182eb13e1b29b134da12d3a42615d6d6fb5860d",
+    "presentation/index.html": "eaadbb0df8c1aae5f3efbb676723afea7cba2499a0c78926d3041133fa38427c",
     "presentation/inter-OFL.txt": "5dd548d31a85f756e01d63e00d7faf1e324103ed3e9102fcbbabf2cc2db6dd39",
-    "presentation/manifest.json": "81627379ec4ee71656632f4ab4442474f9e707ed563e0eb9b728034decef86ca",
+    "presentation/manifest.json": "8906aaefbcfe6e4e7e2d1b95dd6b91760895b61464dacc6838627e102fa136f4",
+    "presentation/project-en.json": "5dd56092a01ad8f344ab4293a8e187b034a8609c8ebbbe8665ba2834d258eb8f",
     "presentation/project.json": "d6b7618c33c0ec117f2c17fc32ae45aaa73b37fbe817d82a98d284ae4d6daede",
-    "presentation/README.md": "a84689bdd930319568e2e033f470a2305e6594b517b6a80e2936c7ab2b524cbc",
+    "presentation/README.md": "1ed21abdfa0f7e9ac7f4765a7712d7c5bf3c2d26fb56b9c34bc206ab1af07d0a",
     "presentation/source-serif-OFL.txt": "0fd8b796c1c6220a559a5682cfd00d1c8488b428369f7cb70deb671888cef85f",
     "robots.txt": "87c6fd3eda26befab0a27cdcb24713e69c0962400c6308cbdba3ecda6b3b4fb3",
-    "sitemap.xml": "15c2a450e542233c549c9bf4b8ffaeafbc4ae47aba67008b99c0fc5e41847169",
-    "styles.css": "d5f8b4707d3f4258225c0fb3159f60614cfaee11e38a5289ce7c8791119a0ddd",
+    "sitemap.xml": "0b8c5c07f25e64b908e5bd981b959f97709a41430e89fa546b46eeb5741c0073",
+    "styles.css": "5a60fc0fcd17b5e61075e1edc265b6be2101d335f53198c6b35b3ff543d468cb",
     "vercel.json": "29fa726b16c559f7d95270e9289d9a5b12e6267dbdef97b286155a5144a36058"
   }
 }

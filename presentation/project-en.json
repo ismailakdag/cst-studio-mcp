@@ -1,0 +1,41 @@
+{
+  "id": "cst-studio-mcp",
+  "title": "CST Studio MCP",
+  "headline": "From a tool call to <em>a trustworthy operation.</em>",
+  "intro": "A reliability-focused bridge between CST Studio Suite and MCP clients, covering connection timing, error propagation, and the simulation lifecycle.",
+  "repo": "https://github.com/ismailakdag/cst-studio-mcp",
+  "flow": [
+    "MCP client",
+    "Validated tool call",
+    "CST session and results"
+  ],
+  "diagram_alt": "Three layers connecting an MCP client, the server, and CST",
+  "diagram_caption": "Architecture flow. A successful tool call is not the same as a completed and validated simulation.",
+  "status": "Reliability fixes merged; 56 tests passed on each of two MCP SDK versions.",
+  "finding_title": "A server that reports operation state accurately.",
+  "finding": "The review found CST connections occurring before the client handshake, some failures being returned as successful calls, and inconsistent solver lifecycle behavior.",
+  "work": [
+    {
+      "title": "Client connection",
+      "body": "Standard MCP handshake, tool discovery, and calls, with the stdio protocol channel kept separate from logs."
+    },
+    {
+      "title": "CST lifecycle",
+      "body": "Blocking and asynchronous solver calls are distinguished, while status queries remain read-only."
+    },
+    {
+      "title": "Actionable errors",
+      "body": "Failures reach the client as failures, and an ambiguous operation state is preserved when a timeout occurs."
+    }
+  ],
+  "verified": [
+    "56 tests passed with MCP SDK 1.29.0 and 56 with 2.2.0; 180 tool schemas were validated.",
+    "Handshake, tool discovery, calls, and separation of Python/native logs were tested through a real stdio subprocess.",
+    "A fake CST backend verified busy, timeout, unknown solver state, safe disconnect, and result-error propagation."
+  ],
+  "limits": [
+    "All 180 tools have not been executed against a real CST installation, and correctness is not claimed for every client or CST release.",
+    "The running research experiment was preserved; this work did not run a new end-to-end solve in real CST."
+  ],
+  "next": "For a new setup, add the MCP server first and then connect explicitly with cst_connect. A real-CST check should later use an empty session and a temporary project. The verified scope is recorded in docs/RELIABILITY_REVIEW.md in the repository."
+}
