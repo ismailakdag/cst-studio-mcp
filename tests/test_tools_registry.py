@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 
 import pytest
+from mcp.server import Server
+from mcp.types import TextContent, Tool
 
 from cst_mcp.config import CSTConfig
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.tools import register_all_tools
-from mcp.server import Server
+from cst_mcp.tools.registry import ToolRegistry
 
 
 @pytest.mark.asyncio
@@ -50,3 +52,62 @@ async def test_list_tools_full_surface(tmp_path, monkeypatch):
     data = json.loads(result[0].text)
     assert data["status"] == "ok"
     assert "design" in data
+
+
+@pytest.mark.asyncio
+async def test_registry_marks_tool_error_envelope_as_mcp_error():
+    callbacks = {}
+
+    class FakeServer:
+        def list_tools(self):
+            return lambda callback: callbacks.setdefault("list", callback)
+
+        def call_tool(self):
+            return lambda callback: callbacks.setdefault("call", callback)
+
+    async def handler(name, arguments, client):
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps({"status": "error", "message": "mock failure"}),
+            )
+        ]
+
+    registry = ToolRegistry()
+    registry.add_module(
+        [
+            Tool(
+                name="mock_tool",
+                description="A mock tool.",
+                inputSchema={"type": "object", "properties": {}, "required": []},
+            )
+        ],
+        handler,
+    )
+    registry.bind(FakeServer(), object())
+
+    result = await callbacks["call"]("mock_tool", {})
+    assert getattr(result, "isError", getattr(result, "is_error", None)) is True
+    assert json.loads(result.content[0].text)["message"] == "mock failure"
+
+    unknown = await callbacks["call"]("does_not_exist", {})
+    assert getattr(unknown, "isError", getattr(unknown, "is_error", None)) is True
+
+
+def test_registry_rejects_malformed_tool_schema():
+    registry = ToolRegistry()
+
+    async def handler(name, arguments, client):
+        return []
+
+    malformed = Tool(
+        name="bad_tool",
+        description="Bad schema for a catalog regression test.",
+        inputSchema={
+            "type": "object",
+            "properties": {},
+            "required": ["missing"],
+        },
+    )
+    with pytest.raises(ValueError, match="unknown property"):
+        registry.add_module([malformed], handler)

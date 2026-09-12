@@ -107,7 +107,7 @@ pip install -e ".[dev]"
 
 This installs:
 
-- Runtime dependency: `mcp>=1.0.0`
+- Runtime dependencies: `mcp>=1.29,<3`, `anyio>=4.5`, and `jsonschema>=4.20`
 - Console script: **`cst-studio-mcp`** (also at `.\.venv\Scripts\cst-studio-mcp.exe`)
 - Dev extras: `pytest`, `pytest-asyncio`, `ruff`
 
@@ -163,7 +163,13 @@ Nothing in the library hard-codes a drive letter. Discovery order:
 | `CST_WORK_DIR` | Optional | Projects, exports, reports | `%USERPROFILE%\cst_projects` |
 | `CST_VERSION` | Optional | Year for auto-detect (default `2026`) | `2026` |
 | `CST_QUIET` | Optional | Quiet Design Environment (`1`/`0`, default quiet) | `1` |
+| `CST_CONNECT_MODE` | Optional | Startup behavior: `auto`, `manual`, or `disabled` (default `auto`) | `auto` |
 | `CST_LOG_LEVEL` | Optional | Logging level | `INFO` |
+
+`auto` attaches to a running Design Environment or starts one when the MCP process starts.
+Use `disabled` for catalog inspection, client setup checks, and offline VBA generation: it does
+not import the CST Python package or connect to CST. `manual` skips the startup connection while
+leaving the CST Python package available to workflows that explicitly request a connection.
 
 Template file: **[`.mcp.example.json`](.mcp.example.json)**  
 Local machine paths: **`.mcp.json`** (edit paths only; keep out of shared commits if needed).
@@ -179,10 +185,12 @@ Local machine paths: **`.mcp.json`** (edit paths only; keep out of shared commit
   "mcpServers": {
     "cst-studio": {
       "command": "cst-studio-mcp",
+      "args": [],
       "env": {
         "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
         "CST_WORK_DIR": "C:\\cst_projects",
         "CST_VERSION": "2026",
+        "CST_CONNECT_MODE": "auto",
         "PYTHONPATH": "C:\\Program Files\\CST Studio Suite 2026\\AMD64\\python_cst_libraries",
         "CST_LOG_LEVEL": "INFO"
       }
@@ -227,6 +235,36 @@ Add the server via your usual MCP config (project or user), same `command` + `en
 
 Any client that supports MCP **stdio** servers can use `cst-studio-mcp` with the same environment variables.
 
+The process uses newline-delimited JSON-RPC on stdout. Logs and diagnostics are written to stderr,
+so clients must keep stdout reserved for MCP messages. For a first client-side check, set
+`CST_CONNECT_MODE` to `disabled`, restart the MCP process, and verify that initialize, `tools/list`,
+and `cst_connection_status` succeed. Change it to `auto` only when the client configuration points
+to the intended CST installation.
+
+MCP clients use two common configuration envelopes. Clients such as Claude Desktop and Cursor use
+the `mcpServers` object shown above. Clients whose schema uses a `servers` object generally need the
+same process definition in this shape:
+
+```json
+{
+  "servers": {
+    "cst-studio": {
+      "type": "stdio",
+      "command": "C:\\path\\to\\.venv\\Scripts\\cst-studio-mcp.exe",
+      "args": [],
+      "env": {
+        "CST_PATH": "C:\\Program Files\\CST Studio Suite 2026",
+        "CST_WORK_DIR": "C:\\cst_projects",
+        "CST_CONNECT_MODE": "auto"
+      }
+    }
+  }
+}
+```
+
+Use the field names required by the client, but keep `command`, `args`, and `env` unchanged. Prefer
+the absolute console-script path on Windows; it avoids differences in each client's `PATH`.
+
 ---
 
 ## Verify the install
@@ -248,7 +286,7 @@ python -m pytest tests/ -q
 
 From an MCP client, call:
 
-1. `cst_connection_status` — expect `connected` when CST can start/attach  
+1. `cst_connection_status` — expect `connected` with `CST_CONNECT_MODE=auto`, or `offline` with it set to `disabled`
 2. Prefer workflows for smoke tests (see below)
 
 ---

@@ -24,7 +24,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "mcp>=1.0.0",
+    "anyio>=4.5",
+    "jsonschema>=4.20",
+    "mcp>=1.29,<3",
 ]
 
 [project.optional-dependencies]
@@ -45,6 +47,7 @@ include = ["src/cst_mcp", "README.md", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 asyncio_mode = "auto"
 
 [tool.ruff]

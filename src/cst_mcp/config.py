@@ -17,6 +17,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 DEFAULT_VERSION = "2026"
+CONNECT_MODES = frozenset({"auto", "manual", "disabled"})
 
 
 @dataclass
@@ -29,6 +30,8 @@ class CSTConfig:
     version: str = DEFAULT_VERSION
     log_level: str = "INFO"
     quiet_mode: bool = True
+    connect_mode: str = "auto"
+    work_dir_error: str | None = None
 
     @classmethod
     def from_env(cls) -> CSTConfig:
@@ -45,10 +48,25 @@ class CSTConfig:
             if python_lib:
                 _ensure_on_sys_path(python_lib)
 
-        work_dir.mkdir(parents=True, exist_ok=True)
+        work_dir_error = None
+        try:
+            work_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            # A bad project directory must not prevent the MCP initialize
+            # handshake. Tools that need the directory will still report the
+            # concrete filesystem error when called.
+            work_dir_error = str(exc)
+            logger.warning("CST work directory is unavailable: %s", exc)
 
         quiet = os.environ.get("CST_QUIET", "1").strip().lower() not in {"0", "false", "no"}
         log_level = os.environ.get("CST_LOG_LEVEL", "INFO")
+        connect_mode = os.environ.get("CST_CONNECT_MODE", "auto").strip().lower()
+        if connect_mode not in CONNECT_MODES:
+            logger.warning(
+                "Invalid CST_CONNECT_MODE=%r; using 'manual' for safe startup",
+                connect_mode,
+            )
+            connect_mode = "manual"
 
         cfg = cls(
             cst_path=cst_path,
@@ -57,6 +75,8 @@ class CSTConfig:
             version=version,
             log_level=log_level,
             quiet_mode=quiet,
+            connect_mode=connect_mode,
+            work_dir_error=work_dir_error,
         )
         logger.info(
             "CST config: path=%s libs=%s work=%s version=%s",
@@ -70,12 +90,20 @@ class CSTConfig:
     @property
     def cst_available(self) -> bool:
         """True if the official ``cst`` Python package can be imported."""
+        if self.connect_mode == "disabled":
+            return False
         try:
             import cst.interface  # noqa: F401
 
             return True
-        except ImportError:
+        except Exception:  # Import may fail with a DLL/ABI error, not ImportError.
+            logger.debug("CST Python package is unavailable", exc_info=True)
             return False
+
+    @property
+    def connect_on_startup(self) -> bool:
+        """Whether the MCP process should attach to or launch CST at startup."""
+        return self.connect_mode == "auto"
 
 
 def _windows_drive_letters() -> list[str]:
@@ -91,10 +119,6 @@ def _windows_drive_letters() -> list[str]:
 
 def _auto_detect_cst(version: str) -> Path | None:
     """Search common install locations on all available drives."""
-    names = [
-        f"CST Studio Suite {version}",
-        f"CST STUDIO SUITE {version}",
-    ]
     # Prefer newer years if version folder missing: try requested first, then nearby
     years = [version]
     try:
