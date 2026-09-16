@@ -4,7 +4,7 @@ Version **1.1.0** repairs the core connected-result contract and adds access to 
 
 ## Verified evidence
 
-- **85 tests passed** on Windows/Python 3.12 with each of MCP SDK **1.29.0** and **2.2.0**. Tests include real stdio initialization/calls, schema discovery, fake connected-mode contracts, numerical conversions, and busy/unknown-state behavior.
+- **88 tests passed** on Windows/Python 3.12 with each of MCP SDK **1.29.0** and **2.2.0**. Tests include real stdio initialization/calls, schema discovery, fake connected-mode contracts, numerical conversions, and busy/unknown-state behavior.
 - A real completed CST 2026 two-port project was read through the actual stdio server without `cst_connect`: S11/S12/S21/S22 each contained **4,001 complex samples**. Every real/imaginary sample matched the pre-existing research archive exactly: maximum absolute complex difference **0.0** for all four curves. This was read-only; no new solver or live model mutation was used for this check.
 - All statically referenced `client` attributes in registered tool source resolve on CSTClient. This is a contract check, not evidence of every branch executing on CST.
 - Installed official `cst.results`/`cst.interface` help, plus Brick, DiscretePort, LumpedElement, Wire, ExtrudeCurve, SweepCurve, FloquetPort, ParameterSweep, Optimizer and TOUCHSTONE VBA topics were inspected. Documentation paths/hashes and a limited literal-builder scan are in [installed-api-audit.json](installed-api-audit.json). Name matches do not establish signatures, units or live execution.

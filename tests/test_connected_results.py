@@ -237,3 +237,14 @@ def test_preview_cap_preserves_finite_minimum_and_endpoints():
     assert result["n_points"] <= 10
     assert {0, 37, 99} <= set(result["frequency_ghz"])
     assert downsample_series(data, 0) == data
+
+
+@pytest.mark.parametrize("axis", ["x", "y", "z"])
+def test_cylinder_and_cone_centers_are_world_coordinates(axis):
+    from cst_mcp.tools.geometry import _build_cylinder, _build_cone
+    args = dict(component="test", name="solid", axis=axis, center_x=11, center_y=22,
+                center_z=33, outer_radius=2, bottom_radius=2, top_radius=1, range_min=0, range_max=5)
+    for builder in [_build_cylinder, _build_cone]:
+        code = builder(args)
+        for coordinate, value in zip("XYZ", [11,22,33]):
+            assert f'.{coordinate}center "{value}"' in code

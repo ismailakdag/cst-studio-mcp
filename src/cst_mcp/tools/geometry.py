@@ -363,10 +363,7 @@ def _build_cylinder(args: dict) -> str:
     cz = args.get("center_z", 0)
 
     # Map axis to the correct CST VBA property names
-    axis_map = {"x": ("Xrange", "Xcenter", "Ycenter", "Zcenter"),
-                "y": ("Yrange", "Ycenter", "Xcenter", "Zcenter"),
-                "z": ("Zrange", "Zcenter", "Xcenter", "Ycenter")}
-    range_prop, center1_prop, center2_prop, center3_prop = axis_map[axis]
+    range_prop = {"x": "Xrange", "y": "Yrange", "z": "Zrange"}[axis]
 
     vba = (
         VBABuilder("Cylinder")
@@ -377,9 +374,9 @@ def _build_cylinder(args: dict) -> str:
         .set("Axis", axis)
         .set_number("Outerradius", outer_radius)
         .set_number("Innerradius", inner_radius)
-        .set_number(center1_prop, cx)
-        .set_number(center2_prop, cy)
-        .set_number(center3_prop, cz)
+        .set_number("Xcenter", cx)
+        .set_number("Ycenter", cy)
+        .set_number("Zcenter", cz)
         .set_double(range_prop, args["range_min"], args["range_max"])
         .call("Create")
     )
@@ -398,10 +395,7 @@ def _build_cone(args: dict) -> str:
     cz = args.get("center_z", 0)
 
     # Map axis to the correct CST VBA property names
-    axis_map = {"x": ("Xrange", "Xcenter", "Ycenter", "Zcenter"),
-                "y": ("Yrange", "Ycenter", "Xcenter", "Zcenter"),
-                "z": ("Zrange", "Zcenter", "Xcenter", "Ycenter")}
-    range_prop, center1_prop, center2_prop, center3_prop = axis_map[axis]
+    range_prop = {"x": "Xrange", "y": "Yrange", "z": "Zrange"}[axis]
 
     vba = (
         VBABuilder("Cone")
@@ -412,9 +406,9 @@ def _build_cone(args: dict) -> str:
         .set("Axis", axis)
         .set_number("Bottomradius", bottom_radius)
         .set_number("Topradius", top_radius)
-        .set_number(center1_prop, cx)
-        .set_number(center2_prop, cy)
-        .set_number(center3_prop, cz)
+        .set_number("Xcenter", cx)
+        .set_number("Ycenter", cy)
+        .set_number("Zcenter", cz)
         .set_double(range_prop, args["range_min"], args["range_max"])
         .call("Create")
     )
@@ -644,10 +638,7 @@ def _build_ecylinder(args: dict) -> str:
     cz = args.get("center_z", 0)
 
     # Map axis to the correct CST VBA property names
-    axis_map = {"x": ("Xrange", "Xcenter", "Ycenter", "Zcenter"),
-                "y": ("Yrange", "Ycenter", "Xcenter", "Zcenter"),
-                "z": ("Zrange", "Zcenter", "Xcenter", "Ycenter")}
-    range_prop, center1_prop, center2_prop, center3_prop = axis_map[axis]
+    range_prop = {"x": "Xrange", "y": "Yrange", "z": "Zrange"}[axis]
 
     vba = (
         VBABuilder("ECylinder")
@@ -658,9 +649,9 @@ def _build_ecylinder(args: dict) -> str:
         .set("Axis", axis)
         .set_number("XRadius", x_radius)
         .set_number("YRadius", y_radius)
-        .set_number(center1_prop, cx)
-        .set_number(center2_prop, cy)
-        .set_number(center3_prop, cz)
+        .set_number("Xcenter", cx)
+        .set_number("Ycenter", cy)
+        .set_number("Zcenter", cz)
         .set_double(range_prop, args["range_min"], args["range_max"])
         .call("Create")
     )
