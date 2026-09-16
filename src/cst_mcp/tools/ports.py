@@ -520,19 +520,19 @@ async def _handle_lumped_element(
 
     # Map element_type to CST VBA LumpedElement type string
     cst_type_map = {
-        "R": "RLC Serial",
-        "L": "RLC Serial",
-        "C": "RLC Serial",
-        "RLC_serial": "RLC Serial",
-        "RLC_parallel": "RLC Parallel",
+        "R": "rlcserial",
+        "L": "rlcserial",
+        "C": "rlcserial",
+        "RLC_serial": "rlcserial",
+        "RLC_parallel": "rlcparallel",
     }
     cst_type = cst_type_map[element_type]
 
     vba = (
         VBABuilder("LumpedElement")
         .call("Reset")
-        .set("Name", elem_name)
-        .set("Type", cst_type)
+        .set("SetName", elem_name)
+        .set("SetType", cst_type)
     )
 
     # Set R, L, C values depending on element_type
@@ -557,8 +557,8 @@ async def _handle_lumped_element(
 
     vba = (
         vba
-        .set_triple("Point1", x1, y1, z1)
-        .set_triple("Point2", x2, y2, z2)
+        .set_point("SetP1", x1, y1, z1)
+        .set_point("SetP2", x2, y2, z2)
         .call("Create")
     )
     script = vba.build()
@@ -627,14 +627,13 @@ async def _handle_floquet_port(
     vba = (
         VBABuilder("FloquetPort")
         .call("Reset")
-        .set_number("PortNumber", port_number)
-        .set("Orientation", orientation)
-        .set_number("NumberOfModes", modes)
-        .call("Create")
+        .set("Port", orientation)
+        .set_number("SetNumberOfModesConsidered", modes)
     )
     script = vba.build()
     result = client.execute_vba(script)
     result["port_type"] = "floquet"
+    result["note"] = "Floquet ports are selected by zmin/zmax, not a freely assigned port number; unit-cell/open boundaries must already be configured."
     result["port_number"] = port_number
     result["modes"] = modes
 

@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-16",
+  "product": "CST Studio Suite 2026",
+  "transport": "real MCP stdio subprocess",
+  "fixture": "completed two-port research model; existing archive",
+  "connect_called": false,
+  "solver_started": false,
+  "curves": {
+    "S1,1": {"samples": 4001, "max_absolute_complex_archive_difference": 0.0},
+    "S1,2": {"samples": 4001, "max_absolute_complex_archive_difference": 0.0},
+    "S2,1": {"samples": 4001, "max_absolute_complex_archive_difference": 0.0},
+    "S2,2": {"samples": 4001, "max_absolute_complex_archive_difference": 0.0}
+  },
+  "official_help_discovery": true,
+  "reproduce": "scripts/verify_saved_results.py PROJECT.cst [ARCHIVE.csv.gz]"
+}

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cst-studio-mcp"
-version = "1.0.0"
+version = "1.1.0"
 description = "Clean, Python-first MCP server for CST Studio Suite 2024–2026"
 readme = "README.md"
 license = "MIT"

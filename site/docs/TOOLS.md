@@ -1,8 +1,19 @@
-## Full tool catalog (180 tools)
+## Full tool catalog (184 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
 VBA for geometry/ports/transforms is cross-checked against the CST help dump in [`vba_cst/`](vba_cst/).
+
+### Official API and saved results (4)
+
+Read local CST Python/VBA help and complex saved results without opening CST.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_search_help` | Search the installed official CST Python/VBA help by topic filename. Does not start CST. Read the matching help before constructing API c… |
+| `cst_read_help` | Read a paginated official local CST help topic returned by cst_search_help. No GUI or solver. |
+| `cst_list_saved_results` | List exact result tree paths and run IDs from a saved, unpacked, completed .cst file using cst.results. No connection or CST GUI is requi… |
+| `cst_read_saved_result` | Read a complete complex 1D curve by exact tree path and run_id from a completed saved .cst, without opening CST. Raw real/imag are preser… |
 
 ### Explicit connection (2)
 
@@ -231,7 +242,7 @@ Design parameters, sweeps, optimizers, sensitivity, yield.
 | `cst_delete_parameter` | Delete a design parameter from the CST project. The parameter must not be referenced by other parameters or geometry. |
 | `cst_parameter_sweep` | Set up a parameter sweep in CST Studio. The sweep runs the simulation multiple times, varying the specified parameter across a range of v… |
 | `cst_optimizer` | Set up an optimization in CST Studio. Define a goal (minimize, maximize, or target a specific value for a result), specify which paramete… |
-| `cst_multi_objective_optimizer` | Set up a multi-objective optimization with weighted goals and optional constraints. Supports Pareto-front exploration using Genetic Algor… |
+| `cst_multi_objective_optimizer` | Set up a multi-objective optimization with weighted goals and optional constraints. Uses a weighted sum of goals with an evaluation cap; … |
 | `cst_sensitivity_analysis` | Set up a one-at-a-time sensitivity analysis to rank parameters by their impact on a result. Varies each parameter individually while keep… |
 | `cst_yield_analysis` | Set up a Monte Carlo yield analysis to estimate manufacturing yield. Randomly varies parameters according to their tolerances and evaluat… |
 | `cst_constrained_optimizer` | Single-objective optimization with explicit inequality constraints. Example: minimize S11 subject to gain > 8 dBi and bandwidth > 100 MHz. |

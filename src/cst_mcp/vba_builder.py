@@ -89,6 +89,13 @@ class VBABuilder:
         )
         return self
 
+    def set_point(self, prop: str, x: float, y: float, z: float) -> VBABuilder:
+        """Official DiscretePort/LumpedElement SetP1/SetP2 signature."""
+        if prop not in {"SetP1", "SetP2"}:
+            raise ValueError("Use SetP1 or SetP2")
+        self._with_block.append(f'.{prop} False, "{_format_number(x)}", "{_format_number(y)}", "{_format_number(z)}"')
+        return self
+
     def set_bool(self, prop: str, value: bool) -> VBABuilder:
         """Set a boolean property: .Prop "True"/"False" """
         self._with_block.append(f'.{prop} "{value}"')

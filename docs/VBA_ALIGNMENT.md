@@ -1,5 +1,7 @@
 # VBA alignment notes (vba_cst)
 
+Current Python/VBA validation and remaining limits: [API review 2026](API_REVIEW_2026.md). The notes below describe the earlier bundled-reference alignment, not live certification of every tool.
+
 Source: local CST Online Help dump in `vba_cst/vba_data.js` (169 objects).
 
 ## Fixes applied against official help

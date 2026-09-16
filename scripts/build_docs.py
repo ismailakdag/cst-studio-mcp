@@ -12,6 +12,9 @@ sys.path.insert(0, str(ROOT / "src"))
 
 
 CATEGORIES: list[dict] = [
+    {"id": "official", "title_en": "Official API and saved results", "title_tr": "Resmî API ve kayıtlı sonuçlar",
+     "blurb_en": "Read local CST Python/VBA help and complex saved results without opening CST.",
+     "blurb_tr": "CST açmadan yerel Python/VBA belgelerini ve kayıtlı kompleks sonuçları okuyun.", "module": "official"},
     {"id": "connection", "title_en": "Explicit connection", "title_tr": "Açık bağlantı yönetimi",
      "blurb_en": "Attach to CST explicitly; disconnect without closing user projects.",
      "blurb_tr": "CST bağlantısını açıkça kurun; kullanıcı projelerini kapatmadan ayrılın.", "module": "connection"},
@@ -200,6 +203,7 @@ def collect_tools() -> list[dict]:
         materials,
         mesh,
         optimization,
+        official,
         parameters,
         pcb,
         ports,
@@ -220,6 +224,7 @@ def collect_tools() -> list[dict]:
     # fix: explicit map more reliable
     module_map = {
         "connection": connection,
+        "official": official,
         "workflows": workflows,
         "project": project,
         "geometry": geometry,
@@ -284,7 +289,7 @@ def build_catalog(tools: list[dict]) -> dict:
         categories.append({**cat, "count": len(items), "tools": items})
     return {
         "name": "cst-studio-mcp",
-        "version": "1.0.0",
+        "version": __import__("cst_mcp").__version__,
         "total_tools": len(tools),
         "categories": categories,
         "vba_reference_note": {
@@ -374,6 +379,8 @@ def main() -> None:
     compare = ROOT / "docs" / "VBA_ALIGNMENT.md"
     compare.write_text(
         """# VBA alignment notes (vba_cst)
+
+Current Python/VBA validation and remaining limits: [API review 2026](API_REVIEW_2026.md). The notes below describe the earlier bundled-reference alignment, not live certification of every tool.
 
 Source: local CST Online Help dump in `vba_cst/vba_data.js` (169 objects).
 

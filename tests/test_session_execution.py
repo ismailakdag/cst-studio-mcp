@@ -52,7 +52,7 @@ class FakeModel3D:
     def abort_solver(self, *, timeout: int | None = None) -> None:
         self.calls.append(("abort_solver", timeout))
 
-    def _execute_vba_code(self, vba: str) -> None:
+    def _execute_vba_code(self, vba: str, **kwargs) -> None:
         self.calls.append(("_execute_vba_code", vba))
 
     def full_history_rebuild(self, *, timeout: int | None = None) -> None:
@@ -254,11 +254,9 @@ def test_parameter_solve_honors_optimizer_export_path(tmp_path, monkeypatch) -> 
     session.config.work_dir = tmp_path
     output = tmp_path / "optimizer_s11.csv"
 
-    def fake_export(tree_path: str, filepath: str) -> dict:
-        Path(filepath).write_text("Frequency,dB\n2.4,-12\n", encoding="utf-8")
-        return {"status": "exported", "tree_path": tree_path, "path": filepath}
-
-    monkeypatch.setattr(session, "export_tree_csv", fake_export)
+    monkeypatch.setattr(session, "get_s_parameters", lambda *a, **kw: {
+        "status": "ok", "frequency_ghz": [2.4], "magnitude_db": [-12.0],
+        "metrics": {"min_db": -12.0}})
     result = session.set_params_rebuild_solve(
         {"gap": 0.3}, export_path=str(output), export_s11=True, timeout_s=20
     )
@@ -356,7 +354,7 @@ def test_execute_vba_does_not_start_implicit_dialog_watcher(monkeypatch) -> None
             raise AssertionError("dialog watcher must be explicit")
 
     monkeypatch.setattr("cst_mcp.cst_client.DialogWatcher", ExplodingWatcher)
-    model = SimpleNamespace(add_to_history=lambda label, vba: None)
+    model = SimpleNamespace(add_to_history=lambda label, vba, **kw: None, is_solver_running=lambda **kw: False)
     session, _ = make_session(model)
     client = CSTClient(config=session.config)
     client._de = session._de

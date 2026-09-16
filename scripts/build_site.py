@@ -28,6 +28,11 @@ PUBLIC_DOC_FILES = (
     "TOOLS.md",
     "tools.json",
     "VBA_ALIGNMENT.md",
+    "AGENT_SETUP.md",
+    "API_REVIEW_2026.md",
+    "installed-api-audit.json",
+    "saved-result-validation.json",
+    "modeler-validation.json",
 )
 PUBLIC_PRESENTATION_FILES = (
     "index.html",

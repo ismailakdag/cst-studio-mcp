@@ -1,0 +1,308 @@
+{
+  "version": "1.1.0",
+  "cst_version": 2026,
+  "solver_started": false,
+  "records": [
+    {
+      "tool": "cst_connect",
+      "args": {},
+      "result": {
+        "status": "connected",
+        "message": "Connected via connect_to_any_or_new()",
+        "open_projects": 0,
+        "project_path": null,
+        "cst_path": "E:\\CST Studio Suite 2026",
+        "python_lib_path": "E:\\CST Studio Suite 2026\\AMD64\\python_cst_libraries"
+      }
+    },
+    {
+      "tool": "cst_create_project",
+      "args": {
+        "path": "owned-fixture/model.cst"
+      },
+      "result": {
+        "status": "created",
+        "path": "owned-fixture/model.cst",
+        "type": "MWS"
+      }
+    },
+    {
+      "tool": "cst_set_parameter",
+      "args": {
+        "name": "width",
+        "value": 12.5
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_1",
+        "result": "True",
+        "parameter": "width",
+        "value": 12.5
+      }
+    },
+    {
+      "tool": "cst_get_parameter",
+      "args": {
+        "name": "width"
+      },
+      "result": {
+        "status": "ok",
+        "output": "Parameter width = 12.5\n",
+        "source": "VBA query via Python",
+        "popup": false,
+        "parameter": "width"
+      }
+    },
+    {
+      "tool": "cst_list_parameters",
+      "args": {},
+      "result": {
+        "status": "ok",
+        "output": "width = 12.5\n",
+        "source": "VBA query via Python",
+        "popup": false
+      }
+    },
+    {
+      "tool": "cst_create_material",
+      "args": {
+        "name": "TestDielectric",
+        "epsilon": 4.3,
+        "tan_d_e": 0.025
+      },
+      "result": {
+        "tool": "cst_create_material",
+        "material": "TestDielectric",
+        "properties": {
+          "epsilon_r": 4.3,
+          "mu_r": 1.0,
+          "tan_d_e": 0.025,
+          "tan_d_m": 0.0,
+          "conductivity_S_m": 0.0
+        },
+        "vba": "With Material\n  .Reset\n  .Name \"TestDielectric\"\n  .Type \"Normal\"\n  .Colour \"0.6\", \"0.6\", \"0.6\"\n  .Transparency \"0\"\n  .Epsilon \"4.3\"\n  .Mu \"1\"\n  .Sigma \"0\"\n  .TanD \"0.025\"\n  .TanDFreq \"0\"\n  .TanDGiven \"True\"\n  .TanDModel \"ConstTanD\"\n  .TanDM \"0\"\n  .TanDMFreq \"0\"\n  .TanDMGiven \"False\"\n  .Create\nEnd With",
+        "status": "executed",
+        "label": "cst_mcp_2",
+        "result": "True"
+      }
+    },
+    {
+      "tool": "cst_create_brick",
+      "args": {
+        "component": "test",
+        "name": "brick",
+        "x_min": 0,
+        "x_max": 10,
+        "y_min": 0,
+        "y_max": 10,
+        "z_min": 0,
+        "z_max": 1.6,
+        "material": "TestDielectric"
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_3",
+        "result": "True"
+      }
+    },
+    {
+      "tool": "cst_create_cylinder",
+      "args": {
+        "component": "test",
+        "name": "cylinder",
+        "axis": "z",
+        "outer_radius": 2,
+        "center_x": 20,
+        "range_min": 0,
+        "range_max": 5
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_4",
+        "result": "True"
+      }
+    },
+    {
+      "tool": "cst_create_sphere",
+      "args": {
+        "component": "test",
+        "name": "sphere",
+        "radius": 2,
+        "center_x": 30
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_5",
+        "result": "True"
+      }
+    },
+    {
+      "tool": "cst_create_wire",
+      "args": {
+        "component": "test",
+        "name": "wire",
+        "radius": 0.1,
+        "start_x": 40,
+        "start_y": 0,
+        "start_z": 0,
+        "end_x": 43,
+        "end_y": 0,
+        "end_z": 0
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_6",
+        "result": "True"
+      }
+    },
+    {
+      "tool": "cst_create_polygon_extrude",
+      "args": {
+        "component": "test",
+        "name": "extrude",
+        "height": 2,
+        "points": [
+          [
+            50,
+            0
+          ],
+          [
+            52,
+            0
+          ],
+          [
+            52,
+            2
+          ],
+          [
+            50,
+            2
+          ]
+        ],
+        "axis": "z"
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_7",
+        "result": "True"
+      }
+    },
+    {
+      "tool": "cst_add_discrete_port",
+      "args": {
+        "port_number": 1,
+        "x1": 0,
+        "y1": 0,
+        "z1": 0,
+        "x2": 0,
+        "y2": 0,
+        "z2": 1.6
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_8",
+        "result": "True",
+        "port_type": "discrete",
+        "port_number": 1,
+        "impedance": 50.0
+      }
+    },
+    {
+      "tool": "cst_add_lumped_element",
+      "args": {
+        "name": "testR",
+        "element_type": "R",
+        "value": 50,
+        "x1": 45,
+        "y1": 0,
+        "z1": 0,
+        "x2": 46,
+        "y2": 0,
+        "z2": 0
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_9",
+        "result": "True",
+        "element_name": "testR",
+        "element_type": "R",
+        "value": 50.0
+      }
+    },
+    {
+      "tool": "cst_parameter_sweep",
+      "args": {
+        "parameter": "width",
+        "start": 12,
+        "stop": 13,
+        "steps": 3
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_10",
+        "result": "True",
+        "parameter": "width",
+        "start": 12,
+        "stop": 13,
+        "steps": 3
+      }
+    },
+    {
+      "tool": "cst_optimizer",
+      "args": {
+        "goal_type": "minimize",
+        "result_path": "1D Results\\S-Parameters\\S1,1",
+        "parameters": [
+          {
+            "name": "width",
+            "min": 12,
+            "max": 13
+          }
+        ],
+        "max_evaluations": 4
+      },
+      "result": {
+        "status": "executed",
+        "label": "cst_mcp_11",
+        "result": "True",
+        "goal_type": "minimize",
+        "result_path": "1D Results\\S-Parameters\\S1,1",
+        "method": "Trust Region",
+        "max_evaluations": 4,
+        "parameters": [
+          "width"
+        ]
+      }
+    },
+    {
+      "tool": "cst_read_project_log",
+      "args": {},
+      "result": {
+        "status": "empty",
+        "message": "No CST message/log file found yet."
+      }
+    },
+    {
+      "tool": "cst_save_project",
+      "args": {},
+      "result": {
+        "status": "saved",
+        "path": "owned-fixture/model.cst"
+      }
+    },
+    {
+      "tool": "cst_close_project",
+      "args": {},
+      "result": {
+        "status": "closed"
+      }
+    },
+    {
+      "tool": "cst_disconnect",
+      "args": {},
+      "result": {
+        "status": "disconnected"
+      }
+    }
+  ]
+}

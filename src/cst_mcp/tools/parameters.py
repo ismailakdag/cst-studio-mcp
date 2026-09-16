@@ -196,8 +196,7 @@ TOOLS: list[Tool] = [
                     "type": "string",
                     "enum": [
                         "Trust Region",
-                        "Genetic Algorithm",
-                        "Particle Swarm",
+                        "CMAES",
                         "Nelder Mead",
                     ],
                     "description": "Optimization algorithm.",
@@ -218,8 +217,8 @@ TOOLS: list[Tool] = [
         name="cst_multi_objective_optimizer",
         description=(
             "Set up a multi-objective optimization with weighted goals and optional "
-            "constraints. Supports Pareto-front exploration using Genetic Algorithm "
-            "or Particle Swarm methods."
+            "constraints. Uses a weighted sum of goals with an evaluation cap; "
+            "this is not a Pareto-front search. Configuration only; start explicitly."
         ),
         inputSchema={
             "type": "object",
@@ -287,9 +286,9 @@ TOOLS: list[Tool] = [
                 },
                 "method": {
                     "type": "string",
-                    "enum": ["Genetic Algorithm", "Particle Swarm"],
-                    "default": "Genetic Algorithm",
-                    "description": "Optimization method (GA or PSO recommended for multi-objective).",
+                    "enum": ["Trust Region", "Nelder Mead", "CMAES"],
+                    "default": "CMAES",
+                    "description": "Evaluation-capped optimization method.",
                 },
                 "max_evaluations": {
                     "type": "integer",
@@ -449,8 +448,7 @@ TOOLS: list[Tool] = [
                     "type": "string",
                     "enum": [
                         "Trust Region",
-                        "Genetic Algorithm",
-                        "Particle Swarm",
+                        "CMAES",
                         "Nelder Mead",
                     ],
                     "default": "Trust Region",
@@ -593,167 +591,23 @@ def _build_parameter_sweep(args: dict) -> str:
 
     vba = (
         VBABuilder("ParameterSweep")
-        .call("Reset")
-        .set("SimulationType", sim_type)
-        .call_with_args("AddParameter_Linear", parameter, str(start), str(stop), str(steps))
-        .call("Create")
+        .call_with_args("AddSequence", f"mcp_{parameter}")
+        .set_bool("StartActiveSolver", True)
+        .call_with_args("AddParameter_Samples", f"mcp_{parameter}", parameter, str(start), str(stop), str(steps), "False")
     )
+    script.add_comment(f"Configure only; select requested {sim_type} solver separately before starting the sweep")
     script.add_block(vba)
     return script.build()
 
 
 def _build_optimizer(args: dict) -> str:
-    """Build VBA script to configure an optimization.
-
-    CST Optimizer API requires this call order within the With block:
-    1. Reset
-    2. SetOptimizerType, SetMaxEvaluations (optimizer config)
-    3. SetGoalOperator, SetGoalTarget, SetGoalRangeMin/Max, SetGoalResult (goal setup)
-    4. InitGoal
-    5. Per-parameter: SelectParameter, SetParameterMin, SetParameterMax, AddSelectedParameter
-    6. Start
-    """
-    goal_type = args["goal_type"]
-    goal_value = args.get("goal_value", 0)
-    result_path = args["result_path"]
-    parameters = args["parameters"]
-    method = args.get("method", "Trust Region")
-    max_evaluations = int(args.get("max_evaluations", 100))
-
-    if goal_type not in ("minimize", "maximize", "target"):
-        raise ValueError(f"Invalid goal_type '{goal_type}'. Must be minimize, maximize, or target")
-    if not parameters:
-        raise ValueError("At least one parameter must be specified for optimization")
-    validate_positive(max_evaluations, "max_evaluations")
-
-    script = VBAScript()
-    script.add_comment(f"Optimization: {goal_type} {result_path}")
-
-    # Map goal types to CST operator strings
-    goal_operator_map = {
-        "minimize": "Min",
-        "maximize": "Max",
-        "target": "=",
-    }
-
-    # Build the Optimizer With block with correct CST API method order
-    vba = (
-        VBABuilder("Optimizer")
-        .call("Reset")
-        .set("SetOptimizerType", method)
-        .set_number("SetMaxEvaluations", max_evaluations)
-    )
-
-    # Set the optimization goal properties
-    vba.set("SetGoalOperator", goal_operator_map[goal_type])
-    vba.set("SetGoalResult", result_path)
-
-    if goal_type == "target":
-        vba.set_number("SetGoalTarget", goal_value)
-
-    # InitGoal commits the goal configuration
-    vba.call("InitGoal")
-
-    # Add parameters with ranges using CST's per-parameter API
-    for param in parameters:
-        param_name = validate_name(param["name"], "optimizer parameter name")
-        param_min = float(param["min"])
-        param_max = float(param["max"])
-        if param_min >= param_max:
-            raise ValueError(
-                f"Parameter '{param_name}' min ({param_min}) must be less than max ({param_max})"
-            )
-        vba.call_with_args("SelectParameter", param_name)
-        vba.set_number("SetParameterMin", param_min)
-        vba.set_number("SetParameterMax", param_max)
-        vba.call("AddSelectedParameter")
-
-    vba.call("Start")
-    script.add_block(vba)
-    return script.build()
+    from cst_mcp.execution.native_optimizer import build_optimizer
+    return build_optimizer(args, "single")
 
 
 def _build_multi_objective_optimizer(args: dict) -> str:
-    """Build VBA for multi-objective optimization with weighted goals."""
-    goals = args["goals"]
-    parameters = args["parameters"]
-    constraints = args.get("constraints", [])
-    method = args.get("method", "Genetic Algorithm")
-    max_evaluations = int(args.get("max_evaluations", 200))
-
-    if not goals:
-        raise ValueError("At least one goal must be specified")
-    if not parameters:
-        raise ValueError("At least one parameter must be specified")
-    validate_positive(max_evaluations, "max_evaluations")
-
-    goal_operator_map = {"minimize": "Min", "maximize": "Max", "target": "="}
-
-    script = VBAScript()
-    script.add_comment("Multi-objective optimization")
-
-    vba = (
-        VBABuilder("Optimizer")
-        .call("Reset")
-        .set("SetOptimizerType", method)
-        .set_number("SetMaxEvaluations", max_evaluations)
-    )
-
-    # Add each goal with its weight
-    for i, goal in enumerate(goals):
-        result_path = goal["result_path"]
-        goal_type = goal["goal_type"]
-        weight = float(goal.get("weight", 1.0))
-        target_value = goal.get("target_value", 0)
-
-        vba.set("SetGoalOperator", goal_operator_map[goal_type])
-        vba.set("SetGoalResult", result_path)
-        vba.set_number("SetGoalWeight", weight)
-
-        if goal_type == "target":
-            vba.set_number("SetGoalTarget", target_value)
-
-        if "frequency_ghz" in goal:
-            freq = goal["frequency_ghz"]
-            vba.set_number("SetGoalRangeMin", freq * 0.99)
-            vba.set_number("SetGoalRangeMax", freq * 1.01)
-
-        vba.call("InitGoal")
-
-    # Add constraint goals (using penalty approach via tight targets)
-    for constraint in constraints:
-        c_path = constraint["result_path"]
-        c_op = constraint["operator"]
-        c_val = float(constraint["value"])
-
-        # Map constraints to optimizer goals
-        if c_op in ("<", "<="):
-            vba.set("SetGoalOperator", "Max")
-            vba.set("SetGoalResult", c_path)
-            vba.set_number("SetGoalTarget", c_val)
-        else:
-            vba.set("SetGoalOperator", "Min")
-            vba.set("SetGoalResult", c_path)
-            vba.set_number("SetGoalTarget", c_val)
-        vba.call("InitGoal")
-
-    # Add parameters
-    for param in parameters:
-        param_name = validate_name(param["name"], "optimizer parameter name")
-        param_min = float(param["min"])
-        param_max = float(param["max"])
-        if param_min >= param_max:
-            raise ValueError(
-                f"Parameter '{param_name}' min ({param_min}) must be less than max ({param_max})"
-            )
-        vba.call_with_args("SelectParameter", param_name)
-        vba.set_number("SetParameterMin", param_min)
-        vba.set_number("SetParameterMax", param_max)
-        vba.call("AddSelectedParameter")
-
-    vba.call("Start")
-    script.add_block(vba)
-    return script.build()
+    from cst_mcp.execution.native_optimizer import build_optimizer
+    return build_optimizer(args, "multi")
 
 
 def _build_sensitivity_analysis(args: dict) -> str:
@@ -780,12 +634,11 @@ def _build_sensitivity_analysis(args: dict) -> str:
 
         vba = (
             VBABuilder("ParameterSweep")
-            .call("Reset")
-            .set("SimulationType", "Transient")
+            .call_with_args("AddSequence", f"mcp_sensitivity_{param_name}")
+            .set_bool("StartActiveSolver", True)
             .call_with_args(
-                "AddParameter_Linear", param_name, str(low), str(high), "3"
+                "AddParameter_Samples", f"mcp_sensitivity_{param_name}", param_name, str(low), str(high), "3", "False"
             )
-            .call("Create")
         )
         script.add_block(vba)
 
@@ -807,28 +660,21 @@ def _build_yield_analysis(args: dict) -> str:
     script = VBAScript()
     script.add_comment(f"Monte Carlo yield analysis — {num_samples} samples")
 
-    # Configure parameter sweep with random sampling
-    vba = VBABuilder("ParameterSweep").call("Reset")
-    vba.set("SimulationType", "Transient")
-
-    for param in parameters:
-        param_name = validate_name(param["name"], "parameter name")
-        nominal = float(param["nominal"])
-        tolerance = float(param["tolerance"])
-
-        low = nominal - tolerance
-        high = nominal + tolerance
-
-        # CST uses linear sweep — we create enough steps to approximate random
-        vba.call_with_args(
-            "AddParameter_Linear",
-            param_name,
-            str(low),
-            str(high),
-            str(num_samples),
-        )
-
-    vba.call("Create")
+    # One sample per sequence avoids a Cartesian product masquerading as Monte Carlo.
+    import random
+    rng = random.Random(0)
+    script.add_comment("Uniform independent tolerances; reproducible Python seed=0. Configure only, no solver start. Pass criteria require separate analysis.")
+    vba = VBABuilder("ParameterSweep").set_bool("StartActiveSolver", True)
+    for sample in range(num_samples):
+        sequence = f"mcp_mc_{sample + 1}"
+        vba.call_with_args("AddSequence", sequence)
+        for param in parameters:
+            param_name = validate_name(param["name"], "parameter name")
+            nominal, tolerance = float(param["nominal"]), float(param["tolerance"])
+            if tolerance < 0:
+                raise ValueError("tolerance must be non-negative")
+            value = nominal + rng.uniform(-tolerance, tolerance)
+            vba.call_with_args("AddParameter_ArbitraryPoints", sequence, param_name, str(value))
     script.add_block(vba)
 
     # Add pass criteria as comments for post-processing reference
@@ -842,69 +688,8 @@ def _build_yield_analysis(args: dict) -> str:
 
 
 def _build_constrained_optimizer(args: dict) -> str:
-    """Build VBA for single-objective optimization with inequality constraints."""
-    objective = args["objective"]
-    constraints = args["constraints"]
-    parameters = args["parameters"]
-    method = args.get("method", "Trust Region")
-    max_evaluations = int(args.get("max_evaluations", 100))
-
-    if not constraints:
-        raise ValueError("At least one constraint must be specified")
-    if not parameters:
-        raise ValueError("At least one parameter must be specified")
-    validate_positive(max_evaluations, "max_evaluations")
-
-    goal_operator_map = {"minimize": "Min", "maximize": "Max"}
-
-    script = VBAScript()
-    script.add_comment(
-        f"Constrained optimization: {objective['goal_type']} {objective['result_path']}"
-    )
-
-    vba = (
-        VBABuilder("Optimizer")
-        .call("Reset")
-        .set("SetOptimizerType", method)
-        .set_number("SetMaxEvaluations", max_evaluations)
-    )
-
-    # Primary objective
-    vba.set("SetGoalOperator", goal_operator_map[objective["goal_type"]])
-    vba.set("SetGoalResult", objective["result_path"])
-    vba.call("InitGoal")
-
-    # Add constraints as additional goals with tight targets
-    for constraint in constraints:
-        c_path = constraint["result_path"]
-        c_op = constraint["operator"]
-        c_val = float(constraint["value"])
-
-        if c_op in ("<", "<="):
-            vba.set("SetGoalOperator", "Max")
-        else:
-            vba.set("SetGoalOperator", "Min")
-        vba.set("SetGoalResult", c_path)
-        vba.set_number("SetGoalTarget", c_val)
-        vba.call("InitGoal")
-
-    # Parameters
-    for param in parameters:
-        param_name = validate_name(param["name"], "optimizer parameter name")
-        param_min = float(param["min"])
-        param_max = float(param["max"])
-        if param_min >= param_max:
-            raise ValueError(
-                f"Parameter '{param_name}' min ({param_min}) must be less than max ({param_max})"
-            )
-        vba.call_with_args("SelectParameter", param_name)
-        vba.set_number("SetParameterMin", param_min)
-        vba.set_number("SetParameterMax", param_max)
-        vba.call("AddSelectedParameter")
-
-    vba.call("Start")
-    script.add_block(vba)
-    return script.build()
+    from cst_mcp.execution.native_optimizer import build_optimizer
+    return build_optimizer(args, "constrained")
 
 
 def _build_parameter_interpolation(args: dict) -> str:
@@ -994,7 +779,7 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
             result["parameters"] = [p["name"] for p in arguments["parameters"]]
         elif name == "cst_multi_objective_optimizer":
             result["num_goals"] = len(arguments["goals"])
-            result["method"] = arguments.get("method", "Genetic Algorithm")
+            result["method"] = arguments.get("method", "CMAES")
             result["parameters"] = [p["name"] for p in arguments["parameters"]]
         elif name == "cst_sensitivity_analysis":
             result["result_path"] = arguments["result_path"]

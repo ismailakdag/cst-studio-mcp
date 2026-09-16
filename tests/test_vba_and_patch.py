@@ -55,7 +55,7 @@ def test_parse_sparam_csv(tmp_path):
     p.write_text(
         "\n".join(
             [
-                "Frequency, dB, Phase",
+                "Frequency / GHz, dB, Phase",
                 "2.0, -5.0, 10",
                 "2.4, -15.0, 20",
                 "3.0, -8.0, 30",

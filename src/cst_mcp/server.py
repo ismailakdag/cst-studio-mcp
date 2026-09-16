@@ -28,6 +28,12 @@ def create_server(config: CSTConfig | None = None) -> tuple[Server, CSTClient]:
         instructions=(
             "Control CST Studio Suite through structured tools. Check "
             "cst_connection_status before operations that require a live CST session."
+            " Prefer cst_list_saved_results and cst_read_saved_result for completed files; "
+            "they do not open CST. Read installed Python/VBA help with cst_search_help and "
+            "cst_read_help before using unfamiliar commands. Offline VBA is generated code, "
+            "not execution evidence. Never treat busy/unknown solver state as idle, and do not "
+            "replay a timed-out mutation. Native optimizer tools configure only; starting is explicit. "
+            "Advanced field exports and material models require project-specific validation."
         ),
     )
     client = CSTClient(config)

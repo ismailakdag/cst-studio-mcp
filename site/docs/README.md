@@ -1,5 +1,7 @@
 # Documentation / Belgeler
 
+Current release: [1.1.0 API review](API_REVIEW_2026.md) · [Agent setup](AGENT_SETUP.md).
+
 Interactive **English / Türkçe** documentation for **cst-studio-mcp**, including installation,
 environment variables, MCP client setup, and the full tool catalog.
 

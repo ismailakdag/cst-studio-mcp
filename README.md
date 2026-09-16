@@ -1,6 +1,6 @@
 # cst-studio-mcp
 
-**Python-first MCP server for CST Studio Suite (2024–2026)**
+**Python-first MCP server for CST Studio Suite · version 1.1.0**
 
 Drive CST from an AI assistant: open projects, build geometry, set materials and ports,
 run solvers, read S-parameters and farfield metrics, and generate design reports — through
@@ -9,14 +9,16 @@ structured MCP tools on your Windows machine.
 | | |
 |--|--|
 | **Package** | `cst-studio-mcp` · entry point `cst-studio-mcp` |
-| **Tools** | 180 (workflows, geometry, antennas, solvers, results, PCB, …) |
+| **Tools** | 184 (workflows, geometry, antennas, solvers, results, PCB, …) |
 | **Python** | 3.10+ (3.12 recommended) |
 | **OS** | Windows 10/11 + licensed CST Studio Suite |
 | **Docs** | Interactive EN/TR browser: [`docs/index.html`](docs/index.html) |
 
 Project presentation: [`presentation/index.html`](presentation/index.html), a self-contained
 Turkish architecture and validation overview. See [the reliability review](docs/RELIABILITY_REVIEW.md)
-for the tested scope and remaining live-CST checks.
+for historical checks. Current evidence and limits are in the [2026 API review](docs/API_REVIEW_2026.md).
+
+Start with the [agent installation and acceptance guide](docs/AGENT_SETUP.md). Official Python results were verified against all 4 × 4,001 complex samples in a completed CST 2026 project; an isolated modeler fixture also passed. The 184-tool catalog is not a blanket certification of advanced CST features.
 
 ```
 Agent (Cursor / Claude / …)
@@ -48,7 +50,7 @@ Agent (Cursor / Claude / …)
 11. [Development & tests](#development--tests)
 12. [Troubleshooting](#troubleshooting)
 13. [License](#license)
-14. [Full tool catalog](#full-tool-catalog-180-tools)
+14. [Full tool catalog](#full-tool-catalog-184-tools)
 
 ---
 
@@ -71,7 +73,7 @@ Agent (Cursor / Claude / …)
 | Component | Notes |
 |-----------|--------|
 | **Windows** | 10 or 11 (64-bit) |
-| **CST Studio Suite** | 2024 or newer; **2026** recommended and tested |
+| **CST Studio Suite** | Core paths tested on **2026**; its Python result reader supports saved 2025/2026 files. Other versions need local acceptance |
 | **CST license** | Valid license for the solver you use |
 | **Python** | **3.10 – 3.13** (3.12 works well with CST’s bundled `cp312` libs) |
 | **Disk** | CST install + project work directory (simulations can be large) |
@@ -444,11 +446,22 @@ MIT
 
 
 <!-- TOOL_CATALOG_START -->
-## Full tool catalog (180 tools)
+## Full tool catalog (184 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
 VBA for geometry/ports/transforms is cross-checked against the CST help dump in [`vba_cst/`](vba_cst/).
+
+### Official API and saved results (4)
+
+Read local CST Python/VBA help and complex saved results without opening CST.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_search_help` | Search the installed official CST Python/VBA help by topic filename. Does not start CST. Read the matching help before constructing API c… |
+| `cst_read_help` | Read a paginated official local CST help topic returned by cst_search_help. No GUI or solver. |
+| `cst_list_saved_results` | List exact result tree paths and run IDs from a saved, unpacked, completed .cst file using cst.results. No connection or CST GUI is requi… |
+| `cst_read_saved_result` | Read a complete complex 1D curve by exact tree path and run_id from a completed saved .cst, without opening CST. Raw real/imag are preser… |
 
 ### Explicit connection (2)
 
@@ -677,7 +690,7 @@ Design parameters, sweeps, optimizers, sensitivity, yield.
 | `cst_delete_parameter` | Delete a design parameter from the CST project. The parameter must not be referenced by other parameters or geometry. |
 | `cst_parameter_sweep` | Set up a parameter sweep in CST Studio. The sweep runs the simulation multiple times, varying the specified parameter across a range of v… |
 | `cst_optimizer` | Set up an optimization in CST Studio. Define a goal (minimize, maximize, or target a specific value for a result), specify which paramete… |
-| `cst_multi_objective_optimizer` | Set up a multi-objective optimization with weighted goals and optional constraints. Supports Pareto-front exploration using Genetic Algor… |
+| `cst_multi_objective_optimizer` | Set up a multi-objective optimization with weighted goals and optional constraints. Uses a weighted sum of goals with an evaluation cap; … |
 | `cst_sensitivity_analysis` | Set up a one-at-a-time sensitivity analysis to rank parameters by their impact on a result. Varies each parameter individually while keep… |
 | `cst_yield_analysis` | Set up a Monte Carlo yield analysis to estimate manufacturing yield. Randomly varies parameters according to their tolerances and evaluat… |
 | `cst_constrained_optimizer` | Single-objective optimization with explicit inequality constraints. Example: minimize S11 subject to gain > 8 dBi and bandwidth > 100 MHz. |

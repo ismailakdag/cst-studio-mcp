@@ -1181,7 +1181,7 @@ async def _handle_evaluate(args: dict, client: CSTClient) -> dict:
     # Export S11 via Python API (no history entry, view-independent)
     tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
     result = client.export_result(tree_path, s11_file)
-    if result.get("status") == "error":
+    if result.get("status") != "exported":
         return {"status": "error", "message": f"Export failed: {result.get('message')}"}
 
     # Parse
@@ -1239,37 +1239,12 @@ async def _handle_refine(args: dict, client: CSTClient) -> dict:
         return {"status": "error", "message": "max_iterations must be >= 1"}
 
     if not client.connected or not client.has_project:
-        # Offline: fall back to CST built-in optimizer VBA
-        script = VBAScript()
-        script.add_comment("Antenna optimization via CST built-in optimizer")
-
-        vba = VBABuilder("Optimizer").call("Reset")
-        vba.set("SetOptimizerType", "Nelder Mead")
-        vba.set_number("SetMaxEvaluations", max_iterations * (len(params_spec) + 1))
-
-        # Use first band's target for the goal
-        first_band = bands[0]
-        vswr_to_s11(first_band.get("vswr_target", 2.5))
-        tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
-        vba.set("SetGoalType", "Min")
-        vba.set("SetGoalResult", tree_path)
-        vba.call("InitGoal")
-
-        for p in params_spec:
-            vba.call_with_args("AddParameter", p["name"], str(p["min"]), str(p["max"]))
-
-        vba.call("Start")
-        script.add_block(vba)
-
-        return {
-            "status": "offline",
-            "vba": script.build(),
-            "message": (
-                "Run this VBA in CST to optimize using the built-in optimizer. "
-                "In connected mode, the MCP server runs a custom Nelder-Mead loop "
-                "with per-band VSWR cost evaluation."
-            ),
-        }
+        from cst_mcp.execution.native_optimizer import build_optimizer
+        code = build_optimizer({"method": "Nelder Mead", "max_evaluations": max(2, max_iterations * (len(params_spec) + 1)),
+                                "parameters": params_spec, "goal_type": "minimize",
+                                "result_path": f"1D Results\\S-Parameters\\S{port},{port}"})
+        return {"status": "offline", "vba": code,
+                "message": "Native optimizer configuration only; Optimizer.Start must be explicit. Connected mode uses the Python loop with per-band VSWR costs."}
 
     # Connected mode: run optimization loop
     return await _optimization_loop(client, params_spec, bands, max_iterations, port)
@@ -1346,7 +1321,7 @@ async def _handle_analyze_impedance(args: dict, client: CSTClient) -> dict:
 
     tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
     result = client.export_result(tree_path, s11_file)
-    if result.get("status") == "error":
+    if result.get("status") != "exported":
         return {
             "status": "error",
             "message": (

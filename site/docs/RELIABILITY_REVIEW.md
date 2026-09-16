@@ -1,5 +1,7 @@
 # Reliability review — 12 September 2026
 
+Current release: [1.1.0 API review](API_REVIEW_2026.md) · [Agent setup](AGENT_SETUP.md).
+
 Adding this server to an MCP client now leaves CST disconnected until `cst_connect` is called.
 The default is `CST_CONNECT_MODE=manual`; existing automatic workflows can explicitly opt into
 `auto`. Python and native stdout diagnostics are redirected to stderr while JSON-RPC retains

@@ -1,8 +1,177 @@
 {
   "name": "cst-studio-mcp",
-  "version": "1.0.0",
-  "total_tools": 180,
+  "version": "1.1.0",
+  "total_tools": 184,
   "categories": [
+    {
+      "id": "official",
+      "title_en": "Official API and saved results",
+      "title_tr": "Resmî API ve kayıtlı sonuçlar",
+      "blurb_en": "Read local CST Python/VBA help and complex saved results without opening CST.",
+      "blurb_tr": "CST açmadan yerel Python/VBA belgelerini ve kayıtlı kompleks sonuçları okuyun.",
+      "module": "official",
+      "count": 4,
+      "tools": [
+        {
+          "name": "cst_search_help",
+          "description": "Search the installed official CST Python/VBA help by topic filename. Does not start CST. Read the matching help before constructing API calls.",
+          "category_id": "official",
+          "params": [
+            {
+              "name": "query",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": true
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "description": "",
+              "default": 15,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": [
+            "query"
+          ]
+        },
+        {
+          "name": "cst_read_help",
+          "description": "Read a paginated official local CST help topic returned by cst_search_help. No GUI or solver.",
+          "category_id": "official",
+          "params": [
+            {
+              "name": "topic",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": true
+            },
+            {
+              "name": "offset",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_chars",
+              "type": "integer",
+              "description": "",
+              "default": 10000,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": [
+            "topic"
+          ]
+        },
+        {
+          "name": "cst_list_saved_results",
+          "description": "List exact result tree paths and run IDs from a saved, unpacked, completed .cst file using cst.results. No connection or CST GUI is required. Do not use a file currently being solved.",
+          "category_id": "official",
+          "params": [
+            {
+              "name": "project_path",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": true
+            },
+            {
+              "name": "contains",
+              "type": "string",
+              "description": "",
+              "default": "",
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "offset",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "limit",
+              "type": "integer",
+              "description": "",
+              "default": 50,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": [
+            "project_path"
+          ]
+        },
+        {
+          "name": "cst_read_saved_result",
+          "description": "Read a complete complex 1D curve by exact tree path and run_id from a completed saved .cst, without opening CST. Raw real/imag are preserved; format adds derived values. max_points=0 returns all samples; otherwise returns an explicitly sampled preview.",
+          "category_id": "official",
+          "params": [
+            {
+              "name": "project_path",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": true
+            },
+            {
+              "name": "tree_path",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": true
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "format",
+              "type": "string",
+              "description": "",
+              "default": "real_imag",
+              "enum": [
+                "real_imag",
+                "db",
+                "mag",
+                "phase"
+              ],
+              "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "",
+              "default": 200,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": [
+            "project_path",
+            "tree_path"
+          ]
+        }
+      ]
+    },
     {
       "id": "connection",
       "title_en": "Explicit connection",
@@ -4131,6 +4300,22 @@
                 "phase"
               ],
               "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples.",
+              "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
             }
           ],
           "required": []
@@ -4232,6 +4417,22 @@
               "type": "integer",
               "description": "Port number to extract VSWR for.",
               "default": 1,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples.",
+              "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
               "enum": null,
               "required": false
             }
@@ -4364,6 +4565,22 @@
               "default": false,
               "enum": null,
               "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples.",
+              "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
             }
           ],
           "required": []
@@ -4386,6 +4603,22 @@
               "type": "integer",
               "description": "Output port number (observation port).",
               "default": 1,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples.",
+              "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
               "enum": null,
               "required": false
             }
@@ -4613,6 +4846,22 @@
               "default": 50,
               "enum": null,
               "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples.",
+              "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
             }
           ],
           "required": []
@@ -4647,6 +4896,22 @@
                 "S11",
                 "VSWR"
               ],
+              "required": false
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples.",
+              "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
               "required": false
             }
           ],
@@ -5100,8 +5365,7 @@
               "default": "Trust Region",
               "enum": [
                 "Trust Region",
-                "Genetic Algorithm",
-                "Particle Swarm",
+                "CMAES",
                 "Nelder Mead"
               ],
               "required": false
@@ -5123,7 +5387,7 @@
         },
         {
           "name": "cst_multi_objective_optimizer",
-          "description": "Set up a multi-objective optimization with weighted goals and optional constraints. Supports Pareto-front exploration using Genetic Algorithm or Particle Swarm methods.",
+          "description": "Set up a multi-objective optimization with weighted goals and optional constraints. Uses a weighted sum of goals with an evaluation cap; this is not a Pareto-front search. Configuration only; start explicitly.",
           "category_id": "parameters",
           "params": [
             {
@@ -5153,11 +5417,12 @@
             {
               "name": "method",
               "type": "string",
-              "description": "Optimization method (GA or PSO recommended for multi-objective).",
-              "default": "Genetic Algorithm",
+              "description": "Evaluation-capped optimization method.",
+              "default": "CMAES",
               "enum": [
-                "Genetic Algorithm",
-                "Particle Swarm"
+                "Trust Region",
+                "Nelder Mead",
+                "CMAES"
               ],
               "required": false
             },
@@ -5273,8 +5538,7 @@
               "default": "Trust Region",
               "enum": [
                 "Trust Region",
-                "Genetic Algorithm",
-                "Particle Swarm",
+                "CMAES",
                 "Nelder Mead"
               ],
               "required": false

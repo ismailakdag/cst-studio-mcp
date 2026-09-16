@@ -36,7 +36,7 @@
         <a href="#nasil-calisir">How it works</a>
         <a href="#kurulum">Setup</a>
         <a href="#dogrulama">Validation</a>
-        <a href="/docs/">180 tools</a>
+        <a href="/docs/">184 tools</a>
         <a class="nav-repo" href="https://github.com/ismailakdag/cst-studio-mcp">GitHub <span aria-hidden="true">↗</span></a>
         <span class="language-switch" aria-label="Language selection"><a lang="tr" hreflang="tr" href="/">TR</a><span aria-hidden="true">/</span><strong lang="en" aria-current="page">EN</strong></span>
       </nav>
@@ -109,7 +109,7 @@
           <p>MCP messages travel over standard input and output. CST runs on your Windows machine and works with your local project files.</p>
         </article>
         <article>
-          <span class="principle-mark" aria-hidden="true">180</span>
+          <span class="principle-mark" aria-hidden="true">184</span>
           <h3>One tool catalog</h3>
           <p>Modeling, material, boundary, port, solver, result, and workflow tools are published from one schema catalog.</p>
         </article>
@@ -201,7 +201,7 @@ PYTHONPATH = 'C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries'
       <div class="shell"><h2>Ask your agent to set it up.</h2><p class="section-intro">Give this request to an agent with access to your computer and MCP client configuration.</p>
         <div class="code-block" style="margin-left:0"><div class="code-head"><span>Agent request</span><button class="copy-button" type="button" data-copy="agent-prompt-code">Copy</button></div><pre id="agent-prompt-code"><code>Visit https://cst-mcp.akdag.dev/en and read the setup instructions and the linked official GitHub README. Install CST Studio MCP on this computer and add it to my MCP client. First check the operating system, CST/Python paths, and existing configuration. Preserve existing server entries and avoid duplicates. Use a Python virtual environment and set CST_CONNECT_MODE=manual.
 
-Test initialize, tools/list, and an offline status query over a real MCP connection. Then use cst_connect to test the CST connection and confirm it with a read-only status query. Do not change existing projects or running simulations, or start or stop a solver. If the client needs a reload, explain the required step without interrupting active tasks. Clearly report missing CST installation, licensing, or access. Finish with a short summary of changed files, applied settings, and tests that passed or failed.</code></pre></div>
+Read https://cst-mcp.akdag.dev/docs/AGENT_SETUP.md and the API_REVIEW_2026.md validation scope. Test initialize, tools/list, and an offline status query over a real MCP connection. Check installed official Python/VBA help with cst_search_help. If a completed model is supplied, read it without opening the GUI using cst_read_saved_result and report its run ID and sampling metadata. Then use cst_connect to test the CST connection and confirm it with a read-only status query. Do not change existing projects or running simulations, or start or stop a solver. If the client needs a reload, explain the required step without interrupting active tasks. Clearly report missing CST installation, licensing, or access. Finish with a short summary of changed files, applied settings, and tests that passed or failed.</code></pre></div>
       </div>
     </section>
 
@@ -219,15 +219,15 @@ Test initialize, tools/list, and an offline status query over a real MCP connect
         <table>
           <thead><tr><th>Scope</th><th>Result</th><th>What it means</th></tr></thead>
           <tbody>
-            <tr><td>MCP software development kit (SDK) 1.29.0</td><td><span class="pass">56 tests passed</span></td><td>Initialization, tool listing, calls, and error responses were validated.</td></tr>
-            <tr><td>MCP SDK 2.2.0</td><td><span class="pass">56 tests passed</span></td><td>The same suite also passed with the current major SDK series.</td></tr>
-            <tr><td>Tool catalog</td><td><span class="pass">180 schemas</span></td><td>Published tool names and input schemas were generated and checked.</td></tr>
-            <tr><td>Live CST end to end</td><td><span class="pending">Not yet tested</span></td><td>The full set of 180 tools has not been run in a real CST session.</td></tr>
+            <tr><td>MCP software development kit (SDK) 1.29.0</td><td><span class="pass">85 tests passed</span></td><td>Initialization, tool listing, calls, and error responses were validated.</td></tr>
+            <tr><td>MCP SDK 2.2.0</td><td><span class="pass">85 tests passed</span></td><td>The same suite also passed with the current major SDK series.</td></tr>
+            <tr><td>Tool catalog</td><td><span class="pass">184 schemas</span></td><td>Published tool names and input schemas were generated and checked.</td></tr>
+            <tr><td>CST 2026 saved results</td><td><span class="pass">4 × 4,001 samples</span></td><td>All four complex S curves matched the archive exactly.</td></tr><tr><td>CST 2026 modeler</td><td><span class="pass">Live fixture passed</span></td><td>Basic geometry, parameters, port, lumped element, sweep and optimizer configuration; no solver started.</td></tr>
           </tbody>
         </table>
         </div>
         <div class="evidence-note">
-          <p>A real stdio subprocess validated <code>initialize</code>, <code>tools/list</code>, and <code>tools/call</code>, including Python and native file-descriptor logging. CST behavior was tested with mock clients without touching a running user session.</p>
+          <p>A real stdio subprocess validated <code>initialize</code>, <code>tools/list</code>, and <code>tools/call</code>, including Python and native file-descriptor logging. Saved results were read through the real Python API and modeler calls ran in an isolated project. All 184 tools are not live-certified: see <a href="/docs/API_REVIEW_2026.md">test evidence and remaining limits</a>.</p>
           <a class="text-link" href="/docs/RELIABILITY_REVIEW.md">Read the reliability review <span aria-hidden="true">→</span></a>
         </div>
       </div>
@@ -237,7 +237,7 @@ Test initialize, tools/list, and an offline status query over a real MCP connect
       <div class="shell catalog-grid">
         <div>
           <p class="section-number">04 / Catalog</p>
-          <h2>From model to results,<br><em>180 tools.</em></h2>
+          <h2>From model to results,<br><em>184 tools.</em></h2>
           <p class="section-intro">The searchable catalog shows every tool’s description, required parameters, and JSON input schema in one place.</p>
           <div class="catalog-actions">
             <a class="button button-primary" href="/docs/">Browse the tools <span aria-hidden="true">↗</span></a>

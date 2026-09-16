@@ -1,0 +1,3333 @@
+{
+  "installation": "E:\\CST Studio Suite 2026",
+  "missing_client_members": [],
+  "scope": "Statically resolvable literal VBABuilder chains only; raw VBA and runtime arguments need separate validation. Name presence does not validate signatures or execution.",
+  "documentation": [
+    {
+      "path": "Python/source/cst.results.html",
+      "sha256": "3560ac402c2b2438acd28995ea4f9dda6e493c7bcf517d55bc651e6b21390075"
+    },
+    {
+      "path": "Python/source/cst.interface.html",
+      "sha256": "ff91e0fedbb8e29e29ebc71a43b60ca7d46d89919d33e6e16a4640aa0885cf1f"
+    },
+    {
+      "path": "mergedProjects/VBA_3D/common_vbaimpexp/asciiexport_object.htm",
+      "sha256": "3c8447e6dc54b2f434f6e12353290f95148c75a5792d5840ea624b8a6e0aa850"
+    },
+    {
+      "path": "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+      "sha256": "24ddc01df5bbba870b1699e9dd5018cc71fcc281d2af4227b36c7652b2ed808d"
+    }
+  ],
+  "builder_members": [
+    {
+      "object": "AnalyticalCurve",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "Curve",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt12.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "LawX",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "LawY",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "LawZ",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "ParameterRange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "AnalyticalCurve",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_analyticalcurve_object.htm"
+      ]
+    },
+    {
+      "object": "Background",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaimp_exp_humanmodel.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_particlemonitoronsolid.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_timemonitor3d_object.htm"
+      ]
+    },
+    {
+      "object": "Background",
+      "member": "Type",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaplot/common_vbaplot_plot1d_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_timemonitor3d_object.htm",
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_background_object.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "XPeriodicShift",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Xmax",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm",
+        "mergedProjects/VBA_3D/special_vbathermalsolver/special_vbathermalsolver_chtsolver.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Xmin",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm",
+        "mergedProjects/VBA_3D/special_vbathermalsolver/special_vbathermalsolver_chtsolver.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Xsymmetry",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "YPeriodicShift",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Ymax",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm",
+        "mergedProjects/VBA_3D/special_vbathermalsolver/special_vbathermalsolver_chtsolver.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Ymin",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm",
+        "mergedProjects/VBA_3D/special_vbathermalsolver/special_vbathermalsolver_chtsolver.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Ysymmetry",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Zmax",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm",
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm",
+        "mergedProjects/VBA_3D/special_vbathermalsolver/special_vbathermalsolver_chtsolver.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Zmin",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm",
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm",
+        "mergedProjects/VBA_3D/special_vbathermalsolver/special_vbathermalsolver_chtsolver.htm"
+      ]
+    },
+    {
+      "object": "Boundary",
+      "member": "Zsymmetry",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_boundary_object.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_result_3d_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbaobjects/special_vbaobjects_examples.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_result_3d_object.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_result_3d_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbaobjects/special_vbaobjects_examples.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_result_3d_object.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbaobjects/special_vbaobjects_examples.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Xrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbaobjects/special_vbaobjects_examples.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Yrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbaobjects/special_vbaobjects_examples.htm"
+      ]
+    },
+    {
+      "object": "Brick",
+      "member": "Zrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/special_vbaobjects/special_vbaobjects_examples.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm",
+        "mergedProjects/VBA_3D/special_vbarigidbodymotion/motiongap_object.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Curve",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt12.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm",
+        "mergedProjects/VBA_3D/special_vbarigidbodymotion/motiongap_object.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Radius",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm",
+        "mergedProjects/VBA_3D/special_vbarigidbodymotion/motiongap_object.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm",
+        "mergedProjects/VBA_3D/special_vbarigidbodymotion/motiongap_object.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Xcenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm"
+      ]
+    },
+    {
+      "object": "Circle",
+      "member": "Ycenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_circle_object.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Axis",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Bottomradius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm",
+        "mergedProjects/VBA_3D/common_vbaplot/common_vbaplot_vectorplot3d_object.htm"
+      ]
+    },
+    {
+      "object": "Cone",
+      "member": "Topradius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "CoverCurve",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "CoverCurve",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstf98.htm"
+      ]
+    },
+    {
+      "object": "CoverCurve",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Axis",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_nearfieldscan_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_nearfieldscan_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Innerradius",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_nearfieldscan_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Outerradius",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_nearfieldscan_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Xcenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Ycenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Zcenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "Cylinder",
+      "member": "Zrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacylinder_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "DXF",
+      "member": "AddAllShapes",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaie_dxf.htm"
+      ]
+    },
+    {
+      "object": "DXF",
+      "member": "FileName",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaie_dxf.htm"
+      ]
+    },
+    {
+      "object": "DXF",
+      "member": "ImportLineWidth",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "DXF",
+      "member": "Read",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaie_dxf.htm"
+      ]
+    },
+    {
+      "object": "DXF",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaie_dxf.htm"
+      ]
+    },
+    {
+      "object": "DXF",
+      "member": "ScaleToUnit",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaie_dxf.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Current",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Impedance",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "InvertDirection",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "LocalCoordinates",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Monitor",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "PortNumber",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Radius",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "SetP1",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "SetP2",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Type",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "DiscretePort",
+      "member": "Voltage",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "Axis",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "XRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "ECylinder",
+      "member": "YRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaecylinder_object.htm"
+      ]
+    },
+    {
+      "object": "EDAImport",
+      "member": "FileName",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "Import",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "ImportAs",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "LayerName",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "Type",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "Units",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "EDAImport",
+      "member": "UseUnits",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Extrude",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Height",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Mode",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Origin",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm",
+        "mergedProjects/VBA_3D/common_vbarotateo/common_vbarotateo_rotate_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Uvector",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm"
+      ]
+    },
+    {
+      "object": "Extrude",
+      "member": "Vvector",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaextrude/common_vbaextrudeextrude_object.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Curve",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstf98.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Taperangle",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Thickness",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm"
+      ]
+    },
+    {
+      "object": "ExtrudeCurve",
+      "member": "Twistangle",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_extrudecurve_object.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "Frequency",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldarray_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldcalculator_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "Plottype",
+      "sources": [
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py",
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldarray_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldcalculator_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "SetLockSteps",
+      "sources": [
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "SetPlotMode",
+      "sources": [
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "SetScaleLinear",
+      "sources": [
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldcalculator_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "Step",
+      "sources": [
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FarfieldPlot",
+      "member": "Step2",
+      "sources": [
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_farfieldploto.htm"
+      ]
+    },
+    {
+      "object": "FloquetPort",
+      "member": "Port",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt36.htm"
+      ]
+    },
+    {
+      "object": "FloquetPort",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm"
+      ]
+    },
+    {
+      "object": "FloquetPort",
+      "member": "SetDialogPhi",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm"
+      ]
+    },
+    {
+      "object": "FloquetPort",
+      "member": "SetDialogTheta",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm"
+      ]
+    },
+    {
+      "object": "FloquetPort",
+      "member": "SetNumberOfModesConsidered",
+      "sources": [
+        "src\\cst_mcp\\tools\\boundaries.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/floquetport_object.htm"
+      ]
+    },
+    {
+      "object": "Loft",
+      "member": "AddCurve",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_loftcurves_object.htm"
+      ]
+    },
+    {
+      "object": "Loft",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_loftcurves_object.htm",
+        "mergedProjects/VBA_3D/common_vbaloft/common_vbaloftloft_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt8.htm"
+      ]
+    },
+    {
+      "object": "Loft",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_loftcurves_object.htm",
+        "mergedProjects/VBA_3D/common_vbaloft/common_vbaloftloft_object.htm"
+      ]
+    },
+    {
+      "object": "Loft",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_loftcurves_object.htm",
+        "mergedProjects/VBA_3D/common_vbaloft/common_vbaloftloft_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt8.htm"
+      ]
+    },
+    {
+      "object": "Loft",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_loftcurves_object.htm",
+        "mergedProjects/VBA_3D/common_vbaloft/common_vbaloftloft_object.htm"
+      ]
+    },
+    {
+      "object": "Loft",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_loftcurves_object.htm",
+        "mergedProjects/VBA_3D/common_vbaloft/common_vbaloftloft_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "SetC",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "SetL",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "SetName",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "SetR",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "LumpedElement",
+      "member": "SetType",
+      "sources": [
+        "src\\cst_mcp\\tools\\matching.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Alpha",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Colour",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbasolido/common_vbasolido_solid_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaanalyticalface_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Delete",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbaimpexp/common_vbaimp_exp_humanmodel.htm",
+        "mergedProjects/VBA_3D/common_vbasolido/common_vbasolido_solid_object.htm",
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "DispCoeff0Eps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "DispEps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "DrudeFreqEps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "DrudeGammaEps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "Epsilon",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbasolido/common_vbasolido_solid_object.htm",
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm",
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_background_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "EpsilonInfinity",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "EpsilonX",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "EpsilonY",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "EpsilonZ",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "GyroMagneticAppliedField",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "GyroMagneticFieldDirection",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "GyroMagneticLineWidth",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "GyroMagneticSaturation",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "LoadMaterial",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "LorentzDispEps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "LorentzEpsInf",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "LorentzFreqEps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "LorentzGamma0Eps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "Mu",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbasolido/common_vbasolido_solid_object.htm",
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm",
+        "mergedProjects/VBA_3D/special_vbapostproc/special_vbapostproc_qfactor_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "MuX",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "MuY",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "MuZ",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaanalyticalface_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "ReferenceTemperature",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbaanalyticalface_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbabrick_object.htm",
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbacone_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Rho",
+      "sources": [
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "SetDispersionModelEps",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "SetGyroMagneticModel",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "Sigma",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanD",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDFreq",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDGiven",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDM",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDMFreq",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDMGiven",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDModel",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDX",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDY",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TanDZ",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "TempCoeffConductivity",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "TempCoeffEpsilon",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "needs_review",
+      "help": []
+    },
+    {
+      "object": "Material",
+      "member": "Transparency",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Type",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\materials.py",
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_tracefromcurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbasolido/common_vbasolido_solid_object.htm",
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Material",
+      "member": "Wireframe",
+      "sources": [
+        "src\\cst_mcp\\tools\\workflows.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbalayer/special_vbalayerolayer_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vba3dxcoupling/special_vba3dxcoupling_smamphysinterface.htm",
+        "mergedProjects/VBA_3D/special_vbadriftdiffusionsolver/special_vbadriftdiffusionsolver_fieldmonitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "Domain",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_particlemonitoronsolid.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_pic2dmonitor_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "EnableNearfieldCalculation",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "ExportFarfieldSource",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "FieldType",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadriftdiffusionsolver/special_vbadriftdiffusionsolver_fieldmonitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_timemonitor0d_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "Frequency",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vba3dxcoupling/special_vba3dxcoupling_smamphysinterface.htm",
+        "mergedProjects/VBA_3D/special_vbadriftdiffusionsolver/special_vbadriftdiffusionsolver_fieldmonitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vba3dxcoupling/special_vba3dxcoupling_smamphysinterface.htm",
+        "mergedProjects/VBA_3D/special_vbadriftdiffusionsolver/special_vbadriftdiffusionsolver_fieldmonitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/particle_reader_objects.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\results.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vba3dxcoupling/special_vba3dxcoupling_smamphysinterface.htm",
+        "mergedProjects/VBA_3D/special_vbadriftdiffusionsolver/special_vbadriftdiffusionsolver_fieldmonitor_object.htm",
+        "mergedProjects/VBA_3D/special_vbamonitors/particle_reader_objects.htm"
+      ]
+    },
+    {
+      "object": "Monitor",
+      "member": "UseSubvolume",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbamonitors/special_vbamonitors_monitor_object.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "DeleteAllGoals",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/optimizerobject.htm",
+        "mergedProjects/VBA_DES/whgdata/whlsti0.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "InitParameterList",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/optimizerobject.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "ResetParameterList",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/optimizerobject.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "SetMaxEval",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/optimizerobject.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "SetOptimizerType",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/optimizerobject.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "SetUseMaxEval",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/optimizerobject.htm"
+      ]
+    },
+    {
+      "object": "Optimizer",
+      "member": "StartActiveSolver",
+      "sources": [
+        "src\\cst_mcp\\execution\\native_optimizer.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_optimizer_object.htm"
+      ]
+    },
+    {
+      "object": "ParameterSweep",
+      "member": "AddParameter_Samples",
+      "sources": [
+        "src\\cst_mcp\\tools\\parameters.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaparametersweep/special_vbaparametersweepo_parametersweep_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/parametersweepobject.htm"
+      ]
+    },
+    {
+      "object": "ParameterSweep",
+      "member": "AddSequence",
+      "sources": [
+        "src\\cst_mcp\\tools\\parameters.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaparametersweep/special_vbaparametersweepo_parametersweep_object.htm",
+        "mergedProjects/VBA_DES/special_vbacommands/parametersweepobject.htm",
+        "mergedProjects/VBA_DES/whgdata/whlsti0.htm"
+      ]
+    },
+    {
+      "object": "ParameterSweep",
+      "member": "StartActiveSolver",
+      "sources": [
+        "src\\cst_mcp\\tools\\parameters.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaparametersweep/special_vbaparametersweepo_parametersweep_object.htm"
+      ]
+    },
+    {
+      "object": "PlaneWave",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_planewave_object.htm"
+      ]
+    },
+    {
+      "object": "Polygon",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_tracefromcurve_object.htm"
+      ]
+    },
+    {
+      "object": "Polygon",
+      "member": "Curve",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_tracefromcurve_object.htm"
+      ]
+    },
+    {
+      "object": "Polygon",
+      "member": "LineTo",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon_object.htm",
+        "mergedProjects/VBA_3D/special_vbarigidbodymotion/motiongap_object.htm",
+        "mergedProjects/VBA_3D/common_vbacablestudio/cablebundles/cablebundlefromcurve.htm"
+      ]
+    },
+    {
+      "object": "Polygon",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_tracefromcurve_object.htm"
+      ]
+    },
+    {
+      "object": "Polygon",
+      "member": "Point",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon_object.htm",
+        "mergedProjects/VBA_3D/special_vbarigidbodymotion/motiongap_object.htm",
+        "mergedProjects/VBA_3D/common_vbacablestudio/cablebundles/cablebundlefromcurve.htm"
+      ]
+    },
+    {
+      "object": "Polygon",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\geometry.py",
+        "src\\cst_mcp\\tools\\pcb.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_covercurve_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon_object.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_tracefromcurve_object.htm"
+      ]
+    },
+    {
+      "object": "Polygon3D",
+      "member": "Curve",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_examples/common_examples_create_an_analytical_3d_curve.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon3d.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt12.htm"
+      ]
+    },
+    {
+      "object": "Polygon3D",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_examples/common_examples_create_an_analytical_3d_curve.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon3d.htm"
+      ]
+    },
+    {
+      "object": "Polygon3D",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_examples/common_examples_create_an_analytical_3d_curve.htm",
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_polygon3d.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Coordinates",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbadomaindecomposition/common_domaindecomposition_object.htm",
+        "mergedProjects/VBA_3D/special_vbamesh/special_vbamesho.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_face_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbadomaindecomposition/common_domaindecomposition_object.htm",
+        "mergedProjects/VBA_3D/special_vba3dxcoupling/special_vba3dxcoupling_smamphysinterface.htm",
+        "mergedProjects/VBA_3D/special_vbacurrentport/special_vbacurrentport_current_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Delete",
+      "sources": [
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbacurrentport/special_vbacurrentport_current_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_cable_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_face_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Label",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_cable_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_face_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "NumberOfModes",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Orientation",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_face_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "PortNumber",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_cable_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_face_port_object.htm",
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_discrete_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbadomaindecomposition/common_domaindecomposition_object.htm",
+        "mergedProjects/VBA_3D/special_vba3dxcoupling/special_vba3dxcoupling_smamphysinterface.htm",
+        "mergedProjects/VBA_3D/special_vbacurrentport/special_vbacurrentport_current_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Xrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Yrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_port_object.htm"
+      ]
+    },
+    {
+      "object": "Port",
+      "member": "Zrange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\ports.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/special_vbaports_port_object.htm"
+      ]
+    },
+    {
+      "object": "Solid",
+      "member": "ChangeMaterial",
+      "sources": [
+        "src\\cst_mcp\\tools\\materials.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbasolido/common_vbasolido_solid_object.htm"
+      ]
+    },
+    {
+      "object": "Solver",
+      "member": "FrequencyRange",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py",
+        "src\\cst_mcp\\tools\\boundaries.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbapicsolver/special_vbasolver_picsolver_object.htm",
+        "mergedProjects/VBA_3D/special_vbasolver/special_vbasolver_solver_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Axis",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "BottomRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Center",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "CenterRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "Segments",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "Sphere",
+      "member": "TopRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbasphere_object.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Curve",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt14.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Path",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "ProjectProfileToPathAdvanced",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm"
+      ]
+    },
+    {
+      "object": "SweepCurve",
+      "member": "Twistangle",
+      "sources": [
+        "src\\cst_mcp\\tools\\antenna_templates.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbacurves/common_vbacurves_sweepcurve_object.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "ExportType",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "FileName",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "Format",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "FrequencyRange",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "Impedance",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "Renormalize",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbadiscreteelements/special_vbalumpedfaceelement_object.htm",
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "TOUCHSTONE",
+      "member": "Write",
+      "sources": [
+        "src\\cst_mcp\\tools\\import_export.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaimpexp/special_vbaimp_exp_touchstone.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Axis",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Component",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Create",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "InnerRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Material",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm",
+        "mergedProjects/VBA_3D/whgdata/whlstt7.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "OuterRadius",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Xcenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Ycenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Torus",
+      "member": "Zcenter",
+      "sources": [
+        "src\\cst_mcp\\tools\\geometry.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/common_vbabasicsolids/common_vbatorus_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Angle",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/farfieldsource_object.htm",
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Center",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "GroupObjects",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "MultipleObjects",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Name",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/farfieldsource_object.htm",
+        "mergedProjects/VBA_3D/special_vbasignals/special_vbasignals_timesignal_object.htm",
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Origin",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/farfieldsource_object.htm",
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "PlaneNormal",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Repetitions",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Reset",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/farfieldsource_object.htm",
+        "mergedProjects/VBA_3D/special_vbasignals/special_vbasignals_timesignal_object.htm",
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "ScaleFactor",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Transform",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbaports/farfieldsource_object.htm",
+        "mergedProjects/VBA_3D/special_vbasignals/special_vbasignals_timesignal_object.htm",
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    },
+    {
+      "object": "Transform",
+      "member": "Vector",
+      "sources": [
+        "src\\cst_mcp\\tools\\transforms.py"
+      ],
+      "status": "name_found_in_help",
+      "help": [
+        "mergedProjects/VBA_3D/special_vbatransformo/special_vbatransformo_transform_object.htm"
+      ]
+    }
+  ]
+}

@@ -815,7 +815,7 @@ def _handle_assign_material(args: dict, client: CSTClient) -> list[TextContent]:
 
     vba = (
         VBABuilder("Solid")
-        .call_with_args("SetMaterial", f"{component}:{solid_name}", material)
+        .call_with_args("ChangeMaterial", f"{component}:{solid_name}", material)
         .build()
     )
 

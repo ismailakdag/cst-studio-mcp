@@ -35,6 +35,7 @@ class CSTSession:
         self._project: Any = None
         self._project_path: str | None = None
         self._last_error: str | None = None
+        self._last_solver_error: str | None = None
 
     # ------------------------------------------------------------------
     # Properties
@@ -269,6 +270,9 @@ class CSTSession:
 
     def close_project(self) -> dict[str, Any]:
         if self._project is not None:
+            blocked = self._idle_error()
+            if blocked:
+                return blocked
             try:
                 self._project.close()
             except Exception as exc:  # noqa: BLE001
@@ -290,16 +294,25 @@ class CSTSession:
                 "message": "VBA generated — execute in CST or connect first.",
             }
 
+        blocked = self._idle_error()
+        if blocked:
+            return blocked
         CSTSession._history_seq += 1
         hist_label = label or f"cst_mcp_{CSTSession._history_seq}"
         try:
-            result = self.model3d.add_to_history(hist_label, vba)
+            result = self.model3d.add_to_history(hist_label, vba, timeout=30)
             return {
                 "status": "executed",
                 "label": hist_label,
                 "result": str(result) if result not in (None, "") else "ok",
             }
         except Exception as exc:  # noqa: BLE001
+            # A timed-out native call may still be running; do not issue more API
+            # requests or replay its mutation while CST's state is uncertain.
+            if self._is_timeout_error(exc):
+                return {"status": "timeout", "message": str(exc), "label": hist_label,
+                        "execution_state": "unknown", "vba": vba,
+                        "note": "Command exceeded 30 seconds; no replay or solver termination was attempted."}
             # Surface CST-side context so the agent does not rely only on user paste
             extra: dict[str, Any] = {}
             try:
@@ -355,6 +368,9 @@ class CSTSession:
         if not self.is_connected or not self.has_project:
             return {"status": "offline", "vba": vba_code}
 
+        blocked = self._idle_error()
+        if blocked:
+            return blocked
         wrapped = self._ensure_sub_main(vba_code)
         bare = self._strip_sub_main(vba_code)
         errors: list[str] = []
@@ -363,20 +379,24 @@ class CSTSession:
         try:
             schematic = getattr(self._project, "schematic", None)
             if schematic is not None and hasattr(schematic, "execute_vba_code"):
-                schematic.execute_vba_code(wrapped)
+                schematic.execute_vba_code(wrapped, timeout=30)
                 return {"status": "executed", "entrypoint": "schematic.execute_vba_code"}
         except Exception as exc:  # noqa: BLE001
-            errors.append(f"schematic: {exc}")
+            return {"status": "timeout" if self._is_timeout_error(exc) else "error",
+                    "message": str(exc), "entrypoint": "schematic.execute_vba_code",
+                    "note": "Execution may have partially completed; no fallback replay was attempted."}
 
         # 2) model3d._execute_vba_code (CST 2026)
         try:
             m3d = self.model3d
             exe = getattr(m3d, "_execute_vba_code", None)
             if callable(exe):
-                exe(wrapped)
+                exe(wrapped, timeout=30)
                 return {"status": "executed", "entrypoint": "model3d._execute_vba_code"}
         except Exception as exc:  # noqa: BLE001
-            errors.append(f"model3d._execute_vba_code: {exc}")
+            return {"status": "timeout" if self._is_timeout_error(exc) else "error",
+                    "message": str(exc), "entrypoint": "model3d._execute_vba_code",
+                    "note": "Execution may have partially completed; no fallback replay was attempted."}
 
         # 3) history fallback — NEVER pass Sub Main here
         try:
@@ -404,10 +424,41 @@ class CSTSession:
                 "message": "This CST binding does not expose model3d._execute_vba_code",
             }
         try:
-            execute(self._ensure_sub_main(vba_code))
+            execute(self._ensure_sub_main(vba_code), timeout=30)
             return {"status": "executed", "entrypoint": "model3d._execute_vba_code"}
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc), "vba": vba_code}
+
+    def capture_vba_output(self, code: str) -> dict[str, Any]:
+        """Return legacy Debug.Print/MsgBox query text through MCP, with no popup."""
+        import uuid
+        from cst_mcp.vba_builder import _escape_vba_string
+
+        blocked = self._idle_error()
+        if blocked:
+            return blocked
+        out = self.config.work_dir / f"query_{uuid.uuid4().hex}.txt"
+        body = self._strip_sub_main(code)
+        body = re.sub(r"(?im)^(\s*)(?:Debug\.Print|MsgBox)\s+(.+)$", r"\1Print #mcpOutput, \2", body)
+        wrapped = ('Dim mcpOutput As Integer\nDim mcpError As String\n'
+                   'mcpOutput = FreeFile\nOpen "' + _escape_vba_string(str(out)) + '" For Output As #mcpOutput\n'
+                   'On Error GoTo mcpQueryFailed\n' + body + '\nClose #mcpOutput\nExit Sub\n'
+                   'mcpQueryFailed:\nmcpError = Err.Description\nClose #mcpOutput\n'
+                   'Err.Raise vbObjectError + 1, , mcpError')
+        try:
+            result = self.run_vba_silent(wrapped)
+            if result.get("status") != "executed":
+                return result
+            if not out.is_file():
+                return {"status": "error", "message": "CST returned without writing query output"}
+            # VBA Print uses the Windows ANSI code page, not UTF-8.
+            text = out.read_text(encoding="mbcs" if __import__("os").name == "nt" else "utf-8", errors="replace")
+            return {"status": "ok", "output": text, "source": "VBA query via Python", "popup": False}
+        finally:
+            try:
+                out.unlink(missing_ok=True)
+            except OSError:
+                logger.debug("Query output remains locked: %s", out)
 
     @staticmethod
     def _parameter_vba(params: dict[str, float | str]) -> str:
@@ -480,6 +531,13 @@ class CSTSession:
             raise ValueError("timeout_s must be greater than zero")
         return max(1, int(timeout_s))
 
+    def _idle_error(self) -> dict[str, Any] | None:
+        state = self.is_solver_running(timeout_s=5)
+        if state is not False:
+            return {"status": "busy", "running": state,
+                    "message": "Operation blocked: solver is active or its state is unknown. Check status; do not retry mutations until idle."}
+        return None
+
     @staticmethod
     def _is_timeout_error(exc: Exception) -> bool:
         message = str(exc).lower()
@@ -490,8 +548,11 @@ class CSTSession:
         if not self.has_project:
             return False
         try:
-            return bool(self.model3d.is_solver_running(timeout=self._api_timeout(timeout_s)))
-        except Exception:  # noqa: BLE001
+            value = self.model3d.is_solver_running(timeout=self._api_timeout(timeout_s))
+            self._last_solver_error = None if isinstance(value, bool) else "CST solver state is unknown"
+            return value if isinstance(value, bool) else None
+        except Exception as exc:  # noqa: BLE001
+            self._last_solver_error = str(exc)
             logger.debug("is_solver_running failed", exc_info=True)
             return None
 
@@ -503,9 +564,12 @@ class CSTSession:
         timeout = self._api_timeout(timeout_s)
         try:
             m3d = self.model3d
+            running = self.is_solver_running(timeout_s=timeout)
+            if running is None:
+                return {"status": "error", "message": self._last_solver_error or "CST solver state is unknown", "running": None}
             out: dict[str, Any] = {
                 "status": "ok",
-                "running": bool(m3d.is_solver_running(timeout=timeout)),
+                "running": running,
             }
             get_name = getattr(m3d, "get_active_solver_name", None)
             if callable(get_name):
@@ -633,6 +697,9 @@ class CSTSession:
         """Export a result tree item to CSV using model3d.ASCIIExport."""
         if not self.has_project:
             return {"status": "error", "message": "No project open"}
+        blocked = self._idle_error()
+        if blocked:
+            return blocked
 
         if filepath is None:
             safe = re_sub_path(tree_path)
@@ -645,13 +712,17 @@ class CSTSession:
 
         safe_path = str(out).replace("\\", "/")
         try:
-            m3d = self.model3d
-            m3d.SelectTreeItem(tree_path)
-            ae = m3d.ASCIIExport
-            ae.Reset()
-            ae.FileName(safe_path)
-            ae.SetFileType("csv")
-            ae.Execute()
+            from cst_mcp.vba_builder import _escape_vba_string
+            # Model3D exposes add_to_history/run_solver, not COM-style ASCIIExport.
+            # ASCIIExport is an official VBA object; execute it through the Python bridge.
+            vba = ('If Not SelectTreeItem("' + _escape_vba_string(tree_path) + '") Then\n'
+                   'Err.Raise vbObjectError + 1, , "Result tree item not found"\nEnd If\n'
+                   + ('FarfieldPlot.Plot\n' if tree_path.startswith('Farfields\\') else '') +
+                   'With ASCIIExport\n.Reset\n.FileName "' + _escape_vba_string(safe_path) + '"\n'
+                   '.SetFileType "csv"\n.Execute\nEnd With')
+            executed = self.run_vba_silent(vba)
+            if executed.get("status") != "executed":
+                return executed
 
             if not out.is_file() or out.stat().st_size == 0:
                 return {
@@ -673,19 +744,38 @@ class CSTSession:
         *,
         max_points: int = 200,
     ) -> dict[str, Any]:
-        """Export and parse S-parameters into structured JSON."""
-        tree = f"1D Results\\S-Parameters\\S{port_out},{port_in}"
-        tmp = self.config.work_dir / f"s{port_out}_{port_in}_{int(time.time())}.csv"
-        exported = self.export_tree_csv(tree, str(tmp))
-        if exported.get("status") != "exported":
-            return exported
+        """Read complex S-parameters through the official Python results API."""
+        from cst_mcp.execution.curves import read_curve, format_curve, frequency_scale
+        from cst_mcp.execution.results_reader import downsample_series
 
-        reader = ResultsReader(self.config.work_dir)
-        parsed = reader.read_sparam_file(tmp, max_points=max_points)
-        parsed["tree_path"] = tree
-        parsed["port_out"] = port_out
-        parsed["port_in"] = port_in
-        return parsed
+        if not self.has_project or not self.project_path:
+            return {"status": "error", "message": "Open and save a project before reading results"}
+        running = self.is_solver_running(timeout_s=5)
+        if running is not False:
+            return {"status": "busy", "running": running, "message": "Solver is active or its state is unknown"}
+        tree = f"1D Results\\S-Parameters\\S{port_out},{port_in}"
+        raw = read_curve(self.project_path, tree, allow_interactive=True)
+        if raw.get("status") != "ok":
+            return raw
+        try:
+            scale = frequency_scale(raw["xlabel"]) / 1e9
+            freqs = [v * scale for v in raw["x"]]
+            db = format_curve(raw, "db")["y"]
+            finite = [(f, y) for f, y in zip(freqs, db) if y is not None]
+            metrics = {}
+            if finite:
+                f, y = min(finite, key=lambda p: p[1])
+                metrics = {"min_db": y, "freq_at_min_ghz": f}
+            data = {"status": "ok", "source": "cst.results", "tree_path": tree,
+                    "port_out": port_out, "port_in": port_in, "n_points": len(freqs),
+                    "frequency_unit": "GHz", "frequency_ghz": freqs,
+                    "real": raw["real"], "imag": raw["imag"], "magnitude_db": db,
+                    "magnitude_linear": format_curve(raw, "mag")["y"],
+                    "phase_deg": format_curve(raw, "phase")["y"], "metrics": metrics,
+                    "snapshot": raw["snapshot"]}
+            return downsample_series(data, max_points=max_points) if max_points else data
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
 
     def set_params_rebuild_solve(
         self,
@@ -727,16 +817,16 @@ class CSTSession:
 
             out: dict[str, Any] = {"status": "ok", "params": params, "solver": solved}
             if export_s11:
-                if export_path:
-                    tree = f"1D Results\\S-Parameters\\S{port},{port}"
-                    exported = self.export_tree_csv(tree, export_path)
-                    if exported.get("status") != "exported":
-                        return {**exported, "stage": "export", "params": params, "solver": solved}
-                    s_parameters = ResultsReader(self.config.work_dir).read_sparam_file(
-                        Path(export_path)
-                    )
-                else:
-                    s_parameters = self.get_s_parameters(port, port)
+                s_parameters = self.get_s_parameters(port, port, max_points=0 if export_path else 200)
+                if export_path and s_parameters.get("status") == "ok":
+                    values = s_parameters["magnitude_db"]
+                    if any(value is None for value in values):
+                        return {"status": "error", "stage": "export", "message": "Undefined dB samples; use complex results"}
+                    destination = Path(export_path)
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_text("Frequency / GHz    S / dB\n" + "\n".join(
+                        f"{frequency:.17g} {value:.17g}" for frequency, value in
+                        zip(s_parameters["frequency_ghz"], values)) + "\n", encoding="utf-8")
                 if s_parameters.get("status") != "ok":
                     return {
                         **s_parameters,
@@ -758,24 +848,15 @@ class CSTSession:
         """Best-effort parameter table dump via VBA GetNumberOfParameters."""
         if not self.is_connected or not self.has_project:
             return {"status": "offline", "parameters": {}}
-        # Silent VBA is fragile for return values; try Python API first
-        try:
-            m3d = self.model3d
-            params: dict[str, str] = {}
-            # Common pattern on recent CST Python bindings
-            if hasattr(m3d, "GetNumberOfParameters"):
-                n = int(m3d.GetNumberOfParameters())
-                for i in range(n):
-                    name = str(m3d.GetParameterName(i))
-                    try:
-                        val = str(m3d.GetParameterNValue(i))
-                    except Exception:  # noqa: BLE001
-                        val = str(m3d.RestoreParameter(name)) if hasattr(m3d, "RestoreParameter") else ""
-                    params[name] = val
-                return {"status": "ok", "parameters": params, "count": len(params)}
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("list_parameters failed: %s", exc)
-        return {"status": "error", "message": "Could not enumerate parameters", "parameters": {}}
+        result = self.capture_vba_output('Dim i As Long\nFor i = 0 To GetNumberOfParameters() - 1\nDebug.Print GetParameterName(i) & vbTab & CStr(GetParameterNValue(i))\nNext i')
+        if result.get("status") != "ok":
+            return result
+        parameters = {}
+        for line in result["output"].splitlines():
+            if "\t" in line:
+                name, value = line.split("\t", 1)
+                parameters[name.strip()] = value.strip()
+        return {"status": "ok", "parameters": parameters, "count": len(parameters), "source": "VBA via Python"}
 
     def _find_message_output(self) -> str | None:
         """Locate CST Message output / solver log for the active project."""
@@ -794,6 +875,16 @@ class CSTSession:
 
     def get_cst_messages(self, max_chars: int = 4000) -> dict[str, Any]:
         """Return tail of CST message/solver log so agents see CST errors without user paste."""
+        if self.has_project:
+            getter = getattr(self._project, "get_messages", None)
+            if callable(getter):
+                try:
+                    messages = getter()
+                    text = str(messages) if messages is not None else ""
+                    if text and text not in {"[]", "{}"}:
+                        return {"status": "ok", "source": "Project.get_messages", "tail": text[-max_chars:], "size": len(text)}
+                except Exception:
+                    logger.debug("Project.get_messages failed; trying saved log", exc_info=True)
         path = self._find_message_output()
         if not path:
             # Also try work_dir dumps
@@ -1125,14 +1216,14 @@ class CSTSession:
         try:
             schematic = getattr(self._project, "schematic", None)
             if schematic is not None and hasattr(schematic, "execute_vba_code"):
-                schematic.execute_vba_code(wrapped)
+                schematic.execute_vba_code(wrapped, timeout=30)
                 return {"status": "executed", "entrypoint": "schematic.execute_vba_code"}
         except Exception as exc:  # noqa: BLE001
             errors.append(f"schematic: {exc}")
         try:
             exe = getattr(self.model3d, "_execute_vba_code", None)
             if callable(exe):
-                exe(wrapped)
+                exe(wrapped, timeout=30)
                 return {"status": "executed", "entrypoint": "model3d._execute_vba_code"}
         except Exception as exc:  # noqa: BLE001
             errors.append(f"model3d: {exc}")
@@ -1157,6 +1248,9 @@ class CSTSession:
 
         Pass ``try_farfield_plot=False`` to skip the plot step entirely.
         """
+        blocked = self._idle_error()
+        if blocked:
+            return blocked
         metrics: dict[str, Any] = {}
         sources: dict[str, Any] = {}
 

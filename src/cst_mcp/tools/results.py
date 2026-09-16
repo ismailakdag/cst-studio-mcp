@@ -1901,6 +1901,16 @@ _DEFAULT_RESULT_TREE: dict[str, list[str]] = {
 # Tool handler
 # ---------------------------------------------------------------------------
 
+_S_CURVE_TOOLS = {"cst_get_s_parameters", "cst_get_s_parameter_phase", "cst_get_group_delay",
+                  "cst_get_vswr", "cst_get_smith_chart_data", "cst_get_bandwidth"}
+for _tool in TOOLS:
+    if _tool.name in _S_CURVE_TOOLS:
+        _schema = getattr(_tool, "inputSchema", None) or _tool.input_schema
+        _schema["properties"]["max_points"] = {"type": "integer", "minimum": 0, "maximum": 10000, "default": 200,
+            "description": "Preview sample count; 0 returns the full curve. Derived metrics use all samples."}
+        _schema["properties"]["run_id"] = {"type": "integer", "minimum": 0, "default": 0}
+
+
 async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextContent]:
     """Handle a result extraction tool call.
 
@@ -1917,6 +1927,54 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
 
 async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[TextContent]:
     """Internal implementation of the result tool handler."""
+
+    # These tools derive different physical quantities from the same raw S curve.
+    # Returning a curve with a new label is not a conversion.
+    s_tools = {"cst_get_s_parameters", "cst_get_s_parameter_phase", "cst_get_group_delay",
+               "cst_get_vswr", "cst_get_smith_chart_data", "cst_get_bandwidth"}
+    if client.connected and name in s_tools:
+        from cst_mcp.execution.curves import derived_s, format_curve, sample_curve
+        port_in = arguments.get("port_in", arguments.get("port", 1))
+        port_out = arguments.get("port_out", arguments.get("port", 1))
+        validate_port_number(port_in)
+        validate_port_number(port_out)
+        data = client.get_result(_s_param_tree_path(port_out, port_in), arguments.get("run_id", 0))
+        if name == "cst_get_s_parameters":
+            data = format_curve(data, arguments.get("format", "db"))
+        elif name == "cst_get_s_parameter_phase":
+            data = format_curve(data, "phase", arguments.get("unwrap", False))
+        else:
+            data = derived_s(data, name, arguments)
+        return _text(sample_curve(data, arguments.get("max_points", 200)))
+
+    if client.connected and name in {"cst_get_gain", "cst_get_efficiency", "cst_get_efficiency_breakdown"}:
+        validate_frequency(arguments["frequency"])
+        result = client.get_farfield_metrics(arguments["frequency"])
+        metrics = result.get("metrics", {})
+        requested = [key for key in metrics if ("gain" in key if name == "cst_get_gain" else "efficiency" in key)]
+        if result.get("status") == "ok" and not requested:
+            return _text({"status": "error", "message": "Requested radiation metrics are absent; S11 alone is not a gain/efficiency result", "sources": result.get("sources")})
+        if name == "cst_get_efficiency_breakdown":
+            result["limitation"] = "Radiation/total efficiency only. Conductor and dielectric loss separation requires explicit loss monitors; it is not inferred from S11."
+        return _text(result)
+
+    if client.connected and name in {"cst_get_farfield", "cst_get_radiation_pattern_3d"}:
+        frequency = arguments["frequency"]
+        validate_frequency(frequency)
+        if arguments.get("coordinate", "spherical") != "spherical":
+            return _text({"status": "error", "message": "Use spherical export; Cartesian resampling is not implemented."})
+        resolution = float(arguments.get("resolution_deg", 5))
+        if not 0 < resolution <= 90:
+            return _text({"status": "error", "message": "resolution_deg must be in (0, 90]"})
+        settings = (VBABuilder("FarfieldPlot").call("Reset").set("Plottype", "3d")
+                    .set("SetPlotMode", "realized gain").set_bool("SetScaleLinear", False)
+                    .set_number("Step", resolution).set_number("Step2", resolution).set_bool("SetLockSteps", True).build())
+        configured = client.execute_vba_silent(settings)
+        if configured.get("status") != "executed":
+            return _text(configured)
+        result = client.export_farfield_ascii(frequency, monitor_name=arguments.get("monitor_name"))
+        result.update(quantity="realized_gain", coordinate="spherical", requested_step_deg=resolution)
+        return _text(result)
 
     # ------------------------------------------------------------------
     # cst_get_s_parameters

@@ -553,21 +553,32 @@ def _build_loft(args: dict) -> str:
 
 
 def _build_wire(args: dict) -> str:
+    """Straight round solid conductor, using Cylinder and rigid transforms.
+
+    Avoid the Wire-to-solid conversion, which stalled the CST 2026 live test.
+    """
+    import math
+    from cst_mcp.tools.transforms import _build_rotate, _build_translate
+
     component = validate_name(args["component"], "component")
     name = validate_name(args["name"], "name")
     radius = validate_positive(args["radius"], "radius")
-
-    vba = (
-        VBABuilder("Wire")
-        .call("Reset")
-        .set("Name", name)
-        .set("Component", component)
-        .set_triple("StartPoint", args["start_x"], args["start_y"], args["start_z"])
-        .set_triple("EndPoint", args["end_x"], args["end_y"], args["end_z"])
-        .set_number("Radius", radius)
-        .call("Create")
-    )
-    return vba.build()
+    start = [float(args[f"start_{axis}"]) for axis in "xyz"]
+    delta = [float(args[f"end_{axis}"]) - start[i] for i, axis in enumerate("xyz")]
+    length = math.hypot(*delta)
+    if not math.isfinite(length) or length <= 0:
+        raise ValueError("Wire endpoints must be finite and distinct")
+    solid = f"{component}:{name}"
+    code = [_build_cylinder(dict(component=component, name=name,
+        material=args.get("material", "PEC"), axis="z", outer_radius=radius,
+        range_min=0, range_max=length))]
+    theta = math.degrees(math.acos(max(-1, min(1, delta[2]/length))))
+    phi = math.degrees(math.atan2(delta[1], delta[0]))
+    for axis, angle in (("y", theta), ("z", phi)):
+        if abs(angle) > 1e-12:
+            code.append(_build_rotate(dict(solid=solid, axis=axis, angle=angle)))
+    code.append(_build_translate(dict(solid=solid, dx=start[0], dy=start[1], dz=start[2])))
+    return "\n".join(code)
 
 
 def _build_polygon3d(args: dict) -> str:
@@ -666,18 +677,23 @@ def _build_polygon_extrude(args: dict) -> str:
 
     script = VBAScript()
     script.add_comment(f"Polygon extrude: {component}:{name}")
+    script.add_raw(f'Curve.NewCurve "{name}_curves"')
+    if axis not in {"x", "y", "z"}:
+        raise ValueError("axis must be x, y, or z")
+    def point(pt):
+        return (0, pt[0], pt[1]) if axis == "x" else ((pt[0], 0, -pt[1]) if axis == "y" else (pt[0], pt[1], 0))
 
     # Create the polygon curve
     poly_vba = (
-        VBABuilder("Polygon")
+        VBABuilder("Polygon3D")
         .call("Reset")
         .set("Name", f"{name}_profile")
         .set("Curve", f"{name}_curves")
     )
     for pt in points:
-        poly_vba.set_double("Point", pt[0], pt[1])
+        poly_vba.set_triple("Point", *point(pt))
     # Close the polygon
-    poly_vba.set_double("Point", points[0][0], points[0][1])
+    poly_vba.set_triple("Point", *point(points[0]))
     poly_vba.call("Create")
     script.add_block(poly_vba)
 
@@ -689,17 +705,11 @@ def _build_polygon_extrude(args: dict) -> str:
         .set("Component", component)
         .set("Material", material)
         .set_number("Thickness", height)
-        .set_double("Twistangle", 0, 0)
-        .set_double("Taperangle", 0, 0)
+        .set_number("Twistangle", 0)
+        .set_number("Taperangle", 0)
         .set("Curve", f"{name}_curves:{name}_profile")
     )
-    # Map axis to DeleteProfile direction
-    if axis == "z":
-        extrude_vba.set("Axis", "z")
-    elif axis == "x":
-        extrude_vba.set("Axis", "x")
-    elif axis == "y":
-        extrude_vba.set("Axis", "y")
+    # The closed curve's plane sets the extrusion direction in CST.
     extrude_vba.call("Create")
     script.add_block(extrude_vba)
 

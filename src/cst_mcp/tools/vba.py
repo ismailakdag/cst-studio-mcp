@@ -312,7 +312,17 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
             return _text(result)
 
         elif name == "cst_vba_help":
+            import re
+            from cst_mcp.tools.official import handle as official_help
+            if client.config.cst_path:
+                search = await official_help("cst_search_help", {"query": arguments["object_name"], "limit": 50}, client)
+                candidates = json.loads(search[0].text).get("topics", [])
+                for topic in candidates:
+                    if re.search(re.escape(arguments["object_name"]) + r"(?:_object)?\.html?$", topic, re.I):
+                        return await official_help("cst_read_help", {"topic": topic}, client)
             result = _handle_vba_help(arguments)
+            result["source"] = "bundled legacy reference; not verified against installed CST"
+            result["hint"] = "Prefer cst_search_help / cst_read_help. Example generation is illustrative, not an executable API signature check."
             return _text(result)
 
         elif name == "cst_list_vba_objects":

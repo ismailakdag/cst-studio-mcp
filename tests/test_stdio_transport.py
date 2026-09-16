@@ -13,6 +13,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from cst_mcp import server as server_module
+from cst_mcp import __version__
 
 
 @pytest.mark.asyncio
@@ -66,7 +67,7 @@ module.main()
                 initialized, "serverInfo", getattr(initialized, "server_info", None)
             )
             assert server_info.name == "cst-studio-mcp"
-            assert server_info.version == "1.0.0"
+            assert server_info.version == __version__
 
             catalog = await session.list_tools()
             assert len(catalog.tools) >= 170

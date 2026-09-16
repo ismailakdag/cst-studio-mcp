@@ -36,7 +36,7 @@
         <a href="#nasil-calisir">Nasıl çalışır?</a>
         <a href="#kurulum">Kurulum</a>
         <a href="#dogrulama">Doğrulama</a>
-        <a href="/docs/">180 araç</a>
+        <a href="/docs/">184 araç</a>
         <a class="nav-repo" href="https://github.com/ismailakdag/cst-studio-mcp">GitHub <span aria-hidden="true">↗</span></a>
         <span class="language-switch" aria-label="Dil seçimi"><strong lang="tr" aria-current="page">TR</strong><span aria-hidden="true">/</span><a lang="en" hreflang="en" href="/en/">EN</a></span>
       </nav>
@@ -109,7 +109,7 @@
           <p>MCP mesajları standart girdi ve çıktı üzerinden taşınır. CST kurulumu ve proje dosyaları Windows makinenizde çalışır.</p>
         </article>
         <article>
-          <span class="principle-mark" aria-hidden="true">180</span>
+          <span class="principle-mark" aria-hidden="true">184</span>
           <h3>Tek araç kataloğu</h3>
           <p>Modelleme, malzeme, sınır, port, çözücü, sonuç ve iş akışı araçları aynı şema kataloğundan yayınlanır.</p>
         </article>
@@ -199,9 +199,9 @@ PYTHONPATH = 'C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries'
 
     <section class="section agent-prompt" id="ajan-kurulumu">
       <div class="shell"><h2>Ajandan kurmasını isteyin.</h2><p class="section-intro">Aşağıdaki isteği bilgisayarınıza ve MCP istemci ayarlarınıza erişebilen ajana verin.</p>
-        <div class="code-block" style="margin-left:0"><div class="code-head"><span>Ajan istemi</span><button class="copy-button" type="button" data-copy="agent-prompt-code">Kopyala</button></div><pre id="agent-prompt-code"><code>https://cst-mcp.akdag.dev/ adresine git; kurulum bölümünü ve bağlantılı resmî GitHub README dosyasını oku. Bu bilgisayarda CST Studio MCP&#x27;yi kur ve kullandığım MCP istemcisine ekle. Önce işletim sistemini, CST/Python yollarını ve mevcut yapılandırmayı kontrol et; var olan sunucu kayıtlarını koru, aynı kaydı çoğaltma. Python sanal ortamı kullan ve CST_CONNECT_MODE=manual ayarla.
+        <div class="code-block" style="margin-left:0"><div class="code-head"><span>Ajan istemi</span><button class="copy-button" type="button" data-copy="agent-prompt-code">Kopyala</button></div><pre id="agent-prompt-code"><code>https://cst-mcp.akdag.dev/docs/AGENT_SETUP.md kurulum ve kabul rehberini, ardından API_REVIEW_2026.md doğrulama kapsamını oku. Bu bilgisayarda CST Studio MCP&#x27;yi kur ve kullandığım MCP istemcisine ekle. Önce işletim sistemini, CST/Python yollarını ve mevcut yapılandırmayı kontrol et; var olan sunucu kayıtlarını koru, aynı kaydı çoğaltma. Python sanal ortamı kullan ve CST_CONNECT_MODE=manual ayarla.
 
-Gerçek MCP bağlantısıyla initialize, tools/list ve çevrimdışı durum sorgusunu test et. Ardından cst_connect ile CST bağlantısını dene ve salt okunur durum sorgusuyla doğrula. Mevcut proje veya çalışan simülasyonu değiştirme; solver başlatma veya durdurma. İstemciyi yeniden yüklemek gerekiyorsa çalışan görevleri kesmeden gereken adımı belirt. Eksik CST kurulumu, lisans veya erişim varsa nedenini açıkça söyle. Sonunda değiştirdiğin dosyaları, uygulanan ayarları ve geçen/kalan testleri kısaca raporla.</code></pre></div>
+Gerçek MCP bağlantısıyla initialize, tools/list ve çevrimdışı durum sorgusunu test et. Kurulu resmî Python/VBA yardımını cst_search_help ile denetle. Tamamlanmış bir model verilmişse cst_read_saved_result ile GUI açmadan oku; run_id ve örnekleme bilgisini bildir. Ardından cst_connect ile CST bağlantısını dene ve salt okunur durum sorgusuyla doğrula. Mevcut proje veya çalışan simülasyonu değiştirme; solver başlatma veya durdurma. İstemciyi yeniden yüklemek gerekiyorsa çalışan görevleri kesmeden gereken adımı belirt. Eksik CST kurulumu, lisans veya erişim varsa nedenini açıkça söyle. Sonunda değiştirdiğin dosyaları, uygulanan ayarları ve geçen/kalan testleri kısaca raporla.</code></pre></div>
       </div>
     </section>
 
@@ -219,15 +219,15 @@ Gerçek MCP bağlantısıyla initialize, tools/list ve çevrimdışı durum sorg
         <table>
           <thead><tr><th>Kapsam</th><th>Sonuç</th><th>Anlamı</th></tr></thead>
           <tbody>
-            <tr><td>MCP yazılım geliştirme kiti (SDK) 1.29.0</td><td><span class="pass">56 test geçti</span></td><td>Başlatma, araç listeleme, çağrı ve hata yanıtları doğrulandı.</td></tr>
-            <tr><td>MCP SDK 2.2.0</td><td><span class="pass">56 test geçti</span></td><td>Aynı takım güncel ana SDK serisinde de geçti.</td></tr>
-            <tr><td>Araç kataloğu</td><td><span class="pass">180 şema</span></td><td>Yayınlanan araç adları ve giriş şemaları üretildi ve denetlendi.</td></tr>
-            <tr><td>Canlı CST uçtan uca</td><td><span class="pending">Henüz yapılmadı</span></td><td>180 aracın tamamı gerçek bir CST oturumunda çalıştırılmış sayılmaz.</td></tr>
+            <tr><td>MCP yazılım geliştirme kiti (SDK) 1.29.0</td><td><span class="pass">85 test geçti</span></td><td>Başlatma, araç listeleme, çağrı ve hata yanıtları doğrulandı.</td></tr>
+            <tr><td>MCP SDK 2.2.0</td><td><span class="pass">85 test geçti</span></td><td>Aynı takım güncel ana SDK serisinde de geçti.</td></tr>
+            <tr><td>Araç kataloğu</td><td><span class="pass">184 şema</span></td><td>Yayınlanan araç adları ve giriş şemaları üretildi ve denetlendi.</td></tr>
+            <tr><td>CST 2026 kayıtlı sonuçlar</td><td><span class="pass">4 × 4001 nokta</span></td><td>Dört kompleks S eğrisi arşivle birebir eşleşti.</td></tr><tr><td>CST 2026 modelleme</td><td><span class="pass">Canlı test geçti</span></td><td>Temel geometriler, parametreler, port, lumped eleman, sweep ve optimizer yapılandırması; solver çalıştırılmadı.</td></tr>
           </tbody>
         </table>
         </div>
         <div class="evidence-note">
-          <p>Gerçek stdio alt süreciyle <code>initialize</code>, <code>tools/list</code> ve <code>tools/call</code> akışı; Python ve yerel dosya tanıtıcısı günlükleriyle birlikte sınandı. CST davranışı, çalışan bir kullanıcı oturumuna dokunmadan sahte istemcilerle test edildi.</p>
+          <p>Gerçek stdio alt süreciyle <code>initialize</code>, <code>tools/list</code> ve <code>tools/call</code> akışı; Python ve yerel dosya tanıtıcısı günlükleriyle birlikte sınandı. Kayıtlı sonuçlar gerçek Python API ile, modelleme ayrı geçici projede sınandı. 184 aracın tamamı canlı doğrulanmış değildir; <a href="/docs/API_REVIEW_2026.md">geçen testler ve kalan sınırlar</a> açıkça kayıtlıdır.</p>
           <a class="text-link" href="/docs/RELIABILITY_REVIEW.md">Güvenilirlik incelemesini oku <span aria-hidden="true">→</span></a>
         </div>
       </div>
@@ -237,7 +237,7 @@ Gerçek MCP bağlantısıyla initialize, tools/list ve çevrimdışı durum sorg
       <div class="shell catalog-grid">
         <div>
           <p class="section-number">04 / Katalog</p>
-          <h2>Modelden sonuca,<br><em>180 araç.</em></h2>
+          <h2>Modelden sonuca,<br><em>184 araç.</em></h2>
           <p class="section-intro">Aranabilir katalog her aracın açıklamasını, zorunlu parametrelerini ve JSON giriş şemasını tek yerde gösterir.</p>
           <div class="catalog-actions">
             <a class="button button-primary" href="/docs/">Araçları incele <span aria-hidden="true">↗</span></a>

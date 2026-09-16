@@ -253,24 +253,7 @@ def _build_export_cad(args: dict) -> str:
 
 def _build_import_touchstone(args: dict) -> str:
     """Build VBA script for Touchstone file import."""
-    file_path = validate_file_path(args["file_path"])
-    port_number = int(args.get("port_number", 1))
-
-    script = VBAScript()
-    script.add_comment(f"Import Touchstone file: {file_path}")
-
-    vba = (
-        VBABuilder("TouchstoneImport")
-        .call("Reset")
-        .set("FileName", file_path)
-        .set_number("PortNumber", port_number)
-        .set("Impedance", "50")
-        .set("FrequencyUnit", "GHz")
-        .call("Execute")
-    )
-
-    script.add_block(vba)
-    return script.build()
+    raise ValueError("TouchstoneImport is not a documented 3D VBA object. A Touchstone network needs an explicit schematic block or lumped-element pin mapping, which this tool's port_number-only schema cannot represent. No project was changed. Use cst_read_help for LumpedElement or the schematic API before defining the connection.")
 
 
 def _build_export_touchstone(args: dict) -> str:
@@ -282,13 +265,15 @@ def _build_export_touchstone(args: dict) -> str:
     script.add_comment(f"Export S-parameters as Touchstone ({fmt}): {file_path}")
 
     vba = (
-        VBABuilder("TouchstoneExport")
+        VBABuilder("TOUCHSTONE")
         .call("Reset")
         .set("FileName", file_path)
-        .set("Format", fmt)
+        .set("Format", "RI")
         .set("Impedance", "50")
-        .set("FrequencyUnit", "GHz")
-        .call("Execute")
+        .set("ExportType", "S")
+        .set("FrequencyRange", "Full")
+        .set_bool("Renormalize", True)
+        .call("Write")
     )
 
     script.add_block(vba)
