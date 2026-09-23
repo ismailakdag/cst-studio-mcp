@@ -15,6 +15,7 @@ transverse aperture is in the XZ plane at ``Y = y_edge``.
 from __future__ import annotations
 
 from cst_mcp.vba_builder import _format_number as fmt
+from cst_mcp.vba_safety import vba_escape as _q
 
 
 def microstrip_waveguide_port_vba(
@@ -100,3 +101,48 @@ def feed_line_y_range(
     if y_outer > y_inner:
         y_outer, y_inner = y_inner, y_outer
     return y_outer, y_inner
+
+
+def coax_waveguide_port_vba(
+    *,
+    port_number: int = 1,
+    x_range: tuple[str, str],
+    y_range: tuple[str, str],
+    z_plane: str,
+    orientation: str = "zmin",
+) -> str:
+    """Waveguide port on the end face of a z-directed coax (parameter expressions).
+
+    ``x_range``/``y_range`` should bound the coax aperture (dielectric outer
+    radius); the shield must be thick enough to cover the rectangle corners
+    so the port sees only the TEM coax cross-section.  ``z_plane`` is the
+    coax end face.  As for the microstrip port, ``PortOnBound`` is False so
+    the port stays on the coax face after the open boundaries expand.
+    """
+    if orientation not in {"zmin", "zmax"}:
+        raise ValueError("coax port orientation must be zmin or zmax")
+    x0, x1 = (_q(str(v), "x_range") for v in x_range)
+    y0, y1 = (_q(str(v), "y_range") for v in y_range)
+    z = _q(str(z_plane), "z_plane")
+    pn = int(port_number)
+    return "\n".join(
+        [
+            "With Port",
+            "  .Reset",
+            f'  .PortNumber "{pn}"',
+            '  .NumberOfModes "1"',
+            '  .AdjustPolarization "False"',
+            '  .PolarizationAngle "0.0"',
+            '  .ReferencePlaneDistance "0"',
+            '  .TextSize "50"',
+            '  .Coordinates "Free"',
+            f'  .Orientation "{orientation}"',
+            '  .PortOnBound "False"',
+            '  .ClipPickedPortToBound "False"',
+            f'  .Xrange "{x0}", "{x1}"',
+            f'  .Yrange "{y0}", "{y1}"',
+            f'  .Zrange "{z}", "{z}"',
+            "  .Create",
+            "End With",
+        ]
+    )

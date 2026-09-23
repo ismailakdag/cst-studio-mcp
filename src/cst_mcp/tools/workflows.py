@@ -7,7 +7,11 @@ from typing import Any
 from mcp.types import TextContent, Tool
 
 from cst_mcp.domain.antennas.patch import design_patch
-from cst_mcp.execution.port_helpers import feed_line_y_range, microstrip_waveguide_port_vba
+from cst_mcp.execution.port_helpers import (
+    coax_waveguide_port_vba,
+    feed_line_y_range,
+    microstrip_waveguide_port_vba,
+)
 from cst_mcp.execution.vba_builder import fmt_num, vba_str
 from cst_mcp.vba_safety import vba_escape as _q
 from cst_mcp.tools.registry import as_json, err
@@ -297,6 +301,110 @@ def _brick_expr(
     )
 
 
+def _cylinder_expr(
+    component: str,
+    name: str,
+    material: str,
+    outer_r: str,
+    inner_r: str,
+    xc: str,
+    yc: str,
+    z0: str,
+    z1: str,
+) -> str:
+    """z-axis Cylinder with CST parameter expressions."""
+    return "\n".join(
+        [
+            "With Cylinder",
+            "  .Reset",
+            f'  .Name "{_q(name, "name")}"',
+            f'  .Component "{_q(component, "component")}"',
+            f'  .Material "{_q(material, "material")}"',
+            f'  .OuterRadius "{_q(outer_r, "outer_r")}"',
+            f'  .InnerRadius "{_q(inner_r, "inner_r")}"',
+            '  .Axis "z"',
+            f'  .Zrange "{_q(z0, "z0")}", "{_q(z1, "z1")}"',
+            f'  .Xcenter "{_q(xc, "xc")}"',
+            f'  .Ycenter "{_q(yc, "yc")}"',
+            '  .Segments "0"',
+            "  .Create",
+            "End With",
+        ]
+    )
+
+
+def _probe_feed_steps() -> list[tuple[str, str]]:
+    """Coaxial probe feed below the ground plane (parameter expressions only).
+
+    The pin sits at (0, -probe_y) and runs from the coax end face
+    (z = -coax_len) to the patch bottom (z = sub_h).  Below the ground: PTFE
+    between probe_r and coax_r_out, and a PEC shield of wall coax_t.  The
+    ground gets a coax_r_out clearance hole (filled by the PTFE), and the pin
+    is inserted into the substrate so it replaces the FR-4 it passes through.
+    A waveguide port on the z = -coax_len face excites the TEM coax mode.
+    """
+    ptfe = "\n".join(
+        [
+            'If Not Material.Exists("PTFE") Then',
+            VBABuilder("Material")
+            .call("Reset")
+            .set("Name", "PTFE")
+            .set("Type", "Normal")
+            .set_triple("Colour", 0.9, 0.9, 0.9)
+            .set("Wireframe", "False")
+            .set_number("Transparency", 0.5)
+            .set("Epsilon", "coax_er")
+            .set_number("Mu", 1.0)
+            .set_number("Rho", 0.0)
+            .set_number("Sigma", 0.0)
+            .set("TanDGiven", "False")
+            .call("Create")
+            .build(),
+            "End If",
+        ]
+    )
+    return [
+        ("material_ptfe", ptfe),
+        (
+            "cylinder_ground_clearance",
+            _cylinder_expr(
+                "Antenna", "GndClearance", "PEC", "coax_r_out", "0",
+                "0", "-probe_y", "-metal_t", "0",
+            ),
+        ),
+        (
+            "boolean_ground_clearance",
+            'Solid.Subtract "Antenna:Ground", "Antenna:GndClearance"',
+        ),
+        (
+            "cylinder_probe_pin",
+            _cylinder_expr(
+                "Antenna", "ProbePin", "PEC", "probe_r", "0",
+                "0", "-probe_y", "-coax_len", "sub_h",
+            ),
+        ),
+        (
+            # Pin replaces the substrate it passes through (no PEC/FR-4 overlap)
+            "boolean_probe_pin_substrate",
+            'Solid.Insert "Antenna:Substrate", "Antenna:ProbePin"',
+        ),
+        (
+            "cylinder_coax_dielectric",
+            _cylinder_expr(
+                "Antenna", "CoaxPTFE", "PTFE", "coax_r_out", "probe_r",
+                "0", "-probe_y", "-coax_len", "0",
+            ),
+        ),
+        (
+            "cylinder_coax_shield",
+            _cylinder_expr(
+                "Antenna", "CoaxShield", "PEC", "coax_r_out+coax_t", "coax_r_out",
+                "0", "-probe_y", "-coax_len", "-metal_t",
+            ),
+        ),
+    ]
+
+
 def _store_params_vba(params: dict[str, float]) -> str:
     lines = []
     for name, value in params.items():
@@ -311,6 +419,8 @@ def _store_params_vba(params: dict[str, float]) -> str:
 
 
 PARAMETER_STEP = "store_parameters"
+COAX_LENGTH_MM = 5.0  # coax section below the ground plane
+COAX_WALL_MM = 1.0  # shield wall; must exceed (sqrt(2)-1)*coax_r_out for the port
 
 
 def _patch_vba_steps(design) -> list[tuple[str, str]]:
@@ -331,6 +441,7 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
     )
     mon = f"farfield (f={f0})"
     metal_t = 0.035
+    probe = d.feed_type == "probe"
 
     # Numeric values go into Parameter List (what user edits in CST)
     design_params: dict[str, float] = {
@@ -342,8 +453,18 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
         "patch_L": length,
         "gnd_x": gx,
         "gnd_y": gy,
-        "feed_w": fw,
-        "inset": inset if d.feed_type == "inset" else 0.0,
+        **(
+            {
+                "probe_y": d.probe_offset_mm,
+                "probe_r": d.probe_radius_mm,
+                "coax_r_out": d.coax_outer_radius_mm,
+                "coax_er": d.coax_epsilon_r,
+                "coax_t": COAX_WALL_MM,
+                "coax_len": COAX_LENGTH_MM,
+            }
+            if probe
+            else {"feed_w": fw, "inset": inset if d.feed_type == "inset" else 0.0}
+        ),
         "metal_t": metal_t,
         **({"notch_g": d.notch_gap_mm} if d.feed_type == "inset" else {}),
         "fmin_GHz": fmin,
@@ -485,6 +606,8 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
                 ),
             )
         )
+    if probe:
+        steps.extend(_probe_feed_steps())
     if d.feed_type in ("inset", "microstrip"):
         # Outer end = -gnd_y/2 (port plane); inner toward patch
         y_inner = (
@@ -537,21 +660,28 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
             ),
         )
     )
-    # Port still needs numeric edge for Free port plane (expressions less reliable)
-    steps.append(
-        (
-            "port_wg_1",
-            microstrip_waveguide_port_vba(
-                port_number=1,
-                y_edge=feed_y0,
-                feed_width=fw,
-                substrate_height=h,
-                ground_bottom=-metal_t,
-                metal_thickness=metal_t,
-                x_center=0.0,
-            ),
+    if probe:
+        # Coax end face; the aperture square (+-coax_r_out) lies inside the
+        # shield because coax_r_out*sqrt(2) < coax_r_out+coax_t.  The expanded
+        # open Zmin boundary adds its margin below the coax automatically.
+        port_vba = coax_waveguide_port_vba(
+            port_number=1,
+            x_range=("-coax_r_out", "coax_r_out"),
+            y_range=("-probe_y-coax_r_out", "-probe_y+coax_r_out"),
+            z_plane="-coax_len",
         )
-    )
+    else:
+        # Port still needs numeric edge for Free port plane (expressions less reliable)
+        port_vba = microstrip_waveguide_port_vba(
+            port_number=1,
+            y_edge=feed_y0,
+            feed_width=fw,
+            substrate_height=h,
+            ground_bottom=-metal_t,
+            metal_thickness=metal_t,
+            x_center=0.0,
+        )
+    steps.append(("port_wg_1", port_vba))
     steps.append(
         (
             "monitor_farfield",
@@ -641,7 +771,9 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
                     if label in {"units", "store_parameters"}:
                         entry["note"] = f"{label} failed (non-fatal); continuing."
                         continue
-                    if label.startswith(("brick_", "material_", "boolean_")):
+                    if label.startswith(
+                        ("brick_", "cylinder_", "material_", "boolean_")
+                    ):
                         fatal = True
                         break
 
@@ -661,9 +793,14 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
                     "design": d.to_dict(),
                     "parameters_in_project": params_now,
                     "parameter_hint": (
-                        "Change patch_W, patch_L, sub_h, feed_w, inset, notch_g, gnd_x, "
-                        "gnd_y with cst_set_parameter (stored outside model history, "
-                        "full rebuild) or cst_refine_antenna."
+                        "Change patch_W, patch_L, sub_h, "
+                        + (
+                            "probe_y, probe_r, coax_r_out, coax_len, "
+                            if d.feed_type == "probe"
+                            else "feed_w, inset, notch_g, "
+                        )
+                        + "gnd_x, gnd_y with cst_set_parameter (stored outside "
+                        "model history, full rebuild) or cst_refine_antenna."
                     ),
                     "steps": steps,
                     "vba": _build_patch_model(d) if status == "offline" else None,

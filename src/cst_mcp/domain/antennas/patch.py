@@ -24,6 +24,11 @@ class PatchDesign:
     feed_width_mm: float
     notch_gap_mm: float
     edge_resistance_ohm: float
+    # coaxial probe feed (feed_type == "probe"; zero otherwise)
+    probe_offset_mm: float
+    probe_radius_mm: float
+    coax_outer_radius_mm: float
+    coax_epsilon_r: float
     lambda0_mm: float
     eps_eff: float
 
@@ -84,6 +89,25 @@ def inset_depth(length_m: float, r_edge: float, z0: float = 50.0) -> float:
     return length_m / math.pi * math.acos(math.sqrt(z0 / r_edge))
 
 
+PTFE_EPSILON_R = 2.1
+SMA_PIN_RADIUS_MM = 0.635
+
+
+def coax_outer_radius(inner_radius: float, epsilon_r: float, z0: float = 50.0) -> float:
+    """Outer radius b of a coax with Z0 = 60/sqrt(eps_r) ln(b/a)."""
+    return inner_radius * math.exp(z0 * math.sqrt(epsilon_r) / 60.0)
+
+
+def probe_offset(length_m: float, r_edge: float, z0: float = 50.0) -> float:
+    """Probe offset from the patch centre along L for R_in = z0.
+
+    Same cos^2 rule as the inset feed: the feed point sits y0 inside the
+    radiating edge with R_edge cos^2(pi y0 / L) = z0, i.e. L/2 - y0 from the
+    centre.
+    """
+    return length_m / 2.0 - inset_depth(length_m, r_edge, z0)
+
+
 def design_patch(
     frequency_ghz: float,
     *,
@@ -103,6 +127,11 @@ def design_patch(
     only ~0.2 mm at 2.4 GHz on FR-4, which is hard to etch and to mesh, while
     ~1 mm (about feed_w/3) is the usual practical choice and barely changes the
     resonance.  Both are starting points; refine inset/notch_g in the solver.
+
+    Probe feed: the coax pin sits at the same cos^2 point, L/2 - y0 from the
+    patch centre toward the -Y edge (2.4 GHz FR-4: ~3.8 mm).  Pin radius
+    0.635 mm (SMA); PTFE (eps_r 2.1) outer radius a exp(50 sqrt(eps_r)/60)
+    ~2.12 mm for 50 ohm.
     """
     if frequency_ghz <= 0:
         raise ValueError("frequency_ghz must be positive")
@@ -150,6 +179,14 @@ def design_patch(
     if feed_type == "inset" and feed_width_mm + 2 * gap >= width_mm:
         raise ValueError("notch_gap_mm too large for the patch width")
 
+    probe_mm = probe_r = coax_r = coax_er = 0.0
+    if feed_type == "probe":
+        probe_r = SMA_PIN_RADIUS_MM
+        coax_er = PTFE_EPSILON_R
+        coax_r = coax_outer_radius(probe_r, coax_er)
+        # Keep the pin (and its ground clearance) on the patch
+        probe_mm = min(probe_offset(length_m, r_edge) * 1e3, length_mm / 2 - probe_r)
+
     return PatchDesign(
         frequency_ghz=frequency_ghz,
         epsilon_r=epsilon_r,
@@ -164,6 +201,10 @@ def design_patch(
         feed_width_mm=feed_width_mm,
         notch_gap_mm=gap if feed_type == "inset" else 0.0,
         edge_resistance_ohm=r_edge,
+        probe_offset_mm=probe_mm,
+        probe_radius_mm=probe_r,
+        coax_outer_radius_mm=coax_r,
+        coax_epsilon_r=coax_er,
         lambda0_mm=lambda0_mm,
         eps_eff=eps_eff,
     )
