@@ -468,6 +468,7 @@ Optional live CST scripts under `scripts/` (require license). Prefer unit tests 
 | SelectTreeItem fails for farfield | Full path `Farfields\farfield (f=<freq>) [1]`. |
 | Parameter List empty / rebuild no shape change | History must use **parameter expressions**, not only bare numbers. |
 | Dialogs block automation | `CST_QUIET=1`; diagnostics / dismiss-dialog tools. |
+| `results_exist` error, or CST frozen on "Results May Get Incompatible With Model" | Editing the model of a solved project makes CST open that modal dialog inside the automation call, where it cannot be answered. Model-editing tools now refuse with `results_exist` instead; export what you need, call `cst_delete_results`, then retry. If an older build already froze CST, it must be force-quit. |
 | pytest plugin import errors | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` plus `-p asyncio` (e.g. `python -m pytest tests/ -q -p asyncio`); without `-p asyncio` the async tests fail. |
 
 ---

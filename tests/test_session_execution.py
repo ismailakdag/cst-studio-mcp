@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.session import CSTSession
 from cst_mcp.tools import mesh, simulation
@@ -384,3 +386,53 @@ def test_mesh_density_uses_cst_2026_meshsettings() -> None:
     assert '.Set "StepsPerBoxNear", "12"' in client.vba
     assert "LinesPerWavelength" not in client.vba
     assert result["density_api"] == "MeshSettings.Set"
+
+
+class HistoryModel3D(FakeModel3D):
+    def add_to_history(self, label, vba, *, timeout=None):
+        self.calls.append(("add_to_history", label))
+        return "ok"
+
+
+def test_history_edit_refused_when_results_exist(monkeypatch) -> None:
+    model = HistoryModel3D()
+    session, _ = make_session(model)
+    monkeypatch.setattr(session, "results_present", lambda: True)
+    result = session.run_history('Component.New "c1"', label="edit")
+    assert result["status"] == "error"
+    assert result["code"] == "results_exist"
+    assert "cst_delete_results" in result["message"]
+    assert not any(name == "add_to_history" for name, _ in model.calls)
+
+
+@pytest.mark.parametrize("present", [False, None])
+def test_history_edit_runs_without_or_with_unknown_results(monkeypatch, present) -> None:
+    model = HistoryModel3D()
+    session, _ = make_session(model)
+    monkeypatch.setattr(session, "results_present", lambda: present)
+    assert session.run_history('Component.New "c1"', label="edit")["status"] == "executed"
+    assert ("add_to_history", "edit") in model.calls
+
+
+def test_results_present_parses_probe_output(monkeypatch) -> None:
+    session, _ = make_session(HistoryModel3D())
+    probes = []
+
+    def fake_capture(code):
+        probes.append(code)
+        return {"status": "ok", "output": outputs.pop(0)}
+
+    monkeypatch.setattr(session, "capture_vba_output", fake_capture)
+    outputs = [
+        "item\t1D Results\\Materials\r\ndone\r\n",  # material curves exist before any solve
+        "item\t1D Results\\S-Parameters\r\ndone\r\n",
+        "item\tFarfields\\farfield (f=2.4) [1]\r\ndone\r\n",
+        "item\t1D Results\\S-Parameters\r\n",  # truncated output: unknown
+    ]
+    assert session.results_present() is False
+    assert session.results_present() is True
+    assert session.results_present() is True
+    assert session.results_present() is None
+    assert "On Error Resume Next" in probes[0]
+    assert 'Resulttree.GetFirstChildName("1D Results")' in probes[0]
+    assert "mcpCount < 50" in probes[0]

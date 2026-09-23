@@ -311,6 +311,18 @@ class CSTSession:
         blocked = self._idle_error()
         if blocked:
             return blocked
+        if self.results_present() is True:
+            # Editing history on a project with results makes CST open the modal
+            # "Results May Get Incompatible With Model" dialog inside the
+            # add_to_history call; the dialog cannot be answered while the call is
+            # pending, which freezes CST until it is force-quit.
+            return {
+                "status": "error",
+                "code": "results_exist",
+                "message": ("The project has simulation results, and changing the model would make "
+                            "CST block on a modal 'Results May Get Incompatible With Model' dialog. "
+                            "Call cst_delete_results first (export anything you need), then retry."),
+            }
         CSTSession._history_seq += 1
         hist_label = label or f"cst_mcp_{CSTSession._history_seq}"
         try:
@@ -462,6 +474,46 @@ class CSTSession:
             return {"status": "executed", "entrypoint": "model3d._execute_vba_code"}
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc), "vba": vba_code}
+
+    _RESULT_FOLDERS = ("1D Results", "2D/3D Results", "Farfields")
+    # Present before any solve (material dispersion curves), so not a result.
+    _NON_RESULT_ITEMS = frozenset({"1D Results\\Materials"})
+
+    def results_present(self) -> bool | None:
+        """Whether the open project holds simulation results (``None`` if unknown).
+
+        Uses a no-history output-capture query, so it never raises a CST dialog.
+        """
+        if not self.is_connected or not self.has_project:
+            return None
+        # A missing folder raises in CST; treat that as "no results there".
+        # mcpNext is reset before each call so a failing GetNextItemName ends
+        # the loop instead of repeating the same item; mcpCount caps it anyway.
+        probe_lines = ["On Error Resume Next", "Dim mcpChild As String",
+                       "Dim mcpNext As String", "Dim mcpCount As Integer"]
+        for folder in self._RESULT_FOLDERS:
+            probe_lines += [
+                'mcpChild = ""',
+                f'mcpChild = Resulttree.GetFirstChildName("{folder}")',
+                "mcpCount = 0",
+                'Do While mcpChild <> "" And mcpCount < 50',
+                '  Debug.Print "item" & vbTab & mcpChild',
+                '  mcpNext = ""',
+                "  mcpNext = Resulttree.GetNextItemName(mcpChild)",
+                "  mcpChild = mcpNext",
+                "  mcpCount = mcpCount + 1",
+                "Loop",
+            ]
+        probe_lines.append('Debug.Print "done"')
+        probe = "\n".join(probe_lines)
+        result = self.capture_vba_output(probe)
+        if result.get("status") != "ok":
+            return None
+        lines = [line.rstrip("\r") for line in str(result.get("output", "")).splitlines()]
+        if "done" not in lines:
+            return None
+        items = {line.partition("\t")[2].strip() for line in lines if line.startswith("item\t")}
+        return any(item and item not in self._NON_RESULT_ITEMS for item in items)
 
     def capture_vba_output(self, code: str) -> dict[str, Any]:
         """Return legacy Debug.Print/MsgBox query text through MCP, with no popup."""
