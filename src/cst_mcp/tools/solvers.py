@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-from mcp.server import Server
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
@@ -437,16 +436,39 @@ def _configure_integral_equation(arguments: dict, client: CSTClient) -> list[Tex
 
 
 def _get_solver_info(arguments: dict, client: CSTClient) -> list[TextContent]:
-    # In connected mode, query the active solver type and settings
-    vba_lines = [
-        'Dim solverType As String',
-        'solverType = GetSolverType()',
-        'ReportInformation("SolverType: " & solverType)',
+    # Read-only query through output capture (never model history).
+    fields = [
+        ("solver_type", "GetSolverType()"),
+        ("fmin", "Solver.GetFmin"),
+        ("fmax", "Solver.GetFmax"),
+        ("n_frequency_samples", "Solver.GetNFsamples"),
+        ("number_of_ports", "Solver.GetNumberOfPorts"),
+        ("stimulation_port", "Solver.GetStimulationPort"),
+        ("last_solver_time_s", "Solver.GetLastSolverTime"),
     ]
-    script = "\n".join(vba_lines)
+    script = client.build_query_vba(fields) if hasattr(client, "build_query_vba") else ""
 
     if client.connected:
-        result = client.execute_vba(script)
+        query = client.query_values(fields)
+        if query.get("status") != "ok":
+            result = query
+        else:
+            result = {"status": "ok", "source": query.get("source")}
+            for key, value in query["values"].items():
+                if key == "solver_type":
+                    result[key] = value
+                    continue
+                try:
+                    result[key] = int(value)
+                except ValueError:
+                    try:
+                        result[key] = float(value.replace(",", "."))
+                    except ValueError:
+                        result[key] = value
+            if "fmin" in result or "fmax" in result:
+                result["frequency_unit"] = "project frequency unit (as set by cst_set_units)"
+            if query.get("errors"):
+                result["unavailable"] = query["errors"]
     else:
         result = {
             "status": "offline",
@@ -601,7 +623,6 @@ def _configure_multilayer_solver(arguments: dict, client: CSTClient) -> list[Tex
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def register_solver_tools(server: Server, client: CSTClient) -> None:
-    """Register solver tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

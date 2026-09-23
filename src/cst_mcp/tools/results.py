@@ -11,7 +11,6 @@ and 3D radiation patterns.
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
 
 from mcp.types import TextContent, Tool
 
@@ -19,9 +18,41 @@ from cst_mcp.cst_client import CSTClient
 from cst_mcp.types import FieldMonitorType
 from cst_mcp.validators import validate_file_path, validate_frequency, validate_port_number
 from cst_mcp.vba_builder import VBABuilder, VBAScript
+from cst_mcp.vba_safety import validate_file_path as _qf
+from cst_mcp.vba_safety import vba_escape as _q
+from cst_mcp.vba_safety import vba_number as _n
 
-if TYPE_CHECKING:
-    from mcp.server import Server
+
+# ---------------------------------------------------------------------------
+# Output schemas (describe success payloads only; deliberately permissive)
+# ---------------------------------------------------------------------------
+
+# Connected mode returns status='ok' with a sampled curve; offline mode returns
+# status='offline' with the tree path and a VBA script instead of data.
+S_PARAMETERS_OUTPUT_SCHEMA: dict = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "status": {"type": "string"},
+        "format": {"type": "string"},
+        "n": {"type": "integer", "minimum": 0},
+        "total_points": {"type": "integer", "minimum": 0},
+        "sampled": {"type": "boolean"},
+        "x": {"type": "array", "items": {"type": "number"}},
+        "y": {"type": "array"},
+        "real": {"type": "array", "items": {"type": "number"}},
+        "imag": {"type": "array", "items": {"type": "number"}},
+        "xlabel": {"type": "string"},
+        "unit": {"type": "string"},
+        "tree_path": {"type": "string"},
+        "s_parameter": {"type": "string"},
+        "vba_script": {"type": "string"},
+    },
+    "required": ["status"],
+    "if": {"properties": {"status": {"const": "ok"}}, "required": ["status"]},
+    "then": {"required": ["format", "n", "x", "y"]},
+    "additionalProperties": True,
+}
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -65,6 +96,7 @@ TOOLS: list[Tool] = [
             },
             "required": [],
         },
+        outputSchema=S_PARAMETERS_OUTPUT_SCHEMA,
     ),
     # 2. cst_get_farfield
     Tool(
@@ -737,7 +769,7 @@ def _build_s_parameter_vba(port_out: int, port_in: int, fmt: str) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  ' Access the 1D result data",
         "  Dim nPoints As Long",
@@ -800,7 +832,7 @@ def _build_farfield_vba(frequency: float, monitor_name: str | None) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  ' Access far-field result object",
         "  Dim ff As Object",
@@ -920,7 +952,7 @@ def _build_vswr_vba(port: int) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  ' If VSWR is directly available in the result tree, read it",
         "  Dim nPoints As Long",
@@ -969,7 +1001,7 @@ def _build_gain_vba(frequency: float) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
@@ -1003,7 +1035,7 @@ def _build_efficiency_vba(frequency: float) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
@@ -1042,15 +1074,15 @@ def _build_list_results_vba(tree_path: str | None) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{root}"',
+        f'  SelectTreeItem "{_q(root, "tree_path")}"',
         "",
         "  ' Enumerate child items in the result tree",
         "  Dim sItem As String",
-        f'  sItem = ResultTree.GetFirstChildName("{root}")',
+        f'  sItem = ResultTree.GetFirstChildName("{_q(root, "tree_path")}")',
         "",
         '  Do While sItem <> ""',
         '    Debug.Print sItem',
-        f'    sItem = ResultTree.GetNextItemName("{root}")',
+        '    sItem = ResultTree.GetNextItemName(sItem)',
         "  Loop",
         "End Sub",
     ]
@@ -1066,19 +1098,16 @@ def _build_export_result_vba(
     script.add_comment(f"Export result '{result_path}' to {fmt.upper()}: {output_file}")
     script.add_blank()
 
-    # Escape backslashes in file path for VBA string
-    escaped_output = output_file.replace("\\", "\\\\")
-
     if fmt == "touchstone":
         lines = [
             "Sub Main()",
-            f'  SelectTreeItem "{result_path}"',
+            f'  SelectTreeItem "{_q(result_path, "result_path")}"',
             "",
             "  ' Export S-parameters in Touchstone format",
             "  Dim sTouchstone As Object",
             "  Set sTouchstone = TouchstoneExport",
             "  sTouchstone.Reset",
-            f'  sTouchstone.FileName "{escaped_output}"',
+            f'  sTouchstone.FileName "{_qf(output_file, "output_file")}"',
             '  sTouchstone.FrequencyRange "Full"',
             "  sTouchstone.Renormalize 50",
             '  sTouchstone.UseARResults "False"',
@@ -1093,13 +1122,13 @@ def _build_export_result_vba(
         # of SetfileType. SetSeparator/StepWidth do NOT exist in CST 2025.
         lines = [
             "Sub Main()",
-            f'  SelectTreeItem "{result_path}"',
+            f'  SelectTreeItem "{_q(result_path, "result_path")}"',
             "",
             f"  ' Export result data via ASCIIExport ({fmt.upper()})",
             "  With ASCIIExport",
             "    .Reset",
-            f'    .FileName "{output_file}"',
-            f'    .SetfileType "{fmt}"',
+            f'    .FileName "{_qf(output_file, "output_file")}"',
+            f'    .SetfileType "{_q(fmt, "format")}"',
             "    .Execute",
             "  End With",
             "End Sub",
@@ -1121,7 +1150,7 @@ def _build_s_parameter_phase_vba(port_out: int, port_in: int, unwrap: bool) -> s
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  ' Export S-parameter data to ASCII for phase extraction",
         "  Dim nPoints As Long",
@@ -1184,7 +1213,7 @@ def _build_group_delay_vba(port_out: int, port_in: int) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim nPoints As Long",
         '  nPoints = Result1D("").GetN',
@@ -1256,7 +1285,7 @@ def _build_pattern_cut_vba(
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
@@ -1268,7 +1297,7 @@ def _build_pattern_cut_vba(
         "",
         f"  ' Set phi cut plane to {phi_val} degrees",
         '  ff.Vary "angle1"',
-        f'  ff.Phi "{phi_val}"',
+        f'  ff.Phi "{_n(phi_val, "phi_cut")}"',
         "",
         "  ' Export the pattern cut data",
         '  ff.Plot',
@@ -1306,7 +1335,7 @@ def _build_cross_polarization_vba(frequency: float, definition: str) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
@@ -1353,7 +1382,7 @@ def _build_axial_ratio_vba(
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
@@ -1367,7 +1396,7 @@ def _build_axial_ratio_vba(
         lines += [
             f"  ' Plot axial ratio vs theta at phi={phi_cut} deg",
             '  ff.Vary "angle1"',
-            f'  ff.Phi "{phi_cut}"',
+            f'  ff.Phi "{_n(phi_cut, "phi_cut")}"',
             '  ff.Plot',
             "",
             "  ' Read axial ratio values vs angle",
@@ -1384,7 +1413,7 @@ def _build_axial_ratio_vba(
     else:  # vs_frequency
         lines += [
             f"  ' Extract axial ratio at theta={theta_cut}, phi={phi_cut}",
-            f'  ff.SetObservationAngle "{theta_cut}", "{phi_cut}"',
+            f'  ff.SetObservationAngle "{_n(theta_cut, "theta_cut")}", "{_n(phi_cut, "phi_cut")}"',
             '  ff.Plot',
             "",
             "  ' Read axial ratio at the observation direction",
@@ -1413,13 +1442,13 @@ def _build_surface_current_vba(frequency: float, component: str | None) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
     ]
     if component:
         lines += [
             f"  ' Filter to component: {component}",
-            f'  Plot3DSetComponent "{component}"',
+            f'  Plot3DSetComponent "{_q(component, "component")}"',
             "",
         ]
     lines += [
@@ -1451,7 +1480,7 @@ def _build_efficiency_breakdown_vba(frequency: float) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
@@ -1529,13 +1558,13 @@ def _build_time_domain_signal_vba(
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim nPoints As Long",
         '  nPoints = Result1D("").GetN',
         "",
         "  If nPoints = 0 Then",
-        '    Debug.Print "No time-domain signal data found at: ' + tree_path + '"',
+        '    Debug.Print "No time-domain signal data found at: ' + _q(tree_path, "tree_path") + '"',
         "    Exit Sub",
         "  End If",
         "",
@@ -1613,7 +1642,7 @@ def _build_bandwidth_vba(port: int, threshold_db: float, criterion: str) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim nPoints As Long",
         '  nPoints = Result1D("").GetN',
@@ -1715,14 +1744,14 @@ def _build_radiation_pattern_3d_vba(
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
         "  Dim ff As Object",
         "  Set ff = FarfieldPlot",
         "  ff.Reset",
         '  ff.Plottype "3D"',
         '  ff.SetPlotMode "Gain"',
-        f'  ff.Step "{resolution_deg}"',
+        f'  ff.Step "{_n(resolution_deg, "resolution_deg")}"',
         "",
     ]
 
@@ -1762,13 +1791,13 @@ def _build_current_distribution_vba(frequency: float, component: str | None) -> 
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "{tree_path}"',
+        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
     ]
     if component:
         lines += [
             f"  ' Filter to component: {component}",
-            f'  Plot3DSetComponent "{component}"',
+            f'  Plot3DSetComponent "{_q(component, "component")}"',
             "",
         ]
     lines += [
@@ -3145,7 +3174,8 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
 # ---------------------------------------------------------------------------
 
 
-def register_result_tools(server: Server, client: CSTClient) -> None:
-    """Register result extraction tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

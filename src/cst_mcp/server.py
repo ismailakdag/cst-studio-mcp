@@ -16,6 +16,7 @@ from cst_mcp import __version__
 from cst_mcp.config import CSTConfig
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.tools import register_all_tools
+from cst_mcp.tools.registry import CST_WORKER
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,14 @@ def create_server(config: CSTConfig | None = None) -> tuple[Server, CSTClient]:
         ),
     )
     client = CSTClient(config)
-    register_all_tools(server, client)
+    registry = register_all_tools(server, client)
+    # stderr only: stdout carries the MCP protocol.
+    logger.info(
+        "Serving %d of %d tools (CST_TOOLSETS=%s)",
+        len(registry.active_tool_names),
+        len(registry),
+        "all" if config.toolsets is None else ",".join(sorted(config.toolsets)),
+    )
     return server, client
 
 
@@ -67,7 +75,8 @@ async def run_server() -> None:
         server, client = create_server()
         if client.config.connect_on_startup:
             try:
-                conn = client.connect()
+                # Same single CST thread that serves every tool handler.
+                conn = await CST_WORKER.call(client.connect)
                 logger.info("cst-studio-mcp %s start: %s", __version__, conn.get("status"))
             except Exception:
                 logger.exception("CST startup connection failed; continuing in offline mode")

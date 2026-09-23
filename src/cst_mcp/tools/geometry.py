@@ -7,16 +7,15 @@ in CST Studio by generating VBA scripts via VBABuilder.
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from mcp.types import TextContent, Tool
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 from cst_mcp.validators import validate_name, validate_positive, validate_non_negative
+from cst_mcp.vba_safety import vba_escape as _q
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -668,7 +667,7 @@ def _build_polygon_extrude(args: dict) -> str:
 
     script = VBAScript()
     script.add_comment(f"Polygon extrude: {component}:{name}")
-    script.add_raw(f'Curve.NewCurve "{name}_curves"')
+    script.add_raw(f'Curve.NewCurve "{_q(name, "name")}_curves"')
     if axis not in {"x", "y", "z"}:
         raise ValueError("axis must be x, y, or z")
     def point(pt):
@@ -757,7 +756,8 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
         }))]
 
 
-def register_geometry_tools(server: Server, client: CSTClient) -> None:
-    """Register geometry tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

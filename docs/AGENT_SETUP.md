@@ -22,7 +22,7 @@ Example for clients using the `mcpServers` JSON convention (other clients use th
 ```json
 {
   "mcpServers": {
-    "cst": {
+    "cst-studio": {
       "command": "C:/CST-MCP/.venv/Scripts/python.exe",
       "args": ["-m", "cst_mcp.server"],
       "env": {
@@ -35,15 +35,23 @@ Example for clients using the `mcpServers` JSON convention (other clients use th
 }
 ```
 
+For Claude Code, the equivalent one-line registration is:
+
+```powershell
+claude mcp add cst-studio --scope user -e CST_CONNECT_MODE=manual -e CST_PATH="C:/Program Files (x86)/CST Studio Suite 2026" -e CST_WORK_DIR="C:/CST-Projects" '--' "C:/CST-MCP/.venv/Scripts/python.exe" -m cst_mcp.server
+```
+
+Optional: `CST_TOOLSETS` (comma-separated categories, alias `core`; connection tools are always exposed) limits the tool schemas sent to the model. `CST_ALLOW_RAW_VBA=1` is required before `cst_execute_vba` runs raw VBA in connected mode; its VBA check is a best-effort denylist, not a sandbox.
+
 Set CST_PATH to the actual installation, or omit it to discover CST. The 2026 results module documents reading unpacked, unprotected **2025 and 2026** projects; this does not establish live 2025 automation coverage. A vendor DLL/Python ABI mismatch must be fixed in the environment, not worked around by opening another CST version silently.
 
 ## Acceptance order
 
-1. Perform MCP `initialize`, `tools/list`, and `cst_connection_status`. Version should be 1.1.0; current catalog contains 184 tools. Default startup is disconnected.
+1. Perform MCP `initialize`, `tools/list`, and `cst_connection_status`. Version should be 1.1.0; the full catalog contains 180+ tools (fewer if `CST_TOOLSETS` is set). Default startup is disconnected. Tools carry `readOnlyHint`/`destructiveHint` annotations, so read-only tools can be auto-approved.
 2. Use `cst_search_help` with `{"query":"cst.results"}` and then `cst_read_help` with a returned topic. This reads installed official documentation without opening CST. `offset`/`max_chars` paginate long topics.
 3. If a completed saved project is supplied, call `cst_list_saved_results` with its absolute `project_path`. Use an exact returned `tree_path` and `run_id` with `cst_read_saved_result`. No `cst_connect` is required. Use `max_points: 0` for all samples; the default is an explicitly labelled 200-point preview. Preserve real and imaginary values.
 4. For live work, call `cst_connect` explicitly. This **may launch CST** if none is open. Inspect the selected project and solver state before changing anything. Do not change an unrelated project. Create a new uniquely named scratch project for model-building acceptance tests when CST is idle.
-5. Never treat `offline` (generated VBA), `busy`, `error`, or `timeout` as completed simulation. A timed-out mutation is not automatically replayed. Check status/messages and establish idle state before proceeding.
+5. Never treat `offline` (generated VBA), `busy`, `error`, or `timeout` as completed simulation. A timed-out mutation is not automatically replayed. Check status/messages and establish idle state before proceeding. For solves longer than about a minute, start with `cst_run_simulation_async` and call `cst_wait_for_simulation` repeatedly (each call returns within about `max_wait_s` + 2 s; default 45 s) until it reports completion.
 6. Native optimizer tools configure goals/parameters only. Starting requires an explicit `Optimizer.Start` action. The connected Python `cst_refine_antenna` workflow remains an explicit run operation with its own iteration limit.
 
 For a completed two-port project, this read-only script checks the real stdio transport and all four complex curves:

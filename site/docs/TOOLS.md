@@ -1,4 +1,4 @@
-## Full tool catalog (184 tools)
+## Full tool catalog (188 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
@@ -31,11 +31,11 @@ One-shot helpers for common tasks. New users should start here.
 | Tool | What it does |
 |------|--------------|
 | `cst_workflow_patch_antenna` | END-TO-END / Uçtan uca: size a rectangular microstrip patch, build substrate/ground/patch/feed, frequency, open BCs, waveguide port, farf… |
-| `cst_workflow_run_and_s11` | Run solver and return structured S11/Sij with metrics (min dB, bandwidth). Solver çalıştırır ve S parametrelerini metriklerle döner. |
+| `cst_workflow_run_and_s11` | Run solver and return structured S11/Sij with metrics (min dB, bandwidth). BLOCKING: waits for the whole solve (up to timeout_s) inside o… |
 | `cst_design_patch_only` | Calculate microstrip patch dimensions only (offline, no CST). Sadece boyut hesabı — CST gerekmez. |
 | `cst_export_structure_views` | Export structure screenshots (perspective/xy/xz/yz) via Plot.ExportImage. Yapı görünüm görsellerini dışa aktarır. Connected mode required. |
 | `cst_workflow_design_report` | ONE-SHOT design package after modeling/simulation: project status, parameters/dimensions, S-parameters (+metrics), best-effort farfield e… |
-| `cst_workflow_simulate_and_report` | Run the solver, then immediately build a design report (S-params + views + optional farfield). Simülasyonu çalıştırıp rapor paketini üretir. |
+| `cst_workflow_simulate_and_report` | Run the solver, then immediately build a design report (S-params + views + optional farfield). BLOCKING: waits for the whole solve (up to… |
 | `cst_discover_farfield_monitors` | Discover farfield monitors from the project Result folder and tree-path heuristics. Uzak alan monitörlerini disk + path sezgisiyle listeler. |
 | `cst_get_farfield_metrics` | Read antenna metrics after a solve: S11 + radiation/total efficiency from 1D Results, plus max realized gain via official FarfieldPlot.Ge… |
 
@@ -176,15 +176,16 @@ Time domain, frequency domain, eigenmode, IE…
 | `cst_configure_ie_solver_advanced` | Advanced Integral Equation solver configuration for electrically large structures. Provides control over preconditioner, MLFMM accelerati… |
 | `cst_configure_multilayer_solver` | Configure the solver for planar multilayer structures. Optimised for antenna-on-PCB, frequency selective surfaces (FSS), and radome analy… |
 
-### Simulation control (6)
+### Simulation control (7)
 
 Run, pause, resume, stop simulations.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_run_simulation` | Start a CST simulation with the current solver settings. This is a blocking call that waits for the simulation to complete. Use cst_run_s… |
-| `cst_run_simulation_async` | Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Use cst_get_simulation_sta… |
+| `cst_run_simulation` | Start a CST simulation with the current solver settings and block until it completes (up to timeout_s). The server stays responsive, but … |
+| `cst_run_simulation_async` | Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Then call cst_wait_for_sim… |
 | `cst_get_simulation_status` | Read whether a CST simulation is running and return any solver-run metadata exposed by the CST Python API. This does not show a dialog or… |
+| `cst_wait_for_simulation` | Wait a bounded time for the running CST solve to finish, polling only the read-only 'is solver running' flag about every 2 s. Returns sta… |
 | `cst_pause_simulation` | Pause a currently running CST simulation. The simulation can be resumed later with cst_resume_simulation. |
 | `cst_resume_simulation` | Resume a previously paused CST simulation. Use after cst_pause_simulation to continue from where it stopped. |
 | `cst_stop_simulation` | Stop and abort a running CST simulation. Unlike pause, a stopped simulation cannot be resumed — it must be restarted from the beginning. |
@@ -339,12 +340,36 @@ L / Pi / T networks, stubs, quarter-wave, Smith transforms.
 | `cst_impedance_smith_transform` | Apply a reactive element transformation to an impedance on the Smith chart. Supports series L/C, shunt L/C, and transmission line operati… |
 | `cst_matching_microstrip_impedance` | Calculate microstrip transmission line characteristic impedance from physical dimensions using the Hammerstad-Jensen model with optional … |
 
+### Publication figures (1)
+
+IEEE-style 1D result and farfield figures from saved projects (PDF/SVG/PNG).
+
+| Tool | What it does |
+|------|--------------|
+| `cst_plot_1d_results` | Publication-quality (IEEE column, serif, PDF/SVG/PNG) figures of 1D results read offline from a saved .cst via cst.results (no GUI, no so… |
+
+### Farfield figures (1)
+
+Polar cuts, heatmaps and 3D patterns with gain/HPBW/F-B metrics.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_plot_farfield` | Publication-quality farfield figures (IEEE sizes, serif, grayscale-safe): polar dB cuts (E/H-plane, co/cross-pol when Ludwig-3/spherical … |
+
+### Technical drawings (1)
+
+Dimensioned orthographic views of the model with title block and parameter table.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_technical_drawing` | Render an academic, dimensioned orthographic technical drawing (third-angle top/front/side views, optional isometric) of the CST model. C… |
+
 ### VBA escape hatch (3)
 
 Raw VBA execution and built-in VBA object reference.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_execute_vba` | Execute raw VBA code in CST Studio Suite. The code is validated for safety (shell access, file I/O, and external process execution are bl… |
+| `cst_execute_vba` | Execute raw VBA code in CST Studio Suite (history VBA). DISABLED BY DEFAULT in connected mode: it only runs when the server process has t… |
 | `cst_vba_help` | Get VBA reference documentation for a CST Studio object. Returns the object description and a list of its common methods and properties. |
 | `cst_list_vba_objects` | List available CST Studio VBA objects, optionally filtered by category. Returns object names with brief descriptions. |

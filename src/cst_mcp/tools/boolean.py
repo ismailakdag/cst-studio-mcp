@@ -11,11 +11,11 @@ from typing import TYPE_CHECKING
 
 from mcp.types import TextContent, Tool
 
+from cst_mcp.vba_safety import vba_escape as _q
 from cst_mcp.validators import validate_component_path
 from cst_mcp.vba_builder import VBABuilder
 
 if TYPE_CHECKING:
-    from mcp.server import Server
 
     from cst_mcp.cst_client import CSTClient
 
@@ -130,7 +130,7 @@ async def handle(
 
         # Boolean ops use direct Solid.<Op> calls — no With block needed
         vba = VBABuilder("Solid")
-        vba.raw_line(f'Solid.{operation} "{solid1}", "{solid2}"')
+        vba.raw_line(f'Solid.{operation} "{_q(solid1, "solid1")}", "{_q(solid2, "solid2")}"')
         script = vba.build()
 
         result = client.execute_vba(script)
@@ -151,7 +151,8 @@ async def handle(
 # ---------------------------------------------------------------------------
 
 
-def register_boolean_tools(server: Server, client: CSTClient) -> None:
-    """Register boolean tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

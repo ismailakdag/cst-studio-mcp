@@ -147,16 +147,31 @@ async def handle(name, arguments, client):
     path = Path(arguments["project_path"]).resolve()
     if path.suffix.lower() != ".cst" or not path.is_file():
         return err("project_path must be an existing saved .cst file")
-    if client.project_path and Path(client.project_path).resolve() == path:
+    # The session's own open project may be read with allow_interactive=True
+    # once the solver is verified idle (same contract as CSTClient.get_result).
+    own_project = False
+    try:
+        own_project = bool(client.project_path) and Path(client.project_path).resolve() == path
+    except (OSError, TypeError, ValueError):
+        own_project = False
+    if own_project:
         if client.is_solver_running(timeout_s=5) is not False:
             return err("Project is busy or solver state is unknown")
     if name == "cst_list_saved_results":
-        import cst.results
+        try:
+            import cst.results
 
-        module = cst.results.ProjectFile(str(path), allow_interactive=False).get_3d()
+            module = cst.results.ProjectFile(str(path), allow_interactive=own_project).get_3d()
+            tree_items = list(module.get_tree_items())
+        except Exception as exc:  # cst.results raises UserWarning/RuntimeError etc.
+            hint = (
+                " The project is open in another CST instance; close it there or use the"
+                " session that opened it." if not own_project and "interactive" in str(exc).lower() else ""
+            )
+            return err(f"Could not open saved results: {type(exc).__name__}: {exc}.{hint}")
         paths = [
             str(p)
-            for p in module.get_tree_items()
+            for p in tree_items
             if arguments.get("contains", "").lower() in str(p).lower()
         ]
         offset, limit = arguments.get("offset", 0), arguments.get("limit", 50)
@@ -176,10 +191,18 @@ async def handle(name, arguments, client):
             }
         )
     if name == "cst_read_saved_result":
-        data = format_curve(
-            read_curve(str(path), arguments["tree_path"], arguments.get("run_id", 0)),
-            arguments.get("format", "real_imag"),
-        )
+        try:
+            data = format_curve(
+                read_curve(
+                    str(path),
+                    arguments["tree_path"],
+                    arguments.get("run_id", 0),
+                    allow_interactive=own_project,
+                ),
+                arguments.get("format", "real_imag"),
+            )
+        except Exception as exc:
+            return err(f"Could not read saved result: {type(exc).__name__}: {exc}")
         maximum = arguments.get("max_points", 200)
         if data.get("status") == "ok":
             n = data["n"]
@@ -197,3 +220,8 @@ async def handle(name, arguments, client):
                 data.update(total_points=n, sampled=False)
         return as_json(data)
     return err(f"Unknown tool: {name}")
+
+
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

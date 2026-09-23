@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from cst_mcp.config import CSTConfig
-from cst_mcp.execution.results_reader import ResultsReader
+from cst_mcp.vba_safety import vba_escape
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,10 @@ class CSTSession:
         self._project_path: str | None = None
         self._last_error: str | None = None
         self._last_solver_error: str | None = None
+        # Set by start_solver (async start) until a wait confirms the finish:
+        # {"t0": monotonic start time, "seen_running": bool}. It lets
+        # cst_wait_for_simulation tell "not started yet" from "finished".
+        self._pending_solve: dict[str, Any] | None = None
 
     # ------------------------------------------------------------------
     # Properties
@@ -65,6 +69,14 @@ class CSTSession:
     @property
     def project_path(self) -> str | None:
         return self._project_path
+
+    @property
+    def pending_solve(self) -> dict[str, Any] | None:
+        """Copy of the async-solve record set by :meth:`start_solver`, or ``None``."""
+        return dict(self._pending_solve) if self._pending_solve is not None else None
+
+    def clear_pending_solve(self) -> None:
+        self._pending_solve = None
 
     @property
     def model3d(self) -> Any:
@@ -168,6 +180,7 @@ class CSTSession:
         self._de = None
         self._project = None
         self._project_path = None
+        self._pending_solve = None
         return {"status": "disconnected"}
 
     # ------------------------------------------------------------------
@@ -279,6 +292,7 @@ class CSTSession:
                 return {"status": "error", "message": str(exc), "path": self._project_path}
         self._project = None
         self._project_path = None
+        self._pending_solve = None
         return {"status": "closed"}
 
     # ------------------------------------------------------------------
@@ -347,18 +361,34 @@ class CSTSession:
 
     @staticmethod
     def _strip_sub_main(code: str) -> str:
-        """Remove Sub Main wrapper for add_to_history (history macros must be bare)."""
-        import re
+        """Remove Sub Main wrapper for add_to_history (history macros must be bare).
 
+        Leading blank lines, comments (``'`` / ``Rem``) and module-level
+        ``Option ...`` lines before ``Sub Main`` are tolerated: comments are
+        kept, ``Option`` lines are dropped (they are invalid inside a Sub).
+        """
+        lines = code.strip().splitlines()
+        prefix: list[str] = []
+        idx = 0
+        while idx < len(lines):
+            stripped = lines[idx].strip()
+            if not stripped or stripped.startswith("'") or re.match(r"(?i)rem(\s|$)", stripped):
+                if stripped:
+                    prefix.append(stripped)
+            elif not re.match(r"(?i)option\s+\w+", stripped):
+                break
+            idx += 1
+        rest = "\n".join(lines[idx:])
         m = re.search(
-            r"(?is)^\s*sub\s+main\s*\(\s*\)\s*(.*)\s*end\s+sub\s*$",
-            code.strip(),
+            r"(?is)^\s*sub\s+main\s*(?:\(\s*\))?[ \t]*\r?\n(.*?)\s*end\s+sub\s*$",
+            rest,
         )
         if m:
-            return m.group(1).strip() + "\n"
+            body = m.group(1).strip()
+            return "\n".join([*prefix, body]).strip() + "\n"
         return code
 
-    def run_vba_silent(self, vba_code: str) -> dict[str, Any]:
+    def run_vba_silent(self, vba_code: str, *, history_fallback: bool = True) -> dict[str, Any]:
         """Run VBA without history (schematic / model3d private fallback).
 
         Accepts bare VBA **or** code already wrapped in ``Sub Main``.
@@ -399,6 +429,10 @@ class CSTSession:
                     "note": "Execution may have partially completed; no fallback replay was attempted."}
 
         # 3) history fallback — NEVER pass Sub Main here
+        if not history_fallback:
+            return {"status": "error", "entrypoint": None,
+                    "message": "No non-history VBA entrypoint is available in this CST binding; "
+                               "read-only queries are never written to the model history."}
         try:
             return {
                 **self.run_history(bare, label="mcp_silent_fallback"),
@@ -446,7 +480,8 @@ class CSTSession:
                    'mcpQueryFailed:\nmcpError = Err.Description\nClose #mcpOutput\n'
                    'Err.Raise vbObjectError + 1, , mcpError')
         try:
-            result = self.run_vba_silent(wrapped)
+            # Queries must never reach the model history (read-only contract).
+            result = self.run_vba_silent(wrapped, history_fallback=False)
             if result.get("status") != "executed":
                 return result
             if not out.is_file():
@@ -550,20 +585,50 @@ class CSTSession:
         try:
             value = self.model3d.is_solver_running(timeout=self._api_timeout(timeout_s))
             self._last_solver_error = None if isinstance(value, bool) else "CST solver state is unknown"
+            if value is True and self._pending_solve is not None:
+                self._pending_solve["seen_running"] = True
             return value if isinstance(value, bool) else None
         except Exception as exc:  # noqa: BLE001
             self._last_solver_error = str(exc)
             logger.debug("is_solver_running failed", exc_info=True)
             return None
 
-    def solver_status(self, timeout_s: float = 30.0) -> dict[str, Any]:
-        """Return solver state through the read-only CST Python API."""
+    @staticmethod
+    def _label_run_info(run_info: dict[str, Any], running: bool | None) -> dict[str, Any]:
+        """Mark CST's run info as historical unless it carries a timestamp.
+
+        ``get_solver_run_info`` reports the outcome of the *last* solver run or
+        history update (e.g. a stale ERROR from a rejected command) and keeps
+        reporting it until the next run. Without a timestamp agents must not
+        read ``state`` as the current solver condition.
+        """
+        time_keys = [k for k in run_info if re.search(r"(?i)time|date|stamp", k)]
+        if time_keys:
+            run_info["reported_at"] = run_info[time_keys[0]]
+            return run_info
+        if "state" in run_info:
+            run_info["last_reported_state"] = run_info.pop("state")
+            run_info["state_note"] = (
+                "Last state CST reported for a previous solver run/history update; it carries "
+                "no timestamp and may be stale. Use 'running' for the current solver condition."
+                + (" The solver is idle now." if running is False else "")
+            )
+        return run_info
+
+    def solver_status(
+        self, timeout_s: float = 30.0, *, running_only: bool = False
+    ) -> dict[str, Any]:
+        """Return solver state through the read-only CST Python API.
+
+        A full status makes up to three CST calls (running flag, active solver
+        name, last run info), each bounded by ``timeout_s``. ``running_only``
+        makes just the ``is_solver_running`` call, for cheap bounded polling.
+        """
         if not self.is_connected or not self.has_project:
             return {"status": "offline", "message": "Solver status requires connected mode"}
 
         timeout = self._api_timeout(timeout_s)
         try:
-            m3d = self.model3d
             running = self.is_solver_running(timeout_s=timeout)
             if running is None:
                 return {"status": "error", "message": self._last_solver_error or "CST solver state is unknown", "running": None}
@@ -571,28 +636,46 @@ class CSTSession:
                 "status": "ok",
                 "running": running,
             }
-            get_name = getattr(m3d, "get_active_solver_name", None)
-            if callable(get_name):
-                try:
-                    out["active_solver"] = str(get_name(timeout=timeout))
-                except Exception:  # noqa: BLE001
-                    logger.debug("get_active_solver_name failed", exc_info=True)
-            get_info = getattr(m3d, "get_solver_run_info", None)
-            if callable(get_info):
-                try:
-                    info = get_info(timeout=timeout)
-                    if isinstance(info, dict):
-                        out["run_info"] = {
-                            str(key): value
-                            if value is None or isinstance(value, (str, int, float, bool))
-                            else str(value)
-                            for key, value in info.items()
-                        }
-                except Exception:  # noqa: BLE001
-                    logger.debug("get_solver_run_info failed", exc_info=True)
+            if not running_only:
+                out.update(self.solver_details(timeout_s=timeout, running=running))
             return out
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc), "running": None}
+
+    def solver_details(
+        self, timeout_s: float = 30.0, *, running: bool | None = None
+    ) -> dict[str, Any]:
+        """Best-effort ``active_solver`` and ``run_info`` (two CST calls, each
+        bounded by ``timeout_s``). Missing/failed values are simply omitted."""
+        out: dict[str, Any] = {}
+        if not self.has_project:
+            return out
+        timeout = self._api_timeout(timeout_s)
+        try:
+            m3d = self.model3d
+        except Exception:  # noqa: BLE001
+            return out
+        get_name = getattr(m3d, "get_active_solver_name", None)
+        if callable(get_name):
+            try:
+                out["active_solver"] = str(get_name(timeout=timeout))
+            except Exception:  # noqa: BLE001
+                logger.debug("get_active_solver_name failed", exc_info=True)
+        get_info = getattr(m3d, "get_solver_run_info", None)
+        if callable(get_info):
+            try:
+                info = get_info(timeout=timeout)
+                if isinstance(info, dict):
+                    run_info = {
+                        str(key): value
+                        if value is None or isinstance(value, (str, int, float, bool))
+                        else str(value)
+                        for key, value in info.items()
+                    }
+                    out["run_info"] = self._label_run_info(run_info, running)
+            except Exception:  # noqa: BLE001
+                logger.debug("get_solver_run_info failed", exc_info=True)
+        return out
 
     def wait_solver(self, timeout_s: float = 3600, poll_s: float = 2.0) -> dict[str, Any]:
         if not self.has_project:
@@ -631,6 +714,8 @@ class CSTSession:
                     "running": True,
                 }
             result = self.model3d.run_solver(timeout=timeout)
+            # A completed blocking solve supersedes any earlier async start.
+            self._pending_solve = None
             return {"status": "executed", "result": str(result) if result else "ok"}
         except Exception as exc:  # noqa: BLE001
             if self._is_timeout_error(exc):
@@ -658,6 +743,7 @@ class CSTSession:
                     "running": True,
                 }
             result = self.model3d.start_solver(timeout=timeout)
+            self._pending_solve = {"t0": time.monotonic(), "seen_running": False}
             return {"status": "started", "result": str(result) if result else "ok"}
         except Exception as exc:  # noqa: BLE001
             if self._is_timeout_error(exc):
@@ -691,7 +777,10 @@ class CSTSession:
         return self._solver_control("resume_solver", timeout_s)
 
     def abort_solver(self, timeout_s: float = 30.0) -> dict[str, Any]:
-        return self._solver_control("abort_solver", timeout_s)
+        result = self._solver_control("abort_solver", timeout_s)
+        if result.get("status") == "executed":
+            self._pending_solve = None
+        return result
 
     def export_tree_csv(self, tree_path: str, filepath: str | None = None) -> dict[str, Any]:
         """Export a result tree item to CSV using model3d.ASCIIExport."""
@@ -937,6 +1026,7 @@ class CSTSession:
 
         def _view(name: str, reserved: str, extra_rotates: list[str] | None = None) -> str:
             lines = [
+                *_STRUCTURE_VIEW_PREAMBLE,
                 'Plot.DrawBox "True"',
                 f'Plot.RestoreView "{reserved}"',
             ]
@@ -946,7 +1036,7 @@ class CSTSession:
                 [
                     "Plot.ZoomToStructure",
                     "Plot.Update",
-                    f'Plot.ExportImage "{_export_path(name)}", {width}, {height}',
+                    f'Plot.ExportImage "{vba_escape(_export_path(name), "path")}", {width}, {height}',
                 ]
             )
             return "\n".join(lines)
@@ -977,11 +1067,12 @@ class CSTSession:
                 # Fallback: rotate from current view
                 script = "\n".join(
                     [
+                        *_STRUCTURE_VIEW_PREAMBLE,
                         "Plot.ZoomToStructure",
                         'Plot.Rotate "left"',
                         'Plot.Rotate "left"',
                         "Plot.Update",
-                        f'Plot.ExportImage "{path.as_posix()}", {width}, {height}',
+                        f'Plot.ExportImage "{vba_escape(path.as_posix(), "path")}", {width}, {height}',
                     ]
                 )
             wrapped = f"Sub Main()\n{script}\nEnd Sub\n"
@@ -990,6 +1081,7 @@ class CSTSession:
             if run.get("status") != "executed" or not path.exists():
                 fallback = "\n".join(
                     [
+                        *_STRUCTURE_VIEW_PREAMBLE,
                         "Plot.ZoomToStructure",
                         *(
                             ['Plot.Rotate "up"', 'Plot.Rotate "up"']
@@ -1003,7 +1095,7 @@ class CSTSession:
                             else ['Plot.Rotate "left"', 'Plot.Rotate "up"']
                         ),
                         "Plot.Update",
-                        f'Plot.ExportImage "{path.as_posix()}", {width}, {height}',
+                        f'Plot.ExportImage "{vba_escape(path.as_posix(), "path")}", {width}, {height}',
                     ]
                 )
                 run = self.run_vba_silent(f"Sub Main()\n{fallback}\nEnd Sub\n")
@@ -1455,6 +1547,11 @@ class CSTSession:
             return str(fname() if callable(fname) else fname)
         except Exception:  # noqa: BLE001
             return None
+
+
+# Switch the main view back to the 3D model before a structure screenshot;
+# otherwise ExportImage captures whatever result (e.g. a farfield) is shown.
+_STRUCTURE_VIEW_PREAMBLE = ('SelectTreeItem "Components"', "Plot.Update")
 
 
 def re_sub_path(tree_path: str) -> str:

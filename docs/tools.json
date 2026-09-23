@@ -1,7 +1,7 @@
 {
   "name": "cst-studio-mcp",
   "version": "1.1.0",
-  "total_tools": 184,
+  "total_tools": 188,
   "categories": [
     {
       "id": "official",
@@ -278,7 +278,7 @@
         },
         {
           "name": "cst_workflow_run_and_s11",
-          "description": "Run solver and return structured S11/Sij with metrics (min dB, bandwidth). Solver çalıştırır ve S parametrelerini metriklerle döner.",
+          "description": "Run solver and return structured S11/Sij with metrics (min dB, bandwidth). BLOCKING: waits for the whole solve (up to timeout_s) inside one tool call; many MCP clients abort calls after ~60 s. For longer solves use cst_run_simulation_async + cst_wait_for_simulation, then cst_get_s_parameters. Solver çalıştırır ve S parametrelerini metriklerle döner.",
           "category_id": "workflows",
           "params": [
             {
@@ -484,7 +484,7 @@
         },
         {
           "name": "cst_workflow_simulate_and_report",
-          "description": "Run the solver, then immediately build a design report (S-params + views + optional farfield). Simülasyonu çalıştırıp rapor paketini üretir.",
+          "description": "Run the solver, then immediately build a design report (S-params + views + optional farfield). BLOCKING: waits for the whole solve (up to timeout_s) inside one tool call; many MCP clients abort calls after ~60 s. For longer solves use cst_run_simulation_async + cst_wait_for_simulation, then cst_workflow_design_report. Simülasyonu çalıştırıp rapor paketini üretir.",
           "category_id": "workflows",
           "params": [
             {
@@ -688,6 +688,14 @@
               "type": "string",
               "description": "Navigation tree path to list, e.g. 'Components', 'Results', or '2D/3D Results'. Omit for the root tree.",
               "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_depth",
+              "type": "integer",
+              "description": "How many levels below tree_path to enumerate (default 3).",
+              "default": 3,
               "enum": null,
               "required": false
             }
@@ -3640,9 +3648,20 @@
             {
               "name": "ratio_limit",
               "type": "number",
-              "description": "Maximum ratio between adjacent mesh cells (default 20)",
+              "description": "Maximum ratio between adjacent mesh cells (default 20; hexahedral only)",
               "default": 20,
               "enum": null,
+              "required": false
+            },
+            {
+              "name": "mesh_type",
+              "type": "string",
+              "description": "Which MeshSettings map to write: 'Hex' (time domain / hexahedral) or 'Tet' (frequency domain / tetrahedral).",
+              "default": "Hex",
+              "enum": [
+                "Hex",
+                "Tet"
+              ],
               "required": false
             }
           ],
@@ -4132,11 +4151,11 @@
       "blurb_en": "Run, pause, resume, stop simulations.",
       "blurb_tr": "Simülasyonu çalıştır, duraklat, sürdür, durdur.",
       "module": "simulation",
-      "count": 6,
+      "count": 7,
       "tools": [
         {
           "name": "cst_run_simulation",
-          "description": "Start a CST simulation with the current solver settings. This is a blocking call that waits for the simulation to complete. Use cst_run_simulation_async for long-running simulations.",
+          "description": "Start a CST simulation with the current solver settings and block until it completes (up to timeout_s). The server stays responsive, but other CST tool calls queue behind the solve, and cancelling the request does not stop a solve already running in CST (use cst_stop_simulation). Many MCP clients abort a single tool call after about a minute, so for any solve that may take longer than ~60 s prefer cst_run_simulation_async followed by repeated cst_wait_for_simulation calls.",
           "category_id": "simulation",
           "params": [
             {
@@ -4165,7 +4184,7 @@
         },
         {
           "name": "cst_run_simulation_async",
-          "description": "Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Use cst_get_simulation_status to monitor progress.",
+          "description": "Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Then call cst_wait_for_simulation (bounded wait, returns within about max_wait_s) repeatedly until it reports status 'finished'; cst_get_simulation_status gives a single instant snapshot.",
           "category_id": "simulation",
           "params": [
             {
@@ -4202,6 +4221,22 @@
               "type": "number",
               "description": "",
               "default": 30,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": []
+        },
+        {
+          "name": "cst_wait_for_simulation",
+          "description": "Wait a bounded time for the running CST solve to finish, polling only the read-only 'is solver running' flag about every 2 s. Returns status 'finished' once the solver is idle (confirmed=true when the solve started by cst_run_simulation_async was seen running), 'starting' while a just-launched solve has not begun yet, or 'running' once max_wait_s (default 45, max 55) has passed; for 'running'/'starting' call this tool again. Each CST query's timeout is cut to the remaining budget, so the call returns within about max_wait_s + 2 s. Use after cst_run_simulation_async. Does not start, stop or change the simulation. Requires connected mode.",
+          "category_id": "simulation",
+          "params": [
+            {
+              "name": "max_wait_s",
+              "type": "number",
+              "description": "Maximum seconds to wait in this call (0-55). 0 performs a single status check.",
+              "default": 45.0,
               "enum": null,
               "required": false
             }
@@ -8042,6 +8077,510 @@
       ]
     },
     {
+      "id": "figures",
+      "title_en": "Publication figures",
+      "title_tr": "Akademik grafikler",
+      "blurb_en": "IEEE-style 1D result and farfield figures from saved projects (PDF/SVG/PNG).",
+      "blurb_tr": "Kayıtlı projelerden IEEE tarzı 1B sonuç ve uzak alan grafikleri (PDF/SVG/PNG).",
+      "module": "figures_1d",
+      "count": 1,
+      "tools": [
+        {
+          "name": "cst_plot_1d_results",
+          "description": "Publication-quality (IEEE column, serif, PDF/SVG/PNG) figures of 1D results read offline from a saved .cst via cst.results (no GUI, no solving): |S11| dB with threshold line, resonance marker and every -10 dB band (BW, fractional BW), all S-parameters, VSWR, Smith chart, input impedance (Z0 from port reference impedance, else 50 ohm), S11 phase, efficiencies; parameter-sweep runs overlaid; optional measured CSV overlays. Returns status 'no_results' plus the available tree items when the project has not been simulated; it never starts the solver.",
+          "category_id": "figures",
+          "params": [
+            {
+              "name": "project_path",
+              "type": "string",
+              "description": "Saved .cst file. Omit to use the currently open project (connected mode).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "quantities",
+              "type": "array",
+              "description": "",
+              "default": [
+                "s11_db"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "tree_paths",
+              "type": "array",
+              "description": "Extra exact 1D tree paths plotted as custom figures (see cst_list_saved_results).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_ids",
+              "type": "array",
+              "description": "Runs to compare. Default: newest max_runs parametric runs (run 0 only if it is the sole run).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_runs",
+              "type": "integer",
+              "description": "",
+              "default": 6,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "freq_range_ghz",
+              "type": "array",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "threshold_db",
+              "type": "number",
+              "description": "",
+              "default": -10,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "mark_resonance",
+              "type": "boolean",
+              "description": "",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "formats",
+              "type": "array",
+              "description": "",
+              "default": [
+                "pdf",
+                "png"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "width",
+              "type": "string",
+              "description": "",
+              "default": "single",
+              "enum": [
+                "single",
+                "double"
+              ],
+              "required": false
+            },
+            {
+              "name": "out_dir",
+              "type": "string",
+              "description": "Output directory. Default: <project folder>/<project name>_figures.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "legend_labels",
+              "type": "array",
+              "description": "One legend label per plotted run, in run order.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "csv_overlays",
+              "type": "array",
+              "description": "Measured freq,dB CSV files overlaid on the |S11| figure (label default 'Measured').",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "simulate_if_missing",
+              "type": "boolean",
+              "description": "When no results exist, return next_steps for cst_run_simulation_async + cst_wait_for_simulation (connected mode). Never solves here.",
+              "default": false,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": []
+        }
+      ]
+    },
+    {
+      "id": "figures_farfield",
+      "title_en": "Farfield figures",
+      "title_tr": "Uzak alan grafikleri",
+      "blurb_en": "Polar cuts, heatmaps and 3D patterns with gain/HPBW/F-B metrics.",
+      "blurb_tr": "Polar kesitler, ısı haritaları ve 3B desenler; kazanç/HPBW/F-B metrikleri.",
+      "module": "figures_3d",
+      "count": 1,
+      "tools": [
+        {
+          "name": "cst_plot_farfield",
+          "description": "Publication-quality farfield figures (IEEE sizes, serif, grayscale-safe): polar dB cuts (E/H-plane, co/cross-pol when Ludwig-3/spherical components exist, -3 dB beamwidth marks), rectangular cuts, theta-phi or u-v heatmap, optional 3D gain surface; plus metrics (max gain + direction, HPBW per cut, front-to-back, side-lobe level). Data source: data_file (a CST farfield ASCII export, works offline) or, when connected, the open project's Farfields\\farfield (f=X) [1] item exported via FarfieldPlot + ASCIIExport. Never solves: returns status no_results with monitor info and next steps when no farfield exists.",
+          "category_id": "figures_farfield",
+          "params": [
+            {
+              "name": "data_file",
+              "type": "string",
+              "description": "Existing CST farfield ASCII export (.txt/.csv: Theta Phi Abs(...) ...). Preferred source; no CST connection needed.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "project_path",
+              "type": "string",
+              "description": "Project (.cst) to use in connected mode; opened if it is not the current one.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "farfield_name",
+              "type": "string",
+              "description": "Farfield result/monitor name, e.g. 'farfield (f=2.4)' or 'Farfields\\farfield (f=2.4) [1]'.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "frequency_ghz",
+              "type": "number",
+              "description": "Selects farfield (f=X) when farfield_name is omitted.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "quantity",
+              "type": "string",
+              "description": "Plotted quantity for CST export (dBi).",
+              "default": "realized_gain",
+              "enum": [
+                "realized_gain",
+                "gain",
+                "directivity"
+              ],
+              "required": false
+            },
+            {
+              "name": "polarization_basis",
+              "type": "string",
+              "description": "Component basis requested from CST for co/cross-pol.",
+              "default": "ludwig3",
+              "enum": [
+                "ludwig3",
+                "spherical"
+              ],
+              "required": false
+            },
+            {
+              "name": "step_deg",
+              "type": "number",
+              "description": "Spherical grid step for CST export (divisor of 180).",
+              "default": 5,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "cuts",
+              "type": "array",
+              "description": "Cuts: numbers = constant phi (deg), or strings 'phi=45', 'theta=90', 'E-plane' (phi=0), 'H-plane' (phi=90).",
+              "default": [
+                0,
+                90
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "plots",
+              "type": "array",
+              "description": "",
+              "default": [
+                "polar",
+                "rect",
+                "heatmap"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "heatmap_projection",
+              "type": "string",
+              "description": "",
+              "default": "theta_phi",
+              "enum": [
+                "theta_phi",
+                "uv"
+              ],
+              "required": false
+            },
+            {
+              "name": "dynamic_range_db",
+              "type": "number",
+              "description": "Plot range below the maximum (dB).",
+              "default": 30,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "formats",
+              "type": "array",
+              "description": "",
+              "default": [
+                "pdf",
+                "png"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "width",
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "'single' (3.5 in, default), 'double' (7.16 in) or inches.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "out_dir",
+              "type": "string",
+              "description": "Output folder (default <CST_WORK_DIR>/figures/farfield).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "file_stem",
+              "type": "string",
+              "description": "Base name for output files.",
+              "default": null,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": []
+        }
+      ]
+    },
+    {
+      "id": "drawing",
+      "title_en": "Technical drawings",
+      "title_tr": "Teknik çizimler",
+      "blurb_en": "Dimensioned orthographic views of the model with title block and parameter table.",
+      "blurb_tr": "Başlık bloğu ve parametre tablosuyla ölçülendirilmiş ortografik görünümler.",
+      "module": "drawing",
+      "count": 1,
+      "tools": [
+        {
+          "name": "cst_technical_drawing",
+          "description": "Render an academic, dimensioned orthographic technical drawing (third-angle top/front/side views, optional isometric) of the CST model. Connected mode exports every solid to STL (no history entry) under CST_WORK_DIR and reads the parameter list; offline mode re-renders from a previous export via stl_dir (manifest.json supplies names/materials/units, else file stem and 'units'). Draws feature edges with hidden lines dashed, grayscale material fills, overall W x L, layer thicknesses and per-solid dimensions in mm, parameter table and title block. Writes PDF/SVG/PNG (600 dpi). Thin planar stacks are Z-exaggerated in front/side views (labelled); dimension values are always true size.",
+          "category_id": "drawing",
+          "params": [
+            {
+              "name": "stl_dir",
+              "type": "string",
+              "description": "Directory of existing .stl files; skips CST entirely.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "units",
+              "type": "string",
+              "description": "Units of STL coordinates in stl_dir (default: manifest or mm).",
+              "default": null,
+              "enum": [
+                "m",
+                "cm",
+                "mm",
+                "um",
+                "nm",
+                "in",
+                "mil",
+                "ft"
+              ],
+              "required": false
+            },
+            {
+              "name": "output_dir",
+              "type": "string",
+              "description": "Output directory (default CST_WORK_DIR/exports/drawings/<time>).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "basename",
+              "type": "string",
+              "description": "",
+              "default": "technical_drawing",
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "views",
+              "type": "array",
+              "description": "",
+              "default": [
+                "top",
+                "front",
+                "side"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "layout",
+              "type": "string",
+              "description": "",
+              "default": "sheet",
+              "enum": [
+                "sheet",
+                "separate"
+              ],
+              "required": false
+            },
+            {
+              "name": "formats",
+              "type": "array",
+              "description": "",
+              "default": [
+                "pdf",
+                "svg",
+                "png"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "dpi",
+              "type": "integer",
+              "description": "",
+              "default": 600,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "title_block",
+              "type": "boolean",
+              "description": "",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "include_parameters",
+              "type": "boolean",
+              "description": "",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "parameters",
+              "type": "object",
+              "description": "Extra/override name=value rows for the parameter table.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "solids",
+              "type": "array",
+              "description": "Only draw solids whose name contains one of these substrings.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_solid_dims",
+              "type": "integer",
+              "description": "",
+              "default": 4,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "hidden_lines",
+              "type": "string",
+              "description": "",
+              "default": "dashed",
+              "enum": [
+                "dashed",
+                "hide",
+                "show"
+              ],
+              "required": false
+            },
+            {
+              "name": "fill",
+              "type": "boolean",
+              "description": "",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "z_exaggeration",
+              "type": "number",
+              "description": "Z stretch in front/side views; 0 = auto, 1 = true scale.",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "feature_angle_deg",
+              "type": "number",
+              "description": "",
+              "default": 20,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "decimals",
+              "type": "integer",
+              "description": "",
+              "default": 2,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": []
+        }
+      ]
+    },
+    {
       "id": "vba",
       "title_en": "VBA escape hatch",
       "title_tr": "VBA acil çıkış",
@@ -8052,13 +8591,13 @@
       "tools": [
         {
           "name": "cst_execute_vba",
-          "description": "Execute raw VBA code in CST Studio Suite. The code is validated for safety (shell access, file I/O, and external process execution are blocked). In connected mode the code runs directly; in offline mode the validated script is returned for manual execution.",
+          "description": "Execute raw VBA code in CST Studio Suite (history VBA). DISABLED BY DEFAULT in connected mode: it only runs when the server process has the environment variable CST_ALLOW_RAW_VBA=1 (or true); otherwise an error is returned. The code is screened by a best-effort denylist, which is NOT a sandbox and can be evaded: enabling CST_ALLOW_RAW_VBA effectively grants the MCP client arbitrary code execution on this machine with the CST user's privileges. Only enable it for fully trusted clients. In offline mode the screened script is returned for manual execution. Prefer the higher-level tools.",
           "category_id": "vba",
           "params": [
             {
               "name": "code",
               "type": "string",
-              "description": "VBA code to execute in CST Studio. Must not contain shell commands, file I/O, or external process calls.",
+              "description": "VBA code to execute in CST Studio. Code matching the best-effort denylist (program launching, COM objects, file I/O, native API declarations, ...) is rejected; this screening is not a sandbox.",
               "default": null,
               "enum": null,
               "required": true

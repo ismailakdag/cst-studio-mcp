@@ -17,15 +17,15 @@ import logging
 import math
 import os
 import tempfile
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
-from cst_mcp.vba_builder import VBABuilder, VBAScript
+from cst_mcp.vba_builder import VBAScript
+from cst_mcp.vba_safety import validate_file_path as _qf
+from cst_mcp.vba_safety import vba_int as _int
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 logger = logging.getLogger(__name__)
 
@@ -405,38 +405,6 @@ def _compute_cost(
 # ---------------------------------------------------------------------------
 
 
-def _parse_z_data(filepath: str) -> tuple[list[float], list[float]]:
-    """Parse CST ASCIIExport space-separated Z-parameter data.
-
-    CST exports real and imaginary parts as separate tree items, each
-    producing a 2-column file: ``frequency  value``.
-
-    Returns (frequencies_ghz, values).
-    """
-    freqs: list[float] = []
-    values: list[float] = []
-
-    with open(filepath, "r") as f:
-        lines = f.readlines()
-
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("-") or stripped.startswith("F"):
-            continue
-        parts = stripped.split()
-        if len(parts) >= 2:
-            try:
-                freqs.append(float(parts[0]))
-                values.append(float(parts[1]))
-            except ValueError:
-                continue
-
-    if not freqs:
-        raise ValueError(f"No Z-parameter data found in {filepath}")
-
-    return freqs, values
-
-
 def z_to_gamma(r: float, x: float, z0: float = 50.0) -> tuple[float, float]:
     """Convert impedance Z = R + jX to reflection coefficient Γ.
 
@@ -473,56 +441,6 @@ def gamma_to_return_loss(g_mag: float) -> float:
     if g_mag <= 0:
         return float("inf")
     return -20.0 * math.log10(g_mag)
-
-
-def _classify_mismatch(r: float, x: float, z0: float = 50.0) -> dict:
-    """Classify impedance mismatch relative to Z0.
-
-    Returns a dict with mismatch type classification and metrics.
-    """
-    r_ratio = r / z0 if z0 > 0 else float("inf")
-
-    # Resistive classification
-    if r_ratio > 1.5:
-        r_class = "high"
-        r_desc = f"R={r:.1f}Ω is {r_ratio:.1f}× target ({z0:.0f}Ω) — too high"
-    elif r_ratio < 0.67:
-        r_class = "low"
-        r_desc = f"R={r:.1f}Ω is {r_ratio:.1f}× target ({z0:.0f}Ω) — too low"
-    else:
-        r_class = "ok"
-        r_desc = f"R={r:.1f}Ω is close to target ({z0:.0f}Ω)"
-
-    # Reactive classification
-    if abs(x) < 10:
-        x_class = "ok"
-        x_desc = f"X={x:+.1f}Ω — near resonance"
-    elif x > 0:
-        x_class = "inductive"
-        x_desc = f"X={x:+.1f}Ω — inductive (antenna electrically long)"
-    else:
-        x_class = "capacitive"
-        x_desc = f"X={x:+.1f}Ω — capacitive (antenna electrically short)"
-
-    # Overall severity
-    g_r, g_i = z_to_gamma(r, x, z0)
-    g_m = gamma_mag(g_r, g_i)
-    vswr = gamma_to_vswr(g_m)
-    rl = gamma_to_return_loss(g_m)
-
-    return {
-        "resistance_ohm": round(r, 2),
-        "reactance_ohm": round(x, 2),
-        "impedance_mag_ohm": round(math.sqrt(r * r + x * x), 2),
-        "r_ratio": round(r_ratio, 3),
-        "r_class": r_class,
-        "r_description": r_desc,
-        "x_class": x_class,
-        "x_description": x_desc,
-        "gamma_mag": round(g_m, 4),
-        "vswr": round(vswr, 3),
-        "return_loss_db": round(rl, 2),
-    }
 
 
 def _generate_recommendations(
@@ -766,83 +684,15 @@ def _analyze_impedance_band(
 # ---------------------------------------------------------------------------
 
 
-def _set_params_and_solve_vba(params: dict[str, float], export_path: str | None = None, port: int = 1) -> str:
-    """Build raw VBA that sets parameters, solves, and optionally exports.
-
-    Combines everything in a single ``add_to_history`` call.  This is
-    necessary because:
-    - ``RebuildOnParametricChange`` is rejected inside a structure macro
-    - ``StoreParameter`` alone doesn't trigger a rebuild
-    - ``Solver.Start`` triggers the rebuild automatically before solving
-
-    The "Results May Get Incompatible" dialog is handled by the
-    background DialogWatcher.
-    """
-    lines = []
-    for name, value in params.items():
-        lines.append(f'StoreParameter "{name}", "{value}"')
-    lines.append("Solver.Start")
-    if export_path:
-        safe_path = export_path.replace("\\", "/")
-        tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
-        lines.append("")
-        lines.append(f'SelectTreeItem "{tree_path}"')
-        lines.append("With ASCIIExport")
-        lines.append("  .Reset")
-        lines.append(f'  .FileName "{safe_path}"')
-        lines.append('  .SetfileType "csv"')
-        lines.append("  .Execute")
-        lines.append("End With")
-    return "\n".join(lines)
-
-
-def _set_params_vba(params: dict[str, float]) -> str:
-    """Build raw VBA for just StoreParameter calls (for final application)."""
-    lines = []
-    for name, value in params.items():
-        lines.append(f'StoreParameter "{name}", "{value}"')
-    return "\n".join(lines)
-
-
-def _run_solver_vba() -> str:
-    """Build raw VBA to start the time-domain solver.
-
-    Note: Solver.Start cannot run inside schematic.execute_vba_code()
-    (structure macro context). Must use model3d.add_to_history() instead.
-    """
-    return "Solver.Start"
-
-
 def _export_s11_vba(filepath: str, port: int = 1) -> str:
     """Build raw VBA to export S11 via ASCIIExport.
 
     Note: ASCIIExport doesn't work in schematic.execute_vba_code() context.
     Must use model3d.add_to_history() instead.
     """
-    safe_path = filepath.replace("\\", "/")
-    tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
+    safe_path = _qf(filepath.replace("\\", "/"), "filepath")
+    tree_path = f"1D Results\\S-Parameters\\S{_int(port, 'port')},{_int(port, 'port')}"
     return (
-        f'SelectTreeItem "{tree_path}"\n'
-        "With ASCIIExport\n"
-        "  .Reset\n"
-        f'  .FileName "{safe_path}"\n'
-        '  .SetfileType "csv"\n'
-        "  .Execute\n"
-        "End With"
-    )
-
-
-def _solve_and_export_vba(filepath: str, port: int = 1) -> str:
-    """Build raw VBA that runs solver then exports S11.
-
-    Combines both operations in a single add_to_history call to minimize
-    history bloat during optimization.
-    """
-    safe_path = filepath.replace("\\", "/")
-    tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
-    return (
-        "Solver.Start\n"
-        "\n"
         f'SelectTreeItem "{tree_path}"\n'
         "With ASCIIExport\n"
         "  .Reset\n"
@@ -1179,7 +1029,7 @@ async def _handle_evaluate(args: dict, client: CSTClient) -> dict:
     s11_file = os.path.join(work_dir, "_eval_s11_temp.csv").replace("\\", "/")
 
     # Export S11 via Python API (no history entry, view-independent)
-    tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
+    tree_path = f"1D Results\\S-Parameters\\S{_int(port, 'port')},{_int(port, 'port')}"
     result = client.export_result(tree_path, s11_file)
     if result.get("status") != "exported":
         return {"status": "error", "message": f"Export failed: {result.get('message')}"}
@@ -1242,7 +1092,7 @@ async def _handle_refine(args: dict, client: CSTClient) -> dict:
         from cst_mcp.execution.native_optimizer import build_optimizer
         code = build_optimizer({"method": "Nelder Mead", "max_evaluations": max(2, max_iterations * (len(params_spec) + 1)),
                                 "parameters": params_spec, "goal_type": "minimize",
-                                "result_path": f"1D Results\\S-Parameters\\S{port},{port}"})
+                                "result_path": f"1D Results\\S-Parameters\\S{_int(port, 'port')},{_int(port, 'port')}"})
         return {"status": "offline", "vba": code,
                 "message": "Native optimizer configuration only; Optimizer.Start must be explicit. Connected mode uses the Python loop with per-band VSWR costs."}
 
@@ -1319,7 +1169,7 @@ async def _handle_analyze_impedance(args: dict, client: CSTClient) -> dict:
         "\\", "/"
     )
 
-    tree_path = f"1D Results\\S-Parameters\\S{port},{port}"
+    tree_path = f"1D Results\\S-Parameters\\S{_int(port, 'port')},{_int(port, 'port')}"
     result = client.export_result(tree_path, s11_file)
     if result.get("status") != "exported":
         return {
@@ -1393,7 +1243,7 @@ def _build_impedance_vba(port: int) -> str:
 
     lines = [
         "Sub Main()",
-        f'  SelectTreeItem "1D Results\\S-Parameters\\S{port},{port}"',
+        f'  SelectTreeItem "1D Results\\S-Parameters\\S{_int(port, "port")},{_int(port, "port")}"',
         "  With ASCIIExport",
         "    .Reset",
         f'    .FileName "C:/cst_projects/s{port}{port}_impedance.csv"',
@@ -1439,7 +1289,8 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
 # ---------------------------------------------------------------------------
 
 
-def register_optimization_tools(server: Server, client: CSTClient) -> None:
-    """Register optimization tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

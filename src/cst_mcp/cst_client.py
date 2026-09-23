@@ -49,6 +49,48 @@ class CSTClient(CSTSession):
             pass
         return result
 
+    @staticmethod
+    def build_query_vba(fields: list[tuple[str, str]]) -> str:
+        """VBA printing ``key<TAB>value`` per expression, each isolated by
+        ``On Error Resume Next`` so one unavailable value (e.g. no mesh yet)
+        does not abort the whole query."""
+        lines = ["Dim mcpValue As String", "On Error Resume Next"]
+        for key, expr in fields:
+            lines += [
+                "Err.Clear",
+                f"mcpValue = CStr({expr})",
+                "If Err.Number = 0 Then",
+                f'  Debug.Print "{key}" & vbTab & mcpValue',
+                "Else",
+                f'  Debug.Print "{key}.error" & vbTab & Err.Description',
+                "End If",
+            ]
+        return "\n".join(lines)
+
+    def query_values(self, fields: list[tuple[str, str]]) -> dict:
+        """Read-only VBA query via output capture; never writes model history.
+
+        Returns ``{"status": "ok", "values": {...}, "errors": {...}}``.
+        """
+        script = self.build_query_vba(fields)
+        if not self.connected or not self.has_project:
+            return {"status": "offline", "vba": script}
+        result = self.capture_vba_output(script)
+        if result.get("status") != "ok":
+            return {**result, "vba": script}
+        values: dict[str, str] = {}
+        errors: dict[str, str] = {}
+        for line in str(result.get("output", "")).splitlines():
+            key, sep, value = line.rstrip("\r").partition("\t")
+            if not sep:
+                continue
+            if key.endswith(".error"):
+                errors[key[: -len(".error")]] = value
+            else:
+                values[key] = value
+        return {"status": "ok", "values": values, "errors": errors,
+                "source": "VBA query via output capture (no model history)"}
+
     def execute_vba_silent(self, vba_code: str) -> dict:
         return self.run_vba_silent(vba_code)
 

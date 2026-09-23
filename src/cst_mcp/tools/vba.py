@@ -1,7 +1,8 @@
 """Raw VBA access tools for CST Studio Suite.
 
-Provides 3 MCP tools for executing arbitrary VBA code (with safety validation),
-looking up VBA object reference documentation, and listing available CST VBA objects.
+Provides 3 MCP tools for executing arbitrary VBA code (with best-effort denylist
+validation, disabled by default behind ``CST_ALLOW_RAW_VBA``), looking up VBA object
+reference documentation, and listing available CST VBA objects.
 """
 
 from __future__ import annotations
@@ -9,15 +10,17 @@ from __future__ import annotations
 import json
 from importlib import resources
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
-from cst_mcp.validators import validate_vba_input
+from cst_mcp.validators import (
+    RAW_VBA_ENV,
+    raw_vba_disabled_message,
+    raw_vba_enabled,
+    validate_vba_input,
+)
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -28,10 +31,15 @@ TOOLS: list[Tool] = [
     Tool(
         name="cst_execute_vba",
         description=(
-            "Execute raw VBA code in CST Studio Suite. The code is validated for "
-            "safety (shell access, file I/O, and external process execution are "
-            "blocked). In connected mode the code runs directly; in offline mode "
-            "the validated script is returned for manual execution."
+            "Execute raw VBA code in CST Studio Suite (history VBA). DISABLED BY "
+            "DEFAULT in connected mode: it only runs when the server process has "
+            f"the environment variable {RAW_VBA_ENV}=1 (or true); otherwise an "
+            "error is returned. The code is screened by a best-effort denylist, "
+            "which is NOT a sandbox and can be evaded: enabling "
+            f"{RAW_VBA_ENV} effectively grants the MCP client arbitrary code "
+            "execution on this machine with the CST user's privileges. Only "
+            "enable it for fully trusted clients. In offline mode the screened "
+            "script is returned for manual execution. Prefer the higher-level tools."
         ),
         inputSchema={
             "type": "object",
@@ -39,8 +47,10 @@ TOOLS: list[Tool] = [
                 "code": {
                     "type": "string",
                     "description": (
-                        "VBA code to execute in CST Studio. Must not contain "
-                        "shell commands, file I/O, or external process calls."
+                        "VBA code to execute in CST Studio. Code matching the "
+                        "best-effort denylist (program launching, COM objects, "
+                        "file I/O, native API declarations, ...) is rejected; this "
+                        "screening is not a sandbox."
                     ),
                 },
             },
@@ -168,8 +178,26 @@ def _handle_execute_vba(args: dict, client: CSTClient) -> dict:
     if not code.strip():
         return {"status": "error", "message": "VBA code cannot be empty"}
 
-    # Safety validation — raises ValidationError on dangerous patterns
+    # Safety validation — raises ValidationError on dangerous patterns.
+    # Best-effort denylist only; the env-var gate below is the real control.
     validate_vba_input(code)
+
+    if not raw_vba_enabled():
+        if getattr(client, "is_connected", False):
+            return {
+                "status": "error",
+                "code": "raw_vba_disabled",
+                "message": raw_vba_disabled_message(),
+            }
+        # Offline: never touches CST; hand the validated script back for manual paste.
+        return {
+            "status": "offline",
+            "vba": code,
+            "message": (
+                "VBA validated but not executed (offline). Paste it into CST manually. "
+                f"Connected execution additionally requires {RAW_VBA_ENV}=1."
+            ),
+        }
 
     result = client.execute_vba(code)
     return result
@@ -340,7 +368,6 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
 # ---------------------------------------------------------------------------
 
 
-def register_vba_tools(server: Server, client: CSTClient) -> None:
-    """Register VBA tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle, allow_multiline=frozenset({"code"}))

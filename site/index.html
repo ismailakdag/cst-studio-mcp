@@ -36,7 +36,7 @@
         <a href="#nasil-calisir">Nasıl çalışır?</a>
         <a href="#kurulum">Kurulum</a>
         <a href="#dogrulama">Doğrulama</a>
-        <a href="/docs/">184 araç</a>
+        <a href="/docs/">180+ araç</a>
         <a class="nav-repo" href="https://github.com/ismailakdag/cst-studio-mcp">GitHub <span aria-hidden="true">↗</span></a>
         <span class="language-switch" aria-label="Dil seçimi"><strong lang="tr" aria-current="page">TR</strong><span aria-hidden="true">/</span><a lang="en" hreflang="en" href="/en/">EN</a></span>
       </nav>
@@ -109,7 +109,7 @@
           <p>MCP mesajları standart girdi ve çıktı üzerinden taşınır. CST kurulumu ve proje dosyaları Windows makinenizde çalışır.</p>
         </article>
         <article>
-          <span class="principle-mark" aria-hidden="true">184</span>
+          <span class="principle-mark" aria-hidden="true">180+</span>
           <h3>Tek araç kataloğu</h3>
           <p>Modelleme, malzeme, sınır, port, çözücü, sonuç ve iş akışı araçları aynı şema kataloğundan yayınlanır.</p>
         </article>
@@ -143,7 +143,7 @@ py -3.11 -m venv .venv
           </li>
           <li>
             <div class="step-label"><span>03</span><h3>MCP istemcinize ekleyin</h3></div>
-            <p>İstemcinize uygun örneği seçin. Her iki yapılandırma da CST bağlantısını siz <code>cst_connect</code> çağrısını verene kadar kapalı tutar.</p>
+            <p>İstemcinize uygun örneği seçin. Üç yapılandırma da CST bağlantısını siz <code>cst_connect</code> çağrısını verene kadar kapalı tutar.</p>
             <div class="code-block code-block-tall">
               <div class="code-head"><span>Claude Desktop / Cursor · JSON</span><button class="copy-button" type="button" data-copy="config-code">Kopyala</button></div>
               <pre id="config-code"><code>{
@@ -175,7 +175,17 @@ CST_VERSION = '2026'
 CST_CONNECT_MODE = 'manual'
 PYTHONPATH = 'C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries'</code></pre>
             </div>
+            <div class="code-block">
+              <div class="code-head"><span>Claude Code · PowerShell</span><button class="copy-button" type="button" data-copy="claude-code-config-code">Kopyala</button></div>
+              <pre id="claude-code-config-code"><code>claude mcp add cst-studio --scope user `
+  -e CST_PATH="C:\Program Files\CST Studio Suite 2026" `
+  -e PYTHONPATH="C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries" `
+  -e CST_WORK_DIR="C:\cst_projects" `
+  -e CST_CONNECT_MODE=manual `
+  '--' "C:\path\to\cst-studio-mcp\.venv\Scripts\cst-studio-mcp.exe"</code></pre>
+            </div>
             <p class="config-help">Codex yapılandırmasının güncel ayrıntıları için <a class="text-link" href="https://learn.chatgpt.com/docs/extend/mcp">resmî MCP belgesini açın <span aria-hidden="true">↗</span></a>.</p>
+            <p class="config-help">İsteğe bağlı: <code>CST_TOOLSETS</code> yalnızca listelenen araç kategorilerini (örneğin <code>core</code>) açarak modele gönderilen araç şeması sayısını azaltır; bağlantı araçları her zaman kullanılabilir. <code>CST_ALLOW_RAW_VBA=1</code>, <code>cst_execute_vba</code> aracının bağlı modda ham VBA çalıştırmasına izin verir; bu denetim en iyi çaba esaslı bir engel listesidir, korumalı alan (sandbox) değildir. Araçlar <code>readOnlyHint</code>/<code>destructiveHint</code> işaretleri taşır; böylece istemciler salt okunur araçları otomatik onaylayabilir.</p>
           </li>
           <li>
             <div class="step-label"><span>04</span><h3>İstemciyi yenileyin ve bağlanın</h3></div>
@@ -227,7 +237,7 @@ Gerçek MCP bağlantısıyla initialize, tools/list ve çevrimdışı durum sorg
         </table>
         </div>
         <div class="evidence-note">
-          <p>Gerçek stdio alt süreciyle <code>initialize</code>, <code>tools/list</code> ve <code>tools/call</code> akışı; Python ve yerel dosya tanıtıcısı günlükleriyle birlikte sınandı. Kayıtlı sonuçlar gerçek Python API ile, modelleme ayrı geçici projede sınandı. 184 aracın tamamı canlı doğrulanmış değildir; <a href="/docs/API_REVIEW_2026.md">geçen testler ve kalan sınırlar</a> açıkça kayıtlıdır.</p>
+          <p>Gerçek stdio alt süreciyle <code>initialize</code>, <code>tools/list</code> ve <code>tools/call</code> akışı; Python ve yerel dosya tanıtıcısı günlükleriyle birlikte sınandı. Kayıtlı sonuçlar gerçek Python API ile, modelleme ayrı geçici projede sınandı. Katalogdaki araçların tamamı canlı doğrulanmış değildir; <a href="/docs/API_REVIEW_2026.md">geçen testler ve kalan sınırlar</a> açıkça kayıtlıdır.</p>
           <a class="text-link" href="/docs/RELIABILITY_REVIEW.md">Güvenilirlik incelemesini oku <span aria-hidden="true">→</span></a>
         </div>
       </div>
@@ -237,7 +247,7 @@ Gerçek MCP bağlantısıyla initialize, tools/list ve çevrimdışı durum sorg
       <div class="shell catalog-grid">
         <div>
           <p class="section-number">04 / Katalog</p>
-          <h2>Modelden sonuca,<br><em>184 araç.</em></h2>
+          <h2>Modelden sonuca,<br><em>180+ araç.</em></h2>
           <p class="section-intro">Aranabilir katalog her aracın açıklamasını, zorunlu parametrelerini ve JSON giriş şemasını tek yerde gösterir.</p>
           <div class="catalog-actions">
             <a class="button button-primary" href="/docs/">Araçları incele <span aria-hidden="true">↗</span></a>

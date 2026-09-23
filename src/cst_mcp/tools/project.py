@@ -8,17 +8,15 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING
 
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.types import ExportFormat, ProjectType
 from cst_mcp.validators import validate_file_path, ValidationError
+from cst_mcp.vba_safety import validate_file_path as vba_path
 from cst_mcp.vba_builder import VBABuilder, VBAScript, _escape_vba_string
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -136,6 +134,13 @@ TOOLS: list[Tool] = [
                         "Omit for the root tree."
                     ),
                 },
+                "max_depth": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "default": 3,
+                    "description": "How many levels below tree_path to enumerate (default 3).",
+                },
             },
             "required": [],
         },
@@ -210,7 +215,7 @@ def _build_create_vba(path: str, project_type: str) -> str:
     lines = [
         "Sub Main()",
         '  Dim sPath As String',
-        f'  sPath = "{path}"',
+        f'  sPath = "{vba_path(path, "path")}"',
         "",
         "  ' Open a new project from the appropriate template",
         f'  StoreTemplateSetting "TemplateType", "{template}"',
@@ -231,7 +236,7 @@ def _build_open_vba(path: str) -> str:
     script.add_blank()
     lines = [
         "Sub Main()",
-        f'  OpenFile("{path}")',
+        f'  OpenFile("{vba_path(path, "path")}")',
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -246,7 +251,7 @@ def _build_save_vba(path: str | None) -> str:
         script.add_blank()
         lines = [
             "Sub Main()",
-            f'  SaveAs "{path}", False',
+            f'  SaveAs "{vba_path(path, "path")}", False',
             "End Sub",
         ]
     else:
@@ -277,7 +282,7 @@ def _validate_tree_path(path: str) -> str:
     return path
 
 
-def _build_tree_vba(tree_path: str | None) -> str:
+def _build_tree_vba(tree_path: str | None, max_depth: int = 3, max_items: int = 2000) -> str:
     """Build VBA script for listing navigation tree items."""
     script = VBAScript()
     root = tree_path or ""
@@ -288,26 +293,97 @@ def _build_tree_vba(tree_path: str | None) -> str:
         script.add_comment("List CST navigation tree root items")
     script.add_blank()
 
-    safe_root = _escape_vba_string(root)
-
+    # Breadth-first walk with ResultTree.GetFirstChildName / GetNextItemName
+    # (official VBA: both return full tree paths, "" when exhausted). The
+    # capture wrapper only supports a single Sub, so no recursive helper Sub
+    # is used; a queue array keeps sibling order. Each line: depth<TAB>path.
+    if root:
+        seeds = [root]
+    else:
+        seeds = _DEFAULT_TREE_ITEMS[""] + ["1D Results", "Parameters"]
     lines = [
         "Sub Main()",
-        '  Dim sPath As String',
-        f'  sPath = "{safe_root}"',
-        "",
-        "  SelectTreeItem sPath",
-        "  Dim nItems As Long",
-        "  nItems = GetNumberOfSelectedTreeItems()",
-        "  Dim i As Long",
-        "  For i = 0 To nItems - 1",
-        "    Dim sItem As String",
-        "    sItem = GetSelectedTreeItem(i)",
-        '    Debug.Print sItem',
-        "  Next i",
+        "  Dim q() As String",
+        "  Dim qd() As Integer",
+        "  Dim head As Long",
+        "  Dim tail As Long",
+        "  Dim printed As Long",
+        "  Dim cur As String",
+        "  Dim d As Integer",
+        "  Dim child As String",
+        f"  Const maxDepth = {int(max_depth)}",
+        f"  Const maxItems = {int(max_items)}",
+        "  ReDim q(0 To 63)",
+        "  ReDim qd(0 To 63)",
+        "  head = 0",
+        "  tail = 0",
+        "  printed = 0",
+    ]
+    lines.insert(-5, "  Dim present As Boolean")
+    for seed in seeds:
+        lines += [
+            f'  q(tail) = "{_escape_vba_string(seed)}"',
+            "  qd(tail) = 0",
+            "  tail = tail + 1",
+        ]
+    # Seed folders are printed only if CST reports them (exists or has
+    # children), so absent default folders are not fabricated.
+    lines += [
+        "  Do While head < tail And printed < maxItems",
+        "    cur = q(head)",
+        "    d = qd(head)",
+        "    head = head + 1",
+        "    child = Resulttree.GetFirstChildName(cur)",
+        "    present = True",
+        "    If d = 0 Then",
+        '      present = (child <> "") Or Resulttree.DoesTreeItemExist(cur)',
+        "    End If",
+        "    If present Then",
+        '      Debug.Print CStr(d) & vbTab & cur',
+        "      printed = printed + 1",
+        "    End If",
+        "    If present And d < maxDepth Then",
+        '      Do While child <> "" And tail < maxItems',
+        "        If tail > UBound(q) Then",
+        "          ReDim Preserve q(0 To 2 * tail)",
+        "          ReDim Preserve qd(0 To 2 * tail)",
+        "        End If",
+        "        q(tail) = child",
+        "        qd(tail) = d + 1",
+        "        tail = tail + 1",
+        "        child = Resulttree.GetNextItemName(child)",
+        "      Loop",
+        "    End If",
+        "  Loop",
+        "  If head < tail Then",
+        '    Debug.Print "TRUNCATED" & vbTab & CStr(tail - head)',
+        "  End If",
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
     return script.build()
+
+
+def _parse_tree_output(text: str, root: str) -> dict:
+    """Parse depth<TAB>path lines produced by the tree walk VBA."""
+    items: list[dict] = []
+    truncated = False
+    for line in text.splitlines():
+        depth, sep, path = line.strip("\r").partition("\t")
+        if not sep:
+            continue
+        if depth == "TRUNCATED":
+            truncated = True
+            continue
+        try:
+            level = int(depth)
+        except ValueError:
+            continue
+        if root and level == 0:
+            continue  # the requested folder itself
+        name = path.rsplit("\\", 1)[-1]
+        items.append({"path": path, "name": name, "depth": level if not root else level - 1})
+    return {"items": items, "count": len(items), "truncated": truncated}
 
 
 def _build_export_vba(path: str, fmt: str) -> str:
@@ -498,17 +574,26 @@ def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[TextCont
     # cst_project_tree
     # ------------------------------------------------------------------
     if name == "cst_project_tree":
-        tree_path = arguments.get("tree_path", "")
+        tree_path = arguments.get("tree_path", "") or ""
+        max_depth = max(0, min(int(arguments.get("max_depth", 3)), 10))
+        vba = _build_tree_vba(tree_path or None, max_depth=max_depth)
 
-        if client.connected:
-            # In connected mode, use VBA to query the actual tree
-            vba = _build_tree_vba(tree_path or None)
-            result = client.execute_vba(vba)
-            return _text(result)
+        if client.connected and client.has_project:
+            # Read-only query: output capture path, never the model history.
+            result = client.capture_vba_output(vba)
+            if result.get("status") != "ok":
+                return _text({**result, "tree_path": tree_path or "(root)"})
+            parsed = _parse_tree_output(result.get("output", ""), tree_path)
+            return _text({
+                "status": "ok",
+                "tree_path": tree_path or "(root)",
+                "max_depth": max_depth,
+                **parsed,
+                "source": "ResultTree.GetFirstChildName/GetNextItemName",
+            })
 
         # Offline mode: return known default tree items and a VBA script
         items = _DEFAULT_TREE_ITEMS.get(tree_path, [])
-        vba = _build_tree_vba(tree_path or None)
         return _text({
             "status": "offline",
             "tree_path": tree_path or "(root)",
@@ -579,7 +664,6 @@ def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[TextCont
 # ---------------------------------------------------------------------------
 
 
-def register_project_tools(server: Server, client: CSTClient) -> None:
-    """Register project management tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

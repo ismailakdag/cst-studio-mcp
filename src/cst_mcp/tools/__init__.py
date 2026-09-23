@@ -11,6 +11,9 @@ from cst_mcp.tools import (
     boundaries,
     connection,
     diagnostics,
+    drawing,
+    figures_1d,
+    figures_3d,
     geometry,
     import_export,
     matching,
@@ -60,6 +63,9 @@ _MODULES = (
     matching,
     vba,
     workflows,
+    drawing,
+    figures_1d,
+    figures_3d,
 )
 
 

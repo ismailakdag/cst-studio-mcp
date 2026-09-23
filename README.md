@@ -9,7 +9,7 @@ structured MCP tools on your Windows machine.
 | | |
 |--|--|
 | **Package** | `cst-studio-mcp` · entry point `cst-studio-mcp` |
-| **Tools** | 184 (workflows, geometry, antennas, solvers, results, PCB, …) |
+| **Tools** | 180+ (workflows, geometry, antennas, solvers, results, PCB, …) |
 | **Python** | 3.10+ (3.12 recommended) |
 | **OS** | Windows 10/11 + licensed CST Studio Suite |
 | **Docs** | Interactive EN/TR browser: [`docs/index.html`](docs/index.html) |
@@ -18,7 +18,7 @@ Project presentation: [`presentation/index.html`](presentation/index.html), a se
 Turkish architecture and validation overview. See [the reliability review](docs/RELIABILITY_REVIEW.md)
 for historical checks. Current evidence and limits are in the [2026 API review](docs/API_REVIEW_2026.md).
 
-Start with the [agent installation and acceptance guide](docs/AGENT_SETUP.md). Official Python results were verified against all 4 × 4,001 complex samples in a completed CST 2026 project; an isolated modeler fixture also passed. The 184-tool catalog is not a blanket certification of advanced CST features.
+Start with the [agent installation and acceptance guide](docs/AGENT_SETUP.md). Official Python results were verified against all 4 × 4,001 complex samples in a completed CST 2026 project; an isolated modeler fixture also passed. The full tool catalog is not a blanket certification of advanced CST features.
 
 ```
 Agent (Cursor / Claude / …)
@@ -50,7 +50,7 @@ Agent (Cursor / Claude / …)
 11. [Development & tests](#development--tests)
 12. [Troubleshooting](#troubleshooting)
 13. [License](#license)
-14. [Full tool catalog](#full-tool-catalog-184-tools)
+14. [Full tool catalog](#full-tool-catalog)
 
 ---
 
@@ -171,6 +171,8 @@ Nothing in the library hard-codes a drive letter. Discovery order:
 | `CST_QUIET` | Legacy | Accepted for compatibility; connecting no longer changes the user's CST UI mode | `1` |
 | `CST_CONNECT_MODE` | Optional | Startup behavior: `auto`, `manual`, or `disabled` (default `manual`) | `manual` |
 | `CST_LOG_LEVEL` | Optional | Logging level | `INFO` |
+| `CST_TOOLSETS` | Optional | Comma-separated tool categories to expose (default: all). Alias `core` = connection + official + project + workflows + simulation + results. Connection tools are always exposed. Use it to reduce the number of tool schemas sent to the model | `core,geometry` |
+| `CST_ALLOW_RAW_VBA` | Optional | Default off. Set to `1` to let `cst_execute_vba` (raw VBA) run in connected mode. The VBA denylist is best-effort and **not a sandbox**: enabling this effectively grants the connected MCP client arbitrary code execution on this machine. Enable it only for fully trusted clients | `1` |
 
 `auto` attaches to a running Design Environment or starts one when the MCP process starts.
 Use `disabled` for catalog inspection, client setup checks, and offline VBA generation: it does
@@ -246,9 +248,9 @@ configuration locations and controls.
 ### Cursor
 
 1. Open **Cursor Settings → MCP** (or project MCP JSON / root `.mcp.json`, depending on Cursor version).
-2. Add the `cst` server block with **your** `CST_PATH` and `PYTHONPATH`.
+2. Add the `cst-studio` server block with **your** `CST_PATH` and `PYTHONPATH`.
 3. Restart MCP / reload the window.
-4. Confirm ~170+ tools under server `cst`.
+4. Confirm the full tool list (180+) under server `cst-studio` (fewer if `CST_TOOLSETS` is set).
 
 After code changes, **restart the MCP server process** so Python reloads the package.
 
@@ -258,7 +260,13 @@ Edit the Claude Desktop config JSON (Windows typically under `%APPDATA%\Claude\`
 
 ### Claude Code / CLI
 
-Add the server via your usual MCP config (project or user), same `command` + `env`. Restart the session after edits.
+Register the server in one line (user scope; use `--scope project` to write a shared `.mcp.json` instead):
+
+```powershell
+claude mcp add cst-studio --scope user -e CST_PATH="C:\Program Files\CST Studio Suite 2026" -e PYTHONPATH="C:\Program Files\CST Studio Suite 2026\AMD64\python_cst_libraries" -e CST_WORK_DIR="C:\cst_projects" -e CST_CONNECT_MODE=manual '--' "C:\path\to\cst-studio-mcp\.venv\Scripts\cst-studio-mcp.exe"
+```
+
+Everything after `--` is the server command. In PowerShell keep the quotes around `'--'`: if `claude` resolves to the npm `.ps1` shim, PowerShell otherwise strips a bare `--`. Check it with `claude mcp list` (or `/mcp` inside a session). Alternatively, add the same `command` + `env` to your MCP config JSON. Restart the session after edits.
 
 ### Other MCP hosts
 
@@ -294,6 +302,10 @@ same process definition in this shape:
 Use the field names required by the client, but keep `command`, `args`, and `env` unchanged. Prefer
 the absolute console-script path on Windows; it avoids differences in each client's `PATH`.
 
+Tools carry MCP annotations (`readOnlyHint` / `destructiveHint`), so clients that honor them can
+auto-approve read-only tools and still prompt for mutating ones. Some result tools also declare an
+`outputSchema` and return `structuredContent` alongside the text result.
+
 ---
 
 ## Verify the install
@@ -309,8 +321,9 @@ python -c "import cst.interface; print('CST interface OK')"
 python -c "from cst_mcp.config import CSTConfig; c=CSTConfig.from_env(); print(c.cst_path); print(c.python_lib_path); print('available', c.cst_available)"
 
 # 4) Offline unit tests (no live solve required)
-$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
 python -m pytest tests/ -q
+# If global pytest plugins break collection, disable autoload but load pytest-asyncio explicitly:
+#   $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"; python -m pytest tests/ -q -p asyncio
 ```
 
 From an MCP client, call:
@@ -332,12 +345,33 @@ Recommended order for a first successful run:
 | 4 | `cst_get_s_parameters` / `cst_get_farfield_metrics` | S11 + antenna metrics |
 | 5 | `cst_workflow_design_report` | Package: params, S-params, farfield, views |
 
+**Long solves:** for anything that takes longer than about a minute, start it with
+`cst_run_simulation_async`, then call `cst_wait_for_simulation` repeatedly until it reports
+completion. Each wait call returns within about `max_wait_s` + 2 s (default `max_wait_s` 45),
+which keeps individual calls under typical client tool-call timeouts. A wait that sees the
+solver idle before the async start was observed keeps polling (status `starting`) instead of
+reporting a premature `finished`. All CST calls run on one dedicated worker thread, so a long
+blocking `cst_run_simulation` queues other CST tools but no longer freezes the MCP server.
+
 Other useful entry points:
 
 - `cst_antenna_patch` — template builder (similar geometry stack)
 - `cst_design_patch_only` — offline dimension calculator (no CST)
 - `cst_export_structure_views` — multi-view structure images
 - `cst_discover_farfield_monitors` — find farfield results on disk
+
+Publication figures (install the extra: `pip install -e ".[figures]"`, i.e. numpy + matplotlib):
+
+- `cst_plot_1d_results` — IEEE-style S11 / S-parameters / VSWR / Smith / impedance / phase /
+  efficiency figures read directly from a saved `.cst` (no GUI), with resonance and −10 dB band
+  annotation, run comparison and measured-CSV overlay. Returns `no_results` with next steps when
+  the project has not been solved.
+- `cst_plot_farfield` — polar E/H cuts, rectangular cuts, θ–φ or u–v heatmaps and 3D patterns,
+  with max gain, HPBW, F/B, SLL and XPD. Works offline from a CST farfield ASCII export or exports
+  it itself when connected; `no_results` distinguishes a missing monitor from an unsolved one.
+- `cst_technical_drawing` — dimensioned orthographic drawing (top/front/side/iso) of the model with
+  title block and parameter table, as PDF/SVG/PNG. Exports each solid as STL (in mm) without
+  touching model history, or renders offline from an existing STL folder.
 
 **Parametric tip:** dimensions should live in the CST Parameter List and geometry history
 should use **expressions** (for example `patch_L/2`). Then parameter change → delete results →
@@ -412,8 +446,8 @@ python scripts/build_docs.py
 
 ```powershell
 pip install -e ".[dev]"
-$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"   # avoid broken global pytest plugins
-python -m pytest tests/ -v
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"   # optional: avoid broken global pytest plugins
+python -m pytest tests/ -v -p asyncio       # -p asyncio is required when autoload is disabled
 python scripts/build_docs.py
 ruff check src tests
 ```
@@ -434,7 +468,7 @@ Optional live CST scripts under `scripts/` (require license). Prefer unit tests 
 | SelectTreeItem fails for farfield | Full path `Farfields\farfield (f=<freq>) [1]`. |
 | Parameter List empty / rebuild no shape change | History must use **parameter expressions**, not only bare numbers. |
 | Dialogs block automation | `CST_QUIET=1`; diagnostics / dismiss-dialog tools. |
-| pytest plugin import errors | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`. |
+| pytest plugin import errors | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` plus `-p asyncio` (e.g. `python -m pytest tests/ -q -p asyncio`); without `-p asyncio` the async tests fail. |
 
 ---
 
@@ -445,8 +479,10 @@ MIT
 ---
 
 
+<a id="full-tool-catalog"></a>
+
 <!-- TOOL_CATALOG_START -->
-## Full tool catalog (184 tools)
+## Full tool catalog (188 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
@@ -479,11 +515,11 @@ One-shot helpers for common tasks. New users should start here.
 | Tool | What it does |
 |------|--------------|
 | `cst_workflow_patch_antenna` | END-TO-END / Uçtan uca: size a rectangular microstrip patch, build substrate/ground/patch/feed, frequency, open BCs, waveguide port, farf… |
-| `cst_workflow_run_and_s11` | Run solver and return structured S11/Sij with metrics (min dB, bandwidth). Solver çalıştırır ve S parametrelerini metriklerle döner. |
+| `cst_workflow_run_and_s11` | Run solver and return structured S11/Sij with metrics (min dB, bandwidth). BLOCKING: waits for the whole solve (up to timeout_s) inside o… |
 | `cst_design_patch_only` | Calculate microstrip patch dimensions only (offline, no CST). Sadece boyut hesabı — CST gerekmez. |
 | `cst_export_structure_views` | Export structure screenshots (perspective/xy/xz/yz) via Plot.ExportImage. Yapı görünüm görsellerini dışa aktarır. Connected mode required. |
 | `cst_workflow_design_report` | ONE-SHOT design package after modeling/simulation: project status, parameters/dimensions, S-parameters (+metrics), best-effort farfield e… |
-| `cst_workflow_simulate_and_report` | Run the solver, then immediately build a design report (S-params + views + optional farfield). Simülasyonu çalıştırıp rapor paketini üretir. |
+| `cst_workflow_simulate_and_report` | Run the solver, then immediately build a design report (S-params + views + optional farfield). BLOCKING: waits for the whole solve (up to… |
 | `cst_discover_farfield_monitors` | Discover farfield monitors from the project Result folder and tree-path heuristics. Uzak alan monitörlerini disk + path sezgisiyle listeler. |
 | `cst_get_farfield_metrics` | Read antenna metrics after a solve: S11 + radiation/total efficiency from 1D Results, plus max realized gain via official FarfieldPlot.Ge… |
 
@@ -624,15 +660,16 @@ Time domain, frequency domain, eigenmode, IE…
 | `cst_configure_ie_solver_advanced` | Advanced Integral Equation solver configuration for electrically large structures. Provides control over preconditioner, MLFMM accelerati… |
 | `cst_configure_multilayer_solver` | Configure the solver for planar multilayer structures. Optimised for antenna-on-PCB, frequency selective surfaces (FSS), and radome analy… |
 
-### Simulation control (6)
+### Simulation control (7)
 
 Run, pause, resume, stop simulations.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_run_simulation` | Start a CST simulation with the current solver settings. This is a blocking call that waits for the simulation to complete. Use cst_run_s… |
-| `cst_run_simulation_async` | Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Use cst_get_simulation_sta… |
+| `cst_run_simulation` | Start a CST simulation with the current solver settings and block until it completes (up to timeout_s). The server stays responsive, but … |
+| `cst_run_simulation_async` | Start a CST simulation asynchronously (non-blocking). The simulation launches and control returns immediately. Then call cst_wait_for_sim… |
 | `cst_get_simulation_status` | Read whether a CST simulation is running and return any solver-run metadata exposed by the CST Python API. This does not show a dialog or… |
+| `cst_wait_for_simulation` | Wait a bounded time for the running CST solve to finish, polling only the read-only 'is solver running' flag about every 2 s. Returns sta… |
 | `cst_pause_simulation` | Pause a currently running CST simulation. The simulation can be resumed later with cst_resume_simulation. |
 | `cst_resume_simulation` | Resume a previously paused CST simulation. Use after cst_pause_simulation to continue from where it stopped. |
 | `cst_stop_simulation` | Stop and abort a running CST simulation. Unlike pause, a stopped simulation cannot be resumed — it must be restarted from the beginning. |
@@ -787,13 +824,37 @@ L / Pi / T networks, stubs, quarter-wave, Smith transforms.
 | `cst_impedance_smith_transform` | Apply a reactive element transformation to an impedance on the Smith chart. Supports series L/C, shunt L/C, and transmission line operati… |
 | `cst_matching_microstrip_impedance` | Calculate microstrip transmission line characteristic impedance from physical dimensions using the Hammerstad-Jensen model with optional … |
 
+### Publication figures (1)
+
+IEEE-style 1D result and farfield figures from saved projects (PDF/SVG/PNG).
+
+| Tool | What it does |
+|------|--------------|
+| `cst_plot_1d_results` | Publication-quality (IEEE column, serif, PDF/SVG/PNG) figures of 1D results read offline from a saved .cst via cst.results (no GUI, no so… |
+
+### Farfield figures (1)
+
+Polar cuts, heatmaps and 3D patterns with gain/HPBW/F-B metrics.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_plot_farfield` | Publication-quality farfield figures (IEEE sizes, serif, grayscale-safe): polar dB cuts (E/H-plane, co/cross-pol when Ludwig-3/spherical … |
+
+### Technical drawings (1)
+
+Dimensioned orthographic views of the model with title block and parameter table.
+
+| Tool | What it does |
+|------|--------------|
+| `cst_technical_drawing` | Render an academic, dimensioned orthographic technical drawing (third-angle top/front/side views, optional isometric) of the CST model. C… |
+
 ### VBA escape hatch (3)
 
 Raw VBA execution and built-in VBA object reference.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_execute_vba` | Execute raw VBA code in CST Studio Suite. The code is validated for safety (shell access, file I/O, and external process execution are bl… |
+| `cst_execute_vba` | Execute raw VBA code in CST Studio Suite (history VBA). DISABLED BY DEFAULT in connected mode: it only runs when the server process has t… |
 | `cst_vba_help` | Get VBA reference documentation for a CST Studio object. Returns the object description and a list of its common methods and properties. |
 | `cst_list_vba_objects` | List available CST Studio VBA objects, optionally filtered by category. Returns object names with brief descriptions. |
 

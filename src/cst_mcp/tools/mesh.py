@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-from mcp.server import Server
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
@@ -59,8 +58,17 @@ TOOLS: list[Tool] = [
                 },
                 "ratio_limit": {
                     "type": "number",
-                    "description": "Maximum ratio between adjacent mesh cells (default 20)",
+                    "description": "Maximum ratio between adjacent mesh cells (default 20; hexahedral only)",
                     "default": 20,
+                },
+                "mesh_type": {
+                    "type": "string",
+                    "enum": ["Hex", "Tet"],
+                    "default": "Hex",
+                    "description": (
+                        "Which MeshSettings map to write: 'Hex' (time domain / hexahedral) "
+                        "or 'Tet' (frequency domain / tetrahedral)."
+                    ),
                 },
             },
             "required": [],
@@ -256,28 +264,34 @@ def _set_mesh_density(arguments: dict, client: CSTClient) -> list[TextContent]:
     validate_positive(cells_per_wavelength, "cells_per_wavelength")
     validate_positive(min_cells, "min_cells")
     validate_positive(ratio_limit, "ratio_limit")
+    mesh_map = str(arguments.get("mesh_type", "Hex"))
+    if mesh_map not in {"Hex", "Tet"}:
+        raise ValueError("mesh_type must be 'Hex' or 'Tet'")
 
     # CST 2026 global mesh density is controlled through MeshSettings.Set.
     # The legacy Mesh.LinesPerWavelength path can execute without changing the
     # modern PBA mesh, which makes a successful call look like a refinement.
-    script = "\n".join(
-        [
-            "With MeshSettings",
-            f'  .Set "StepsPerWaveNear", "{cells_per_wavelength}"',
-            f'  .Set "StepsPerWaveFar", "{cells_per_wavelength}"',
-            f'  .Set "StepsPerBoxNear", "{min_cells}"',
-            f'  .Set "StepsPerBoxFar", "{min_cells}"',
-            "End With",
-            "With Mesh",
-            f'  .RatioLimit "{ratio_limit:g}"',
-            "End With",
-        ]
-    )
+    # MeshSettings.Set requires a setting map to be selected first
+    # (.SetMeshType "Hex"/"Tet"); otherwise CST fails with
+    # "No setting map selected".
+    lines = [
+        "With MeshSettings",
+        f'  .SetMeshType "{mesh_map}"',
+        f'  .Set "StepsPerWaveNear", "{cells_per_wavelength}"',
+        f'  .Set "StepsPerWaveFar", "{cells_per_wavelength}"',
+        f'  .Set "StepsPerBoxNear", "{min_cells}"',
+        f'  .Set "StepsPerBoxFar", "{min_cells}"',
+        "End With",
+    ]
+    if mesh_map == "Hex":
+        lines += ["With Mesh", f'  .RatioLimit "{ratio_limit:g}"', "End With"]
+    script = "\n".join(lines)
 
     result = client.execute_vba(script)
     result["cells_per_wavelength"] = cells_per_wavelength
     result["min_cells"] = min_cells
-    result["ratio_limit"] = ratio_limit
+    result["ratio_limit"] = ratio_limit if mesh_map == "Hex" else None
+    result["mesh_type"] = mesh_map
     result["density_api"] = "MeshSettings.Set"
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
@@ -327,14 +341,46 @@ def _set_adaptive_mesh(arguments: dict, client: CSTClient) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def _get_mesh_info(arguments: dict, client: CSTClient) -> list[TextContent]:
-    # Build VBA that queries mesh statistics
-    vba = VBABuilder("Mesh")
-    vba.call("Update")
-    script = vba.build()
+_MESH_QUERY_FIELDS: list[tuple[str, str]] = [
+    ("mesh_type", "Mesh.GetMeshType"),
+    ("total_cells", "Mesh.GetNumberOfMeshCells"),
+    ("mesh_points", "Mesh.GetNp"),
+    ("min_edge_length", "Mesh.GetMinimumEdgeLength"),
+    ("max_edge_length", "Mesh.GetMaximumEdgeLength"),
+    ("critical_cells", "Mesh.GetNumberOfCriticalCells"),
+]
 
+
+def _to_number(value: str):
+    text = str(value).strip()
+    try:
+        return int(text)
+    except ValueError:
+        pass
+    try:
+        return float(text.replace(",", "."))
+    except ValueError:
+        return value
+
+
+def _query_mesh(client: CSTClient) -> dict:
+    """Read-only mesh statistics (no Mesh.Update, no model history)."""
+    result = client.query_values(_MESH_QUERY_FIELDS)
+    if result.get("status") != "ok":
+        return result
+    values = {k: (v if k == "mesh_type" else _to_number(v)) for k, v in result["values"].items()}
+    out = {"status": "ok", **values, "source": result.get("source")}
+    if result.get("errors"):
+        out["unavailable"] = result["errors"]
+        out["note"] = ("Some values are unavailable (typically no mesh has been generated yet); "
+                       "this tool never triggers meshing.")
+    return out
+
+
+def _get_mesh_info(arguments: dict, client: CSTClient) -> list[TextContent]:
+    script = client.build_query_vba(_MESH_QUERY_FIELDS) if hasattr(client, "build_query_vba") else ""
     if client.connected:
-        result = client.execute_vba(script)
+        result = _query_mesh(client)
     else:
         result = {
             "status": "offline",
@@ -359,12 +405,14 @@ def _get_mesh_info(arguments: dict, client: CSTClient) -> list[TextContent]:
 
 
 def _get_mesh_quality(arguments: dict, client: CSTClient) -> list[TextContent]:
-    vba = VBABuilder("Mesh")
-    vba.call("Update")
-    script = vba.build()
-
+    script = client.build_query_vba(_MESH_QUERY_FIELDS) if hasattr(client, "build_query_vba") else ""
     if client.connected:
-        result = client.execute_vba(script)
+        result = _query_mesh(client)
+        if result.get("status") == "ok":
+            result["note_quality"] = (
+                "CST exposes cell counts, edge lengths and critical cells via VBA; "
+                "aspect-ratio histograms are not available through this API."
+            )
     else:
         result = {
             "status": "offline",
@@ -429,7 +477,6 @@ def _add_fixpoint_mesh(arguments: dict, client: CSTClient) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
-def register_mesh_tools(server: Server, client: CSTClient) -> None:
-    """Register mesh tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

@@ -179,6 +179,30 @@ CATEGORIES: list[dict] = [
         "module": "matching",
     },
     {
+        "id": "figures",
+        "title_en": "Publication figures",
+        "title_tr": "Akademik grafikler",
+        "blurb_en": "IEEE-style 1D result and farfield figures from saved projects (PDF/SVG/PNG).",
+        "blurb_tr": "Kayıtlı projelerden IEEE tarzı 1B sonuç ve uzak alan grafikleri (PDF/SVG/PNG).",
+        "module": "figures_1d",
+    },
+    {
+        "id": "figures_farfield",
+        "title_en": "Farfield figures",
+        "title_tr": "Uzak alan grafikleri",
+        "blurb_en": "Polar cuts, heatmaps and 3D patterns with gain/HPBW/F-B metrics.",
+        "blurb_tr": "Polar kesitler, ısı haritaları ve 3B desenler; kazanç/HPBW/F-B metrikleri.",
+        "module": "figures_3d",
+    },
+    {
+        "id": "drawing",
+        "title_en": "Technical drawings",
+        "title_tr": "Teknik çizimler",
+        "blurb_en": "Dimensioned orthographic views of the model with title block and parameter table.",
+        "blurb_tr": "Başlık bloğu ve parametre tablosuyla ölçülendirilmiş ortografik görünümler.",
+        "module": "drawing",
+    },
+    {
         "id": "vba",
         "title_en": "VBA escape hatch",
         "title_tr": "VBA acil çıkış",
@@ -190,62 +214,11 @@ CATEGORIES: list[dict] = [
 
 
 def collect_tools() -> list[dict]:
-    from cst_mcp.tools import (
-        antenna_templates,
-        arrays,
-        boolean,
-        boundaries,
-        connection,
-        diagnostics,
-        geometry,
-        import_export,
-        matching,
-        materials,
-        mesh,
-        optimization,
-        official,
-        parameters,
-        pcb,
-        ports,
-        project,
-        results,
-        simulation,
-        solvers,
-        transforms,
-        vba,
-        workflows,
-    )
+    import importlib
 
     module_map = {
-        c["module"]: globals().get(c["module"])
-        or __import__(f"cst_mcp.tools.{c['module']}", fromlist=["TOOLS"])
+        c["module"]: importlib.import_module(f"cst_mcp.tools.{c['module']}")
         for c in CATEGORIES
-    }
-    # fix: explicit map more reliable
-    module_map = {
-        "connection": connection,
-        "official": official,
-        "workflows": workflows,
-        "project": project,
-        "geometry": geometry,
-        "boolean": boolean,
-        "transforms": transforms,
-        "materials": materials,
-        "ports": ports,
-        "boundaries": boundaries,
-        "mesh": mesh,
-        "solvers": solvers,
-        "simulation": simulation,
-        "results": results,
-        "import_export": import_export,
-        "parameters": parameters,
-        "optimization": optimization,
-        "diagnostics": diagnostics,
-        "antenna_templates": antenna_templates,
-        "arrays": arrays,
-        "pcb": pcb,
-        "matching": matching,
-        "vba": vba,
     }
 
     tools: list[dict] = []

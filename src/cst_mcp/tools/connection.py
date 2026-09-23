@@ -32,3 +32,8 @@ async def handle(name, arguments, client):
     if name == "cst_disconnect":
         return as_json(client.disconnect())
     return err(f"Unknown connection tool: {name}")
+
+
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from mcp.types import TextContent, Tool
 
@@ -18,8 +17,6 @@ from cst_mcp.validators import (
 )
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "materials"
 
@@ -1204,14 +1201,8 @@ def _handle_list_ferrite_materials(args: dict) -> list[TextContent]:
 # Registration helper (used by tools/__init__.py)
 # ---------------------------------------------------------------------------
 
-def register_material_tools(server: Server, client: CSTClient) -> None:
-    """Register material tools with the MCP server.
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
 
-    Appends tool definitions and the ``handle`` dispatcher to the
-    shared ``ToolRegistry`` in ``cst_mcp.tools``.  The registry
-    is wired into the MCP protocol by ``register_all_tools`` after all
-    modules have been registered.
-    """
-    from cst_mcp.tools import _registry
-
-    _registry.add_module(TOOLS, handle, client)
+handle = _guard_handler(TOOLS, handle)

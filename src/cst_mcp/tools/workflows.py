@@ -9,8 +9,60 @@ from mcp.types import TextContent, Tool
 from cst_mcp.domain.antennas.patch import design_patch
 from cst_mcp.execution.port_helpers import feed_line_y_range, microstrip_waveguide_port_vba
 from cst_mcp.execution.vba_builder import fmt_num, vba_str
+from cst_mcp.vba_safety import vba_escape as _q
 from cst_mcp.tools.registry import as_json, err
 from cst_mcp.vba_builder import VBABuilder
+
+# Output schemas describe success payloads only and stay permissive: offline
+# mode returns status='offline' without data, which must still validate.
+RUN_AND_S11_OUTPUT_SCHEMA: dict[str, Any] = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "status": {"type": "string"},
+        "solver": {
+            "type": "object",
+            "properties": {"status": {"type": "string"}},
+            "additionalProperties": True,
+        },
+        "s_parameters": {
+            "type": "object",
+            "properties": {
+                "status": {"type": "string"},
+                "tree_path": {"type": "string"},
+                "frequency_unit": {"type": "string"},
+                "frequency_ghz": {"type": "array", "items": {"type": "number"}},
+                "magnitude_db": {"type": "array", "items": {"type": ["number", "null"]}},
+                "metrics": {"type": "object"},
+            },
+            "additionalProperties": True,
+        },
+        "message": {"type": "string"},
+    },
+    "required": ["status"],
+    "if": {"properties": {"status": {"const": "ok"}}, "required": ["status"]},
+    "then": {"required": ["solver", "s_parameters"]},
+    "additionalProperties": True,
+}
+
+FARFIELD_METRICS_OUTPUT_SCHEMA: dict[str, Any] = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "status": {"type": "string"},
+        "method": {"type": "string"},
+        "metrics": {"type": "object"},
+        "sources": {"type": "object"},
+        "available": {"type": "boolean"},
+        "tree_path": {"type": ["string", "null"]},
+        "path": {"type": ["string", "null"]},
+        "note": {"type": "string"},
+    },
+    "required": ["status"],
+    "if": {"properties": {"status": {"const": "ok"}}, "required": ["status"]},
+    "then": {"required": ["method", "metrics", "sources"]},
+    "additionalProperties": True,
+}
 
 TOOLS: list[Tool] = [
     Tool(
@@ -47,6 +99,10 @@ TOOLS: list[Tool] = [
         name="cst_workflow_run_and_s11",
         description=(
             "Run solver and return structured S11/Sij with metrics (min dB, bandwidth). "
+            "BLOCKING: waits for the whole solve (up to timeout_s) inside one tool "
+            "call; many MCP clients abort calls after ~60 s. For longer solves use "
+            "cst_run_simulation_async + cst_wait_for_simulation, then "
+            "cst_get_s_parameters. "
             "Solver çalıştırır ve S parametrelerini metriklerle döner."
         ),
         inputSchema={
@@ -59,6 +115,7 @@ TOOLS: list[Tool] = [
             },
             "required": [],
         },
+        outputSchema=RUN_AND_S11_OUTPUT_SCHEMA,
     ),
     Tool(
         name="cst_design_patch_only",
@@ -139,7 +196,11 @@ TOOLS: list[Tool] = [
         name="cst_workflow_simulate_and_report",
         description=(
             "Run the solver, then immediately build a design report (S-params + views + "
-            "optional farfield). Simülasyonu çalıştırıp rapor paketini üretir."
+            "optional farfield). BLOCKING: waits for the whole solve (up to timeout_s) "
+            "inside one tool call; many MCP clients abort calls after ~60 s. For longer "
+            "solves use cst_run_simulation_async + cst_wait_for_simulation, then "
+            "cst_workflow_design_report. "
+            "Simülasyonu çalıştırıp rapor paketini üretir."
         ),
         inputSchema={
             "type": "object",
@@ -194,6 +255,7 @@ TOOLS: list[Tool] = [
             },
             "required": [],
         },
+        outputSchema=FARFIELD_METRICS_OUTPUT_SCHEMA,
     ),
 ]
 
@@ -214,12 +276,12 @@ def _brick_expr(
         [
             "With Brick",
             "  .Reset",
-            f'  .Name "{name}"',
-            f'  .Component "{component}"',
-            f'  .Material "{material}"',
-            f'  .Xrange "{x0}", "{x1}"',
-            f'  .Yrange "{y0}", "{y1}"',
-            f'  .Zrange "{z0}", "{z1}"',
+            f'  .Name "{_q(name, "name")}"',
+            f'  .Component "{_q(component, "component")}"',
+            f'  .Material "{_q(material, "material")}"',
+            f'  .Xrange "{_q(str(x0), "x0")}", "{_q(str(x1), "x1")}"',
+            f'  .Yrange "{_q(str(y0), "y0")}", "{_q(str(y1), "y1")}"',
+            f'  .Zrange "{_q(str(z0), "z0")}", "{_q(str(z1), "z1")}"',
             "  .Create",
             "End With",
         ]
@@ -231,9 +293,11 @@ def _store_params_vba(params: dict[str, float]) -> str:
     for name, value in params.items():
         if isinstance(value, float):
             val = f"{value:.8g}"
-        else:
+        elif isinstance(value, (int, float)):
             val = str(value)
-        lines.append(f'StoreParameter "{name}", "{val}"')
+        else:
+            val = _q(str(value), f"parameter {name}")
+        lines.append(f'StoreParameter "{_q(name, "parameter name")}", "{val}"')
     return "\n".join(lines)
 
 
@@ -618,3 +682,10 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
         return err(f"Unknown workflow tool: {name}")
     except Exception as exc:  # noqa: BLE001
         return err(str(exc))
+
+
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

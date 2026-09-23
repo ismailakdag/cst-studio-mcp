@@ -37,7 +37,7 @@ async def test_preview_is_explicit_and_never_claims_full_curve(tmp_path, monkeyp
     monkeypatch.setattr(
         official,
         "read_curve",
-        lambda *args: dict(status="ok", n=5, x=list(range(5)), real=[1] * 5, imag=[0] * 5),
+        lambda *args, **kwargs: dict(status="ok", n=5, x=list(range(5)), real=[1] * 5, imag=[0] * 5),
     )
     client = CSTClient(CSTConfig())
     result = json.loads(

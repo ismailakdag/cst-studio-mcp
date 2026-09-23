@@ -17,6 +17,7 @@ from mcp.types import TextContent, Tool
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 from cst_mcp.validators import validate_frequency, validate_positive
+from cst_mcp.vba_safety import vba_escape as _q
 
 # ---------------------------------------------------------------------------
 # Physical constants
@@ -514,8 +515,8 @@ def _store_design_parameters(params: dict[str, float]) -> str:
         if isinstance(value, float):
             val_str = f"{value:.6g}"
         else:
-            val_str = str(value)
-        lines.append(f'StoreParameter "{name}", "{val_str}"')
+            val_str = _q(str(value), f"parameter {name}")
+        lines.append(f'StoreParameter "{_q(str(name), "parameter name")}", "{val_str}"')
     lines.append("")
     return "\n".join(lines)
 
@@ -2407,7 +2408,8 @@ async def handle(
         }))]
 
 
-def register_antenna_template_tools(server, client: CSTClient) -> None:
-    """Register antenna template tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

@@ -19,6 +19,97 @@ logger = logging.getLogger(__name__)
 DEFAULT_VERSION = "2026"
 CONNECT_MODES = frozenset({"auto", "manual", "disabled"})
 
+# Tool categories selectable through ``CST_TOOLSETS``. Each maps to one tool
+# module (``antenna`` -> ``antenna_templates``, ``boundaries`` also answers to
+# ``setup``).
+TOOLSET_CATEGORIES: tuple[str, ...] = (
+    "connection",
+    "official",
+    "project",
+    "geometry",
+    "boolean",
+    "transforms",
+    "materials",
+    "ports",
+    "boundaries",
+    "mesh",
+    "solvers",
+    "simulation",
+    "results",
+    "import_export",
+    "parameters",
+    "optimization",
+    "diagnostics",
+    "antenna",
+    "arrays",
+    "pcb",
+    "matching",
+    "vba",
+    "workflows",
+    "drawing",
+    "figures",
+)
+TOOLSET_ALIASES: dict[str, frozenset[str]] = {
+    "all": frozenset(TOOLSET_CATEGORIES),
+    # Enough for a full design loop: open, tweak parameters, run, read results,
+    # and diagnose/dismiss CST dialogs. Drawing/figure output stays opt-in.
+    "core": frozenset(
+        {
+            "connection",
+            "official",
+            "project",
+            "workflows",
+            "simulation",
+            "results",
+            "parameters",
+            "diagnostics",
+        }
+    ),
+    "setup": frozenset({"boundaries"}),
+    "antenna_templates": frozenset({"antenna"}),
+    "import": frozenset({"import_export"}),
+    "export": frozenset({"import_export"}),
+}
+# Present regardless of CST_TOOLSETS so a client can always inspect and manage
+# the CST session.
+ALWAYS_ENABLED_TOOLS = frozenset({"cst_connect", "cst_disconnect", "cst_connection_status"})
+
+
+def parse_toolsets(raw: str | None) -> frozenset[str] | None:
+    """Parse ``CST_TOOLSETS`` into enabled categories; ``None`` means all tools.
+
+    Names are comma-separated and case-insensitive (``-`` is read as ``_``).
+    Unknown names are logged and ignored. If nothing valid remains, every
+    tool stays enabled so a typo cannot silently hide the catalog.
+    """
+    if raw is None or not raw.strip():
+        return None
+    selected: set[str] = set()
+    unknown: list[str] = []
+    for item in raw.split(","):
+        key = item.strip().lower().replace("-", "_")
+        if not key:
+            continue
+        if key in TOOLSET_ALIASES:
+            selected |= TOOLSET_ALIASES[key]
+        elif key in TOOLSET_CATEGORIES:
+            selected.add(key)
+        else:
+            unknown.append(item.strip())
+    if unknown:
+        logger.warning(
+            "Ignoring unknown CST_TOOLSETS name(s): %s. Valid: %s, aliases: %s",
+            ", ".join(unknown),
+            ", ".join(TOOLSET_CATEGORIES),
+            ", ".join(sorted(TOOLSET_ALIASES)),
+        )
+    if not selected:
+        logger.warning("CST_TOOLSETS=%r selects no valid toolset; enabling all tools", raw)
+        return None
+    if selected >= set(TOOLSET_CATEGORIES):
+        return None
+    return frozenset(selected | {"connection"})
+
 
 @dataclass
 class CSTConfig:
@@ -32,6 +123,8 @@ class CSTConfig:
     quiet_mode: bool = True
     connect_mode: str = "manual"
     work_dir_error: str | None = None
+    # Enabled tool categories from CST_TOOLSETS; None exposes every tool.
+    toolsets: frozenset[str] | None = None
 
     @classmethod
     def from_env(cls) -> CSTConfig:
@@ -67,6 +160,7 @@ class CSTConfig:
                 connect_mode,
             )
             connect_mode = "manual"
+        toolsets = parse_toolsets(os.environ.get("CST_TOOLSETS"))
 
         cfg = cls(
             cst_path=cst_path,
@@ -77,13 +171,15 @@ class CSTConfig:
             quiet_mode=quiet,
             connect_mode=connect_mode,
             work_dir_error=work_dir_error,
+            toolsets=toolsets,
         )
         logger.info(
-            "CST config: path=%s libs=%s work=%s version=%s",
+            "CST config: path=%s libs=%s work=%s version=%s toolsets=%s",
             cfg.cst_path,
             cfg.python_lib_path,
             cfg.work_dir,
             cfg.version,
+            "all" if cfg.toolsets is None else ",".join(sorted(cfg.toolsets)),
         )
         return cfg
 

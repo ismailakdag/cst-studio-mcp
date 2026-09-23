@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from cst_mcp.vba_safety import validate_file_path, vba_escape
+
 
 _FREQ_RE = re.compile(
     r"farfield\s*\(\s*f\s*=\s*([0-9]+(?:\.[0-9]+)?)\s*\)",
@@ -295,28 +297,6 @@ def parse_farfield_pattern_csv(path: str | Path, max_points: int = 500) -> dict[
     }
 
 
-def build_farfield_summary_vba(tree_path: str, summary_path: str) -> str:
-    """Legacy VBA using ASCIIExportSummary (often fails on CST 2026).
-
-    Prefer :func:`build_farfield_metrics_vba` (official GetMax path).
-    Returns **body only** (no ``Sub Main``).
-    """
-    safe_tree = tree_path.replace('"', '""')
-    safe_file = summary_path.replace("\\", "/").replace('"', '""')
-    return "\n".join(
-        [
-            f'SelectTreeItem "{safe_tree}"',
-            "With FarfieldPlot",
-            "  .Reset",
-            '  .Plottype "3d"',
-            '  .SetPlotMode "realized gain"',
-            "  .Plot",
-            f'  .ASCIIExportSummary "{safe_file}"',
-            "End With",
-        ]
-    )
-
-
 def build_farfield_metrics_vba(tree_path: str, metrics_path: str) -> str:
     """VBA body: configure plot, select tree item, Plot, dump Get* metrics.
 
@@ -326,8 +306,8 @@ def build_farfield_metrics_vba(tree_path: str, metrics_path: str) -> str:
 
     Returns **body only** (no ``Sub Main``).
     """
-    safe_tree = tree_path.replace('"', '""')
-    safe_file = metrics_path.replace("\\", "/").replace('"', '""')
+    safe_tree = vba_escape(tree_path, "tree_path")
+    safe_file = validate_file_path(metrics_path.replace("\\", "/"), "metrics_path")
     # Settings first, then SelectTreeItem, then Plot — matches official help example.
     return "\n".join(
         [
@@ -428,14 +408,6 @@ def parse_farfield_metrics_kv(text: str) -> dict[str, Any]:
         metrics["error"] = kv["error"]
 
     return metrics
-
-
-def build_farfield_list_eval_hint() -> str:
-    return (
-        "Use FarfieldPlot.Plot + GetMax / GetRadiationEfficiency after "
-        "SelectTreeItem('Farfields\\farfield (f=X) [1]'). "
-        "Avoid ASCIIExportSummary (not reliable on CST 2026)."
-    )
 
 
 def farfield_monitor_vba(name: str, frequency_ghz: float) -> str:

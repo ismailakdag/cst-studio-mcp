@@ -203,7 +203,8 @@ def test_query_output_replaces_popups(tmp_path, monkeypatch):
     client._project = object()
     monkeypatch.setattr(client, "is_solver_running", lambda **kw: False)
 
-    def execute(code):
+    def execute(code, **kwargs):
+        assert kwargs.get("history_fallback") is False
         assert "MsgBox" not in code and "Debug.Print" not in code
         path = re.search(r'Open "([^"]+)" For Output', code)[1]
         Path(path).write_text("w\t12.5\n", encoding="ascii")

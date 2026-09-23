@@ -9,12 +9,12 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from mcp.types import Tool, TextContent
 
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.vba_builder import VBABuilder, VBAScript
+from cst_mcp.vba_safety import vba_escape as _q
 from cst_mcp.validators import (
     validate_file_path,
     validate_name,
@@ -22,8 +22,6 @@ from cst_mcp.validators import (
     validate_range,
 )
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -1405,8 +1403,8 @@ async def _handle_create_ground_plane(
         # Boolean subtract the cutout from the plane
         subtract_vba = VBABuilder("Solid")
         subtract_vba.raw_line(
-            f'Solid.Subtract "PCB_Planes:{plane_name}", '
-            f'"PCB_Planes:{cutout_name}"'
+            f'Solid.Subtract "PCB_Planes:{_q(plane_name, "plane_name")}", '
+            f'"PCB_Planes:{_q(cutout_name, "plane_name")}"'
         )
         script.add_block(subtract_vba)
 
@@ -2275,7 +2273,8 @@ async def handle(
         }))]
 
 
-def register_pcb_tools(server: Server, client: CSTClient) -> None:
-    """Register PCB tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

@@ -12,7 +12,6 @@ from __future__ import annotations
 import cmath
 import json
 import math
-from typing import TYPE_CHECKING
 
 from mcp.types import TextContent, Tool
 
@@ -20,8 +19,6 @@ from cst_mcp.cst_client import CSTClient
 from cst_mcp.validators import validate_frequency, validate_positive, validate_range
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 
-if TYPE_CHECKING:
-    from mcp.server import Server
 
 # ---------------------------------------------------------------------------
 # Physical constants
@@ -1376,7 +1373,8 @@ async def handle(
         }))]
 
 
-def register_matching_tools(server: Server, client: CSTClient) -> None:
-    """Register matching network tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

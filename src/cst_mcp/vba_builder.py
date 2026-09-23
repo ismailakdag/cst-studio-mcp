@@ -16,8 +16,18 @@ _DANGEROUS_IN_STRINGS = re.compile(
 )
 
 
+_FORBIDDEN_STRING_CHARS = re.compile(r"[\r\n\x00]")
+
+
 def _escape_vba_string(value: str) -> str:
-    """Escape a string for safe embedding in VBA."""
+    """Escape a string for safe embedding in a VBA string literal.
+
+    Doubles embedded quotes and rejects CR / LF / NUL: VBA string literals
+    cannot span lines, so a newline in a caller-supplied value would end the
+    literal and let the rest of the value run as a new VBA statement.
+    """
+    if _FORBIDDEN_STRING_CHARS.search(value):
+        raise ValueError(f"VBA string value must not contain line breaks or NUL characters: {value!r}")
     escaped = value.replace('"', '""')
     # Block VBA string concatenation injection attempts
     if _DANGEROUS_IN_STRINGS.search(f'"{escaped}"'):
@@ -148,7 +158,10 @@ class VBAScript:
         return self
 
     def add_comment(self, comment: str) -> VBAScript:
-        safe = _escape_vba_string(comment)
+        # Comments may legitimately be multi-line; flatten them so every line
+        # stays inside the single ``'`` comment.
+        flat = " ".join(comment.replace("\x00", " ").splitlines())
+        safe = _escape_vba_string(flat)
         self._blocks.append(f"' {safe}")
         return self
 

@@ -15,7 +15,6 @@ from cst_mcp.validators import validate_component_path
 from cst_mcp.vba_builder import VBABuilder
 
 if TYPE_CHECKING:
-    from mcp.server import Server
 
     from cst_mcp.cst_client import CSTClient
 
@@ -333,7 +332,8 @@ async def handle(
 # ---------------------------------------------------------------------------
 
 
-def register_transform_tools(server: Server, client: CSTClient) -> None:
-    """Register transform tools with the MCP server."""
-    from cst_mcp.tools import _registry
-    _registry.add_module(TOOLS, handle, client)
+# Reject line breaks and non-numeric values in numeric slots before any VBA
+# is generated from the arguments (generated VBA bypasses CST_ALLOW_RAW_VBA).
+from cst_mcp.vba_safety import guard_handler as _guard_handler  # noqa: E402
+
+handle = _guard_handler(TOOLS, handle)

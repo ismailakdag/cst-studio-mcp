@@ -30,6 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+figures = [
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
