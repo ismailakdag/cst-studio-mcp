@@ -83,4 +83,4 @@ def build_optimizer(args: dict, kind: str = "single") -> str:
             )
         else:
             builder.set("SetGoalRangeType", "total")
-    return "' Configuration only. Explicit Optimizer.Start is required to run.\n" + builder.build()
+    return "' Optimizer configuration only (started separately).\n" + builder.build()

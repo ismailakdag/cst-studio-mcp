@@ -17,6 +17,7 @@ import logging
 import math
 import os
 import tempfile
+import time
 from typing import Any, Callable
 
 from mcp.types import TextContent, Tool
@@ -154,7 +155,12 @@ TOOLS: list[Tool] = [
             "Each iteration sets parameters, runs the solver, exports S11, and "
             "evaluates against targets. Uses silent VBA execution to avoid "
             "history bloat. Applies the best parameters permanently at the end. "
-            "Connected mode only — requires a live CST session with a solvable project."
+            "Connected mode only — requires a live CST session with a solvable project. "
+            "Each evaluation is a full solve, so the call is bounded by max_seconds "
+            "(default 240) and optional max_evaluations: when a budget stops it early it "
+            "returns status 'partial' with the best evaluation so far and a resume_from "
+            "block (best parameters as new initial values) to pass to the next call. "
+            "Existing results are deleted at the start."
         ),
         inputSchema={
             "type": "object",
@@ -213,6 +219,18 @@ TOOLS: list[Tool] = [
                     "type": "integer",
                     "description": "Port number (default: 1).",
                     "default": 1,
+                },
+                "max_seconds": {
+                    "type": "number",
+                    "default": 240,
+                    "description": (
+                        "Wall-clock budget for this call (default 240 s). No new evaluation "
+                        "starts when the previous one's duration would exceed it; 0 = no limit."
+                    ),
+                },
+                "max_evaluations": {
+                    "type": "integer",
+                    "description": "Optional cap on solver evaluations in this call.",
                 },
             },
             "required": ["parameters", "bands"],
@@ -315,6 +333,10 @@ def _evaluate_bands(
                 band_s11.append(s)
 
         if not band_vswr:
+            interpolated = _interpolated_band(freqs, s11_db, band)
+            if interpolated is not None:
+                results.append(interpolated)
+                continue
             results.append({
                 "name": band["name"],
                 "status": "NO_DATA",
@@ -335,7 +357,7 @@ def _evaluate_bands(
 
         passed = worst_vswr <= target
         target_s11 = vswr_to_s11(target)
-        margin_db = target_s11 - worst_s11  # Negative = pass, positive = fail
+        margin_db = target_s11 - worst_s11  # Positive = pass (dB below target), negative = fail
 
         results.append({
             "name": band["name"],
@@ -352,6 +374,50 @@ def _evaluate_bands(
         })
 
     return results
+
+
+def _interp_s11(freqs: list[float], s11_db: list[float], f: float) -> float | None:
+    """Linear interpolation of S11 (dB) at *f*; ``None`` outside the data range."""
+    if not freqs or f < freqs[0] or f > freqs[-1]:
+        return None
+    for i in range(1, len(freqs)):
+        if freqs[i] >= f:
+            f0, f1 = freqs[i - 1], freqs[i]
+            t = 0.0 if f1 == f0 else (f - f0) / (f1 - f0)
+            return s11_db[i - 1] + t * (s11_db[i] - s11_db[i - 1])
+    return s11_db[-1] if f == freqs[-1] else None
+
+
+def _interpolated_band(freqs: list[float], s11_db: list[float], band: dict) -> dict | None:
+    """Evaluate a band narrower than the sample spacing (e.g. f_low == f_high).
+
+    S11 is interpolated at the band edges (a single point when they coincide).
+    """
+    f_low, f_high = band["f_low_ghz"], band["f_high_ghz"]
+    target = band.get("vswr_target", 2.5)
+    points = sorted({f_low, f_high})
+    values = [_interp_s11(freqs, s11_db, f) for f in points]
+    if any(v is None for v in values):
+        return None
+    worst_s11 = max(values)
+    best_s11 = min(values)
+    worst_vswr = s11_to_vswr(worst_s11)
+    target_s11 = vswr_to_s11(target)
+    return {
+        "name": band["name"],
+        "status": "PASS" if worst_vswr <= target else "FAIL",
+        "worst_vswr": round(worst_vswr, 3),
+        "worst_s11_db": round(worst_s11, 2),
+        "best_vswr": round(s11_to_vswr(best_s11), 3),
+        "best_s11_db": round(best_s11, 2),
+        "best_freq_ghz": round(points[values.index(best_s11)], 4),
+        "target_vswr": target,
+        "target_s11_db": round(target_s11, 2),
+        "margin_db": round(target_s11 - worst_s11, 2),
+        "num_points": 0,
+        "interpolated": True,
+        "evaluated_at_ghz": [round(f, 6) for f in points],
+    }
 
 
 def _find_resonances(
@@ -788,12 +854,19 @@ def _shrink(simplex: list[list[float]], best_idx: int, sigma: float = 0.5) -> li
     return new_simplex
 
 
+class _BudgetExhausted(Exception):
+    """Raised before an evaluation that would exceed the caller's budget."""
+
+
 async def _optimization_loop(
     client: CSTClient,
     params_spec: list[dict],
     bands: list[dict],
     max_iterations: int,
     port: int,
+    max_seconds: float | None = None,
+    max_evaluations: int | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> dict:
     """Run the Nelder-Mead optimization loop in connected mode.
 
@@ -803,8 +876,28 @@ async def _optimization_loop(
     3. Export S11 via Python API export_result() (no history entry)
     4. Parse S11 and compute cost
 
-    Only the final best-parameter application uses add_to_history.
+    Nothing is written to the model history.
+
+    Budget: before each evaluation the loop checks ``max_evaluations`` and
+    whether ``max_seconds`` would be exceeded by one more evaluation (using the
+    duration of the previous one).  When a budget stops the loop, the result
+    has ``status: "partial"`` with the best evaluation so far and a
+    ``resume_from`` block to pass back as the next call's arguments.
     """
+    t_start = clock()
+    evaluations: list[dict] = []
+    last_eval_s = 0.0
+
+    def elapsed() -> float:
+        return clock() - t_start
+
+    def budget_left_for_one_more() -> str | None:
+        if max_evaluations is not None and eval_count >= max_evaluations:
+            return "max_evaluations"
+        if max_seconds is not None and eval_count > 0 and elapsed() + last_eval_s > max_seconds:
+            return "max_seconds"
+        return None
+
     len(params_spec)
     param_names = [p["name"] for p in params_spec]
     x0 = [p["initial"] for p in params_spec]
@@ -828,8 +921,21 @@ async def _optimization_loop(
     eval_count = 0
 
     async def evaluate(x: list[float]) -> tuple[float, list[dict]]:
-        nonlocal eval_count
+        nonlocal eval_count, last_eval_s
+        reason = budget_left_for_one_more()
+        if reason:
+            raise _BudgetExhausted(reason)
         eval_count += 1
+        t_eval = clock()
+        try:
+            cost, bands_out = await _evaluate_once(x)
+        finally:
+            last_eval_s = clock() - t_eval
+        evaluations.append({"params": dict(zip(param_names, _clamp_to_bounds(x, bounds))),
+                            "cost": cost, "bands": bands_out})
+        return cost, bands_out
+
+    async def _evaluate_once(x: list[float]) -> tuple[float, list[dict]]:
 
         # Clamp to bounds
         x = _clamp_to_bounds(x, bounds)
@@ -851,104 +957,152 @@ async def _optimization_loop(
             logger.error("Parse/eval error: %s", e)
             return 100.0, []
 
-    # Evaluate initial simplex
-    for vertex in simplex:
-        cost, _ = await evaluate(vertex)
-        costs.append(cost)
+    stop_reason: str | None = None
+    best_cost = float("inf")
+    best_params = dict(zip(param_names, x0))
+    try:
+        # Evaluate initial simplex
+        for vertex in simplex:
+            cost, _ = await evaluate(vertex)
+            costs.append(cost)
 
-    # Track best
-    best_idx = costs.index(min(costs))
-    best_cost = costs[best_idx]
-    best_params = dict(zip(param_names, simplex[best_idx]))
-
-    history.append({
-        "iteration": 0,
-        "eval_count": eval_count,
-        "best_cost": round(best_cost, 4),
-        "best_params": {k: round(v, 4) for k, v in best_params.items()},
-    })
-
-    logger.info("Optimization start: cost=%.4f params=%s", best_cost, best_params)
-
-    # Nelder-Mead iterations
-    for iteration in range(1, max_iterations + 1):
-        # Sort simplex by cost
-        order = sorted(range(len(costs)), key=lambda i: costs[i])
-        simplex = [simplex[i] for i in order]
-        costs = [costs[i] for i in order]
-
-        best_idx_local = 0
-        worst_idx = len(simplex) - 1
-        second_worst_idx = worst_idx - 1
-
-        f_best = costs[best_idx_local]
-        f_worst = costs[worst_idx]
-        f_second_worst = costs[second_worst_idx]
-
-        # Centroid of all except worst
-        c = _centroid(simplex, worst_idx)
-
-        # Reflect
-        xr = _clamp_to_bounds(_reflect(c, simplex[worst_idx]), bounds)
-        fr, _ = await evaluate(xr)
-
-        if f_best <= fr < f_second_worst:
-            # Accept reflection
-            simplex[worst_idx] = xr
-            costs[worst_idx] = fr
-        elif fr < f_best:
-            # Try expansion
-            xe = _clamp_to_bounds(_expand(c, xr), bounds)
-            fe, _ = await evaluate(xe)
-            if fe < fr:
-                simplex[worst_idx] = xe
-                costs[worst_idx] = fe
-            else:
-                simplex[worst_idx] = xr
-                costs[worst_idx] = fr
-        else:
-            # Contraction
-            if fr < f_worst:
-                # Outside contraction
-                xc = _clamp_to_bounds(_contract(c, xr), bounds)
-            else:
-                # Inside contraction
-                xc = _clamp_to_bounds(_contract(c, simplex[worst_idx]), bounds)
-            fc, _ = await evaluate(xc)
-            if fc < min(fr, f_worst):
-                simplex[worst_idx] = xc
-                costs[worst_idx] = fc
-            else:
-                # Shrink
-                simplex = _shrink(simplex, best_idx_local)
-                costs = []
-                for vertex in simplex:
-                    cost, _ = await evaluate(vertex)
-                    costs.append(cost)
-
-        # Update best
-        current_best_idx = costs.index(min(costs))
-        current_best_cost = costs[current_best_idx]
-        if current_best_cost < best_cost:
-            best_cost = current_best_cost
-            best_params = dict(zip(param_names, simplex[current_best_idx]))
+        # Track best
+        best_idx = costs.index(min(costs))
+        best_cost = costs[best_idx]
+        best_params = dict(zip(param_names, simplex[best_idx]))
 
         history.append({
-            "iteration": iteration,
+            "iteration": 0,
             "eval_count": eval_count,
             "best_cost": round(best_cost, 4),
             "best_params": {k: round(v, 4) for k, v in best_params.items()},
         })
 
-        logger.info(
-            "Iter %d: cost=%.4f evals=%d params=%s",
-            iteration, best_cost, eval_count, best_params,
-        )
+        logger.info("Optimization start: cost=%.4f params=%s", best_cost, best_params)
 
-        # Convergence check: cost is 0 (all bands pass)
-        if best_cost == 0.0:
-            logger.info("All bands pass — converged at iteration %d", iteration)
-            break
+        # Nelder-Mead iterations
+        for iteration in range(1, max_iterations + 1):
+            # Sort simplex by cost
+            order = sorted(range(len(costs)), key=lambda i: costs[i])
+            simplex = [simplex[i] for i in order]
+            costs = [costs[i] for i in order]
+
+            best_idx_local = 0
+            worst_idx = len(simplex) - 1
+            second_worst_idx = worst_idx - 1
+
+            f_best = costs[best_idx_local]
+            f_worst = costs[worst_idx]
+            f_second_worst = costs[second_worst_idx]
+
+            # Centroid of all except worst
+            c = _centroid(simplex, worst_idx)
+
+            # Reflect
+            xr = _clamp_to_bounds(_reflect(c, simplex[worst_idx]), bounds)
+            fr, _ = await evaluate(xr)
+
+            if f_best <= fr < f_second_worst:
+                # Accept reflection
+                simplex[worst_idx] = xr
+                costs[worst_idx] = fr
+            elif fr < f_best:
+                # Try expansion
+                xe = _clamp_to_bounds(_expand(c, xr), bounds)
+                fe, _ = await evaluate(xe)
+                if fe < fr:
+                    simplex[worst_idx] = xe
+                    costs[worst_idx] = fe
+                else:
+                    simplex[worst_idx] = xr
+                    costs[worst_idx] = fr
+            else:
+                # Contraction
+                if fr < f_worst:
+                    # Outside contraction
+                    xc = _clamp_to_bounds(_contract(c, xr), bounds)
+                else:
+                    # Inside contraction
+                    xc = _clamp_to_bounds(_contract(c, simplex[worst_idx]), bounds)
+                fc, _ = await evaluate(xc)
+                if fc < min(fr, f_worst):
+                    simplex[worst_idx] = xc
+                    costs[worst_idx] = fc
+                else:
+                    # Shrink
+                    simplex = _shrink(simplex, best_idx_local)
+                    costs = []
+                    for vertex in simplex:
+                        cost, _ = await evaluate(vertex)
+                        costs.append(cost)
+
+            # Update best
+            current_best_idx = costs.index(min(costs))
+            current_best_cost = costs[current_best_idx]
+            if current_best_cost < best_cost:
+                best_cost = current_best_cost
+                best_params = dict(zip(param_names, simplex[current_best_idx]))
+
+            history.append({
+                "iteration": iteration,
+                "eval_count": eval_count,
+                "best_cost": round(best_cost, 4),
+                "best_params": {k: round(v, 4) for k, v in best_params.items()},
+            })
+
+            logger.info(
+                "Iter %d: cost=%.4f evals=%d params=%s",
+                iteration, best_cost, eval_count, best_params,
+            )
+
+            # Convergence check: cost is 0 (all bands pass)
+            if best_cost == 0.0:
+                logger.info("All bands pass — converged at iteration %d", iteration)
+                break
+
+    except _BudgetExhausted as exc:
+        stop_reason = str(exc)
+
+    if evaluations:
+        best_eval = min(evaluations, key=lambda e: e["cost"])
+        if best_eval["cost"] <= best_cost:
+            best_cost, best_params = best_eval["cost"], dict(best_eval["params"])
+    else:
+        best_eval = None
+    best_bands = best_eval["bands"] if best_eval else []
+
+    def resume_block() -> dict:
+        return {
+            "parameters": [
+                {"name": p["name"], "initial": round(best_params[p["name"]], 6),
+                 "min": p["min"], "max": p["max"]} for p in params_spec
+            ],
+            "bands": bands,
+            "port": port,
+        }
+
+    if stop_reason is None and budget_left_for_one_more() == "max_seconds":
+        stop_reason = "max_seconds (final solve with the best parameters skipped)"
+    if stop_reason is not None:
+        return {
+            "status": "partial",
+            "stop_reason": stop_reason,
+            "overall": ("PASS" if best_bands and all(b["status"] == "PASS" for b in best_bands)
+                        else "FAIL"),
+            "best_cost": round(best_cost, 4) if math.isfinite(best_cost) else None,
+            "best_params": {k: round(v, 4) for k, v in best_params.items()},
+            "bands": best_bands,
+            "bands_source": "best evaluation so far",
+            "total_evaluations": eval_count,
+            "iterations": max(0, len(history) - 1),
+            "elapsed_s": round(elapsed(), 1),
+            "history": history,
+            "model_state": ("The model holds the LAST evaluated parameters and their results, "
+                            "not necessarily the best ones."),
+            "resume_from": resume_block(),
+            "next_steps": ("Call cst_refine_antenna again with the resume_from arguments (plus "
+                           "max_seconds / max_iterations) to continue from the best point."),
+        }
 
     # Apply the best parameters, rebuild, solve, and export through the guarded
     # session operation.  A separate history write here could mutate parameters
@@ -982,7 +1136,9 @@ async def _optimization_loop(
         "best_params": {k: round(v, 4) for k, v in best_params.items()},
         "total_evaluations": eval_count,
         "iterations": len(history) - 1,
+        "elapsed_s": round(elapsed(), 1),
         "bands": final_bands,
+        "bands_source": "final solve with best_params",
         "resonances": resonances,
         "history": history,
     }
@@ -1087,6 +1243,14 @@ async def _handle_refine(args: dict, client: CSTClient) -> dict:
 
     if max_iterations < 1:
         return {"status": "error", "message": "max_iterations must be >= 1"}
+    max_seconds = float(args.get("max_seconds", 240))
+    if not math.isfinite(max_seconds) or max_seconds < 0:
+        return {"status": "error", "message": "max_seconds must be a finite number >= 0"}
+    max_evaluations = args.get("max_evaluations")
+    if max_evaluations is not None:
+        max_evaluations = int(max_evaluations)
+        if max_evaluations < 1:
+            return {"status": "error", "message": "max_evaluations must be >= 1"}
 
     if not client.connected or not client.has_project:
         from cst_mcp.execution.native_optimizer import build_optimizer
@@ -1097,7 +1261,9 @@ async def _handle_refine(args: dict, client: CSTClient) -> dict:
                 "message": "Native optimizer configuration only; Optimizer.Start must be explicit. Connected mode uses the Python loop with per-band VSWR costs."}
 
     # Connected mode: run optimization loop
-    return await _optimization_loop(client, params_spec, bands, max_iterations, port)
+    return await _optimization_loop(client, params_spec, bands, max_iterations, port,
+                                    max_seconds=max_seconds or None,
+                                    max_evaluations=max_evaluations)
 
 
 async def _handle_analyze_impedance(args: dict, client: CSTClient) -> dict:

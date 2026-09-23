@@ -5218,7 +5218,7 @@
       "tools": [
         {
           "name": "cst_set_parameter",
-          "description": "Set or create a design parameter in CST Studio. Parameters can hold numeric values or string expressions referencing other parameters.",
+          "description": "Set or create a design parameter in CST Studio. Parameters can hold numeric values or string expressions referencing other parameters. The value is stored through the parameter list (never as a model-history step) and the model is rebuilt. A parameter change invalidates results: on a solved project pass delete_results=true (results are deleted first), otherwise the call is refused with code results_exist.",
           "category_id": "parameters",
           "params": [
             {
@@ -5242,6 +5242,22 @@
               "type": "string",
               "description": "Optional human-readable description of the parameter.",
               "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "rebuild",
+              "type": "boolean",
+              "description": "Rebuild the model after storing the value (default true).",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "delete_results",
+              "type": "boolean",
+              "description": "Required when the project already has simulation results: they are deleted first (export anything you need). Without it the call is refused with code results_exist, because CST would block on a modal dialog.",
+              "default": false,
               "enum": null,
               "required": false
             }
@@ -5278,7 +5294,7 @@
         },
         {
           "name": "cst_delete_parameter",
-          "description": "Delete a design parameter from the CST project. The parameter must not be referenced by other parameters or geometry.",
+          "description": "Delete a design parameter from the CST project. The parameter must not be referenced by other parameters or geometry. Uses the parameter list (no model-history step) and rebuilds; refused with code results_exist on a solved project unless delete_results=true.",
           "category_id": "parameters",
           "params": [
             {
@@ -5288,6 +5304,14 @@
               "default": null,
               "enum": null,
               "required": true
+            },
+            {
+              "name": "delete_results",
+              "type": "boolean",
+              "description": "Required when the project already has simulation results: they are deleted first (export anything you need). Without it the call is refused with code results_exist, because CST would block on a modal dialog.",
+              "default": false,
+              "enum": null,
+              "required": false
             }
           ],
           "required": [
@@ -5296,7 +5320,7 @@
         },
         {
           "name": "cst_parameter_sweep",
-          "description": "Set up a parameter sweep in CST Studio. The sweep runs the simulation multiple times, varying the specified parameter across a range of values.",
+          "description": "Configure a CST parameter sweep (ParameterSweep object; not a model-history step) that solves once per sample of the parameter. By default only configures (status 'configured'); with run=true it also starts the sweep and returns status 'started' quickly while CST keeps solving: poll cst_wait_for_simulation, then compare runs via cst_list_saved_results (run_ids) and cst_plot_1d_results (run_ids) or cst_parameter_interpolation. Replaces previously configured sweep sequences (clear_existing).",
           "category_id": "parameters",
           "params": [
             {
@@ -5334,14 +5358,37 @@
             {
               "name": "simulation_type",
               "type": "string",
-              "description": "Solver type for the sweep. Defaults to Transient.",
+              "description": "Solver used by the sweep. Omit to follow the project's active solver (HF Time Domain -> Transient, HF Frequency Domain, HF Eigenmode); Transient when it cannot be detected.",
               "default": null,
               "enum": [
                 "Transient",
                 "Frequency Domain",
-                "Eigenmode",
-                "Integral Equation"
+                "Eigenmode"
               ],
+              "required": false
+            },
+            {
+              "name": "clear_existing",
+              "type": "boolean",
+              "description": "Delete all previously configured sweep sequences first so that Start runs exactly this sweep (default true).",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run",
+              "type": "boolean",
+              "description": "Also start it (ParameterSweep.Start). Returns status 'started' within ~15 s while CST keeps running; poll cst_wait_for_simulation until finished. Requires a project without results (see delete_results).",
+              "default": false,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "delete_results",
+              "type": "boolean",
+              "description": "Required when the project already has simulation results: they are deleted first (export anything you need). Without it the call is refused with code results_exist, because CST would block on a modal dialog.",
+              "default": false,
+              "enum": null,
               "required": false
             }
           ],
@@ -5354,7 +5401,7 @@
         },
         {
           "name": "cst_optimizer",
-          "description": "Set up an optimization in CST Studio. Define a goal (minimize, maximize, or target a specific value for a result), specify which parameters to vary with their bounds, and choose an optimization algorithm.",
+          "description": "Configure the native CST optimizer (Optimizer object; not a model-history step). Define a goal (minimize, maximize, or target a value for a result), the parameters to vary with bounds, and an evaluation-capped algorithm. Repeated calls replace the previous optimizer settings. Status 'configured' unless run=true, which starts it and returns 'started' while CST keeps solving (poll cst_wait_for_simulation). For a bounded, resumable Python loop use cst_refine_antenna instead.",
           "category_id": "parameters",
           "params": [
             {
@@ -5412,6 +5459,30 @@
               "default": 100,
               "enum": null,
               "required": false
+            },
+            {
+              "name": "frequency_ghz",
+              "type": "number",
+              "description": "Evaluate the goal at this single frequency (default: whole range).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run",
+              "type": "boolean",
+              "description": "Also start it (Optimizer.Start). Returns status 'started' within ~15 s while CST keeps running; poll cst_wait_for_simulation until finished. Requires a project without results (see delete_results).",
+              "default": false,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "delete_results",
+              "type": "boolean",
+              "description": "Required when the project already has simulation results: they are deleted first (export anything you need). Without it the call is refused with code results_exist, because CST would block on a modal dialog.",
+              "default": false,
+              "enum": null,
+              "required": false
             }
           ],
           "required": [
@@ -5422,7 +5493,7 @@
         },
         {
           "name": "cst_multi_objective_optimizer",
-          "description": "Set up a multi-objective optimization with weighted goals and optional constraints. Uses a weighted sum of goals with an evaluation cap; this is not a Pareto-front search. Configuration only; start explicitly.",
+          "description": "Set up a multi-objective optimization with weighted goals and optional constraints. Uses a weighted sum of goals with an evaluation cap; this is not a Pareto-front search. Native CST Optimizer settings (not a model-history step); repeated calls replace them. Status 'configured' unless run=true (then 'started'; poll cst_wait_for_simulation).",
           "category_id": "parameters",
           "params": [
             {
@@ -5466,6 +5537,22 @@
               "type": "integer",
               "description": "",
               "default": 200,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run",
+              "type": "boolean",
+              "description": "Also start it (Optimizer.Start). Returns status 'started' within ~15 s while CST keeps running; poll cst_wait_for_simulation until finished. Requires a project without results (see delete_results).",
+              "default": false,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "delete_results",
+              "type": "boolean",
+              "description": "Required when the project already has simulation results: they are deleted first (export anything you need). Without it the call is refused with code results_exist, because CST would block on a modal dialog.",
+              "default": false,
               "enum": null,
               "required": false
             }
@@ -5539,7 +5626,7 @@
         },
         {
           "name": "cst_constrained_optimizer",
-          "description": "Single-objective optimization with explicit inequality constraints. Example: minimize S11 subject to gain > 8 dBi and bandwidth > 100 MHz.",
+          "description": "Single-objective optimization with explicit inequality constraints. Example: minimize S11 subject to gain > 8 dBi and bandwidth > 100 MHz. Native CST Optimizer settings (not a model-history step); repeated calls replace them. Status 'configured' unless run=true (then 'started'; poll cst_wait_for_simulation).",
           "category_id": "parameters",
           "params": [
             {
@@ -5585,6 +5672,22 @@
               "default": 100,
               "enum": null,
               "required": false
+            },
+            {
+              "name": "run",
+              "type": "boolean",
+              "description": "Also start it (Optimizer.Start). Returns status 'started' within ~15 s while CST keeps running; poll cst_wait_for_simulation until finished. Requires a project without results (see delete_results).",
+              "default": false,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "delete_results",
+              "type": "boolean",
+              "description": "Required when the project already has simulation results: they are deleted first (export anything you need). Without it the call is refused with code results_exist, because CST would block on a modal dialog.",
+              "default": false,
+              "enum": null,
+              "required": false
             }
           ],
           "required": [
@@ -5595,7 +5698,7 @@
         },
         {
           "name": "cst_parameter_interpolation",
-          "description": "Interpolate results between parameter sweep data points to estimate performance at a specific parameter value without running a new simulation.",
+          "description": "Read-only: linearly interpolate a saved 1D result between the two parameter sweep runs that bracket target_value (runs come from a finished cst_parameter_sweep; see cst_list_saved_results run_ids). No simulation, no parameter change, no extrapolation outside the swept range. Returns the interpolated curve (magnitude in dB for complex results) and its minimum.",
           "category_id": "parameters",
           "params": [
             {
@@ -5617,10 +5720,18 @@
             {
               "name": "result_path",
               "type": "string",
-              "description": "Result tree path to interpolate.",
+              "description": "1D result tree path, e.g. '1D Results\\S-Parameters\\S1,1'.",
               "default": null,
               "enum": null,
               "required": true
+            },
+            {
+              "name": "max_points",
+              "type": "integer",
+              "description": "Downsample the returned curve to at most this many points (0 = all).",
+              "default": 200,
+              "enum": null,
+              "required": false
             }
           ],
           "required": [
@@ -5710,7 +5821,7 @@
         },
         {
           "name": "cst_refine_antenna",
-          "description": "Run an automated Nelder-Mead optimization loop to tune CST design parameters toward VSWR goals across specified frequency bands. Each iteration sets parameters, runs the solver, exports S11, and evaluates against targets. Uses silent VBA execution to avoid history bloat. Applies the best parameters permanently at the end. Connected mode only — requires a live CST session with a solvable project.",
+          "description": "Run an automated Nelder-Mead optimization loop to tune CST design parameters toward VSWR goals across specified frequency bands. Each iteration sets parameters, runs the solver, exports S11, and evaluates against targets. Uses silent VBA execution to avoid history bloat. Applies the best parameters permanently at the end. Connected mode only — requires a live CST session with a solvable project. Each evaluation is a full solve, so the call is bounded by max_seconds (default 240) and optional max_evaluations: when a budget stops it early it returns status 'partial' with the best evaluation so far and a resume_from block (best parameters as new initial values) to pass to the next call. Existing results are deleted at the start.",
           "category_id": "optimization",
           "params": [
             {
@@ -5742,6 +5853,22 @@
               "type": "integer",
               "description": "Port number (default: 1).",
               "default": 1,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_seconds",
+              "type": "number",
+              "description": "Wall-clock budget for this call (default 240 s). No new evaluation starts when the previous one's duration would exceed it; 0 = no limit.",
+              "default": 240,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "max_evaluations",
+              "type": "integer",
+              "description": "Optional cap on solver evaluations in this call.",
+              "default": null,
               "enum": null,
               "required": false
             }

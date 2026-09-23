@@ -722,17 +722,17 @@ Design parameters, sweeps, optimizers, sensitivity, yield.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_set_parameter` | Set or create a design parameter in CST Studio. Parameters can hold numeric values or string expressions referencing other parameters. |
+| `cst_set_parameter` | Set or create a design parameter in CST Studio. Parameters can hold numeric values or string expressions referencing other parameters. Th… |
 | `cst_get_parameter` | Get the current value of a design parameter. Returns both the stored expression and the evaluated numeric value. |
 | `cst_list_parameters` | List all design parameters in the current CST project with their names, expressions, and evaluated numeric values. |
-| `cst_delete_parameter` | Delete a design parameter from the CST project. The parameter must not be referenced by other parameters or geometry. |
-| `cst_parameter_sweep` | Set up a parameter sweep in CST Studio. The sweep runs the simulation multiple times, varying the specified parameter across a range of v… |
-| `cst_optimizer` | Set up an optimization in CST Studio. Define a goal (minimize, maximize, or target a specific value for a result), specify which paramete… |
+| `cst_delete_parameter` | Delete a design parameter from the CST project. The parameter must not be referenced by other parameters or geometry. Uses the parameter … |
+| `cst_parameter_sweep` | Configure a CST parameter sweep (ParameterSweep object; not a model-history step) that solves once per sample of the parameter. By defaul… |
+| `cst_optimizer` | Configure the native CST optimizer (Optimizer object; not a model-history step). Define a goal (minimize, maximize, or target a value for… |
 | `cst_multi_objective_optimizer` | Set up a multi-objective optimization with weighted goals and optional constraints. Uses a weighted sum of goals with an evaluation cap; … |
 | `cst_sensitivity_analysis` | Set up a one-at-a-time sensitivity analysis to rank parameters by their impact on a result. Varies each parameter individually while keep… |
 | `cst_yield_analysis` | Set up a Monte Carlo yield analysis to estimate manufacturing yield. Randomly varies parameters according to their tolerances and evaluat… |
-| `cst_constrained_optimizer` | Single-objective optimization with explicit inequality constraints. Example: minimize S11 subject to gain > 8 dBi and bandwidth > 100 MHz. |
-| `cst_parameter_interpolation` | Interpolate results between parameter sweep data points to estimate performance at a specific parameter value without running a new simul… |
+| `cst_constrained_optimizer` | Single-objective optimization with explicit inequality constraints. Example: minimize S11 subject to gain > 8 dBi and bandwidth > 100 MHz… |
+| `cst_parameter_interpolation` | Read-only: linearly interpolate a saved 1D result between the two parameter sweep runs that bracket target_value (runs come from a finish… |
 
 ### Antenna evaluation (3)
 

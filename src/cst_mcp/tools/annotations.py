@@ -42,6 +42,8 @@ _READ_ONLY_EXTRA = frozenset(
         # Polls solver state until done; never starts or stops the solver.
         "cst_wait_for_simulation",
         "cst_evaluate_antenna",
+        # Interpolates saved sweep runs via cst.results; no parameter change.
+        "cst_parameter_interpolation",
         "cst_analyze_impedance",
         "cst_array_compute_factor",
         "cst_array_beam_steering",
@@ -108,10 +110,15 @@ _DESTRUCTIVE_EXTRA = frozenset(
         "cst_dismiss_dialogs",
         # Overwrites design parameter values over many solver iterations.
         "cst_refine_antenna",
-        # Changing a parameter (or interpolating one, which triggers
-        # RebuildOnParametricChange) rebuilds the model and invalidates results.
+        # Changing a parameter rebuilds the model; delete_results=true deletes
+        # existing results first.
         "cst_set_parameter",
-        "cst_parameter_interpolation",
+        # delete_results=true deletes results; run=true starts solver runs that
+        # replace them.
+        "cst_parameter_sweep",
+        "cst_optimizer",
+        "cst_multi_objective_optimizer",
+        "cst_constrained_optimizer",
         # A new solver run overwrites the existing results of the project.
         "cst_run_simulation",
         "cst_run_simulation_async",

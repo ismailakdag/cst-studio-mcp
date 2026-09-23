@@ -475,6 +475,46 @@ class CSTSession:
         except Exception as exc:  # noqa: BLE001
             return {"status": "error", "message": str(exc), "vba": vba_code}
 
+    def start_blocking_vba(self, vba_code: str, *, what: str, probe_timeout_s: float = 10.0) -> dict[str, Any]:
+        """Launch a VBA command that blocks until a long CST job ends.
+
+        ``ParameterSweep.Start`` / ``Optimizer.Start`` do not return until every
+        solver run is done.  Verified on CST 2026: when the client-side timeout
+        of ``_execute_vba_code`` expires, the job keeps running inside CST and
+        ``is_solver_running`` keeps answering (``True`` during the job).  So the
+        call is issued with a short timeout; a timeout followed by a running
+        solver means "started" and is recorded like an async solve so
+        ``cst_wait_for_simulation`` can poll it.  No history entry is written.
+        Callers must make sure the project holds no results first.
+        """
+        if not self.is_connected or not self.has_project:
+            return {"status": "offline", "vba": vba_code}
+        blocked = self._idle_error()
+        if blocked:
+            return blocked
+        execute = getattr(self.model3d, "_execute_vba_code", None)
+        if not callable(execute):
+            return {"status": "error",
+                    "message": "This CST binding does not expose model3d._execute_vba_code"}
+        t0 = time.monotonic()
+        try:
+            execute(self._ensure_sub_main(vba_code), timeout=self._api_timeout(probe_timeout_s))
+        except Exception as exc:  # noqa: BLE001
+            if not self._is_timeout_error(exc):
+                return {"status": "error", "stage": "start", "message": str(exc), "what": what}
+            running = self.is_solver_running(timeout_s=5)
+            if running is True:
+                self._pending_solve = {"t0": t0, "seen_running": True, "what": what}
+                return {"status": "started", "running": True, "what": what,
+                        "message": (f"{what} is running inside CST. Poll cst_wait_for_simulation "
+                                    "until it reports finished, then read per-run results "
+                                    "(cst_list_saved_results shows run_ids).")}
+            return {"status": "timeout", "running": running, "what": what,
+                    "execution_state": "unknown", "message": str(exc),
+                    "note": "The start call timed out but no running solver was reported; "
+                            "check cst_get_messages / dialogs before retrying."}
+        return {"status": "completed", "what": what, "elapsed_s": round(time.monotonic() - t0, 2)}
+
     _RESULT_FOLDERS = ("1D Results", "2D/3D Results", "Farfields")
     # Present before any solve (material dispersion curves), so not a result.
     _NON_RESULT_ITEMS = frozenset({"1D Results\\Materials"})
