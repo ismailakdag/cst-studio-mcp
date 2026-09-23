@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-import numpy as np
 import pytest
 
+np = pytest.importorskip("numpy")
 pytest.importorskip("matplotlib")
 
 from cst_mcp.execution.drawing_geometry import (
