@@ -22,11 +22,66 @@ class PatchDesign:
     ground_y_mm: float
     inset_mm: float
     feed_width_mm: float
+    notch_gap_mm: float
+    edge_resistance_ohm: float
     lambda0_mm: float
     eps_eff: float
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+def _bessel_j0(x: float) -> float:
+    """J0(x) by its power series (accurate for the |x| < ~20 used here)."""
+    term, total, m = 1.0, 1.0, 0
+    q = -(x * x) / 4.0
+    while abs(term) > 1e-17 * max(1.0, abs(total)) and m < 200:
+        m += 1
+        term *= q / (m * m)
+        total += term
+    return total
+
+
+def _simpson(f, a: float, b: float, n: int = 400) -> float:
+    n += n % 2
+    step = (b - a) / n
+    acc = f(a) + f(b)
+    for i in range(1, n):
+        acc += (4 if i % 2 else 2) * f(a + i * step)
+    return acc * step / 3.0
+
+
+def edge_resistance(width_m: float, length_m: float, lambda0_m: float) -> float:
+    """Resonant input resistance at the radiating edge (Balanis 14.2.1).
+
+    Two-slot transmission-line model: R_in = 1 / (2 (G1 + G12)) with
+
+    * G1  = 1/(120 pi^2) int_0^pi [sin(k0 W cos t / 2) / cos t]^2 sin^3 t dt
+    * G12 = 1/(120 pi^2) int_0^pi [sin(k0 W cos t / 2) / cos t]^2
+      J0(k0 L sin t) sin^3 t dt   (mutual conductance of the two slots)
+    """
+    k0 = 2 * math.pi / lambda0_m
+
+    def slot(t: float) -> float:
+        c = math.cos(t)
+        if abs(c) < 1e-12:  # limit sin(a c)/c -> a
+            ratio = k0 * width_m / 2
+        else:
+            ratio = math.sin(k0 * width_m * c / 2) / c
+        return ratio * ratio * math.sin(t) ** 3
+
+    g1 = _simpson(slot, 0.0, math.pi) / (120 * math.pi**2)
+    g12 = _simpson(
+        lambda t: slot(t) * _bessel_j0(k0 * length_m * math.sin(t)), 0.0, math.pi
+    ) / (120 * math.pi**2)
+    return 1.0 / (2.0 * (g1 + g12))
+
+
+def inset_depth(length_m: float, r_edge: float, z0: float = 50.0) -> float:
+    """Inset depth y0 with R_in(y0) = R_edge cos^2(pi y0 / L) = z0."""
+    if r_edge <= z0:
+        return 0.0
+    return length_m / math.pi * math.acos(math.sqrt(z0 / r_edge))
 
 
 def design_patch(
@@ -37,7 +92,18 @@ def design_patch(
     tan_delta: float = 0.02,
     feed_type: str = "inset",
     ground_factor: float = 2.0,
+    notch_gap_mm: float | None = None,
 ) -> PatchDesign:
+    """Size a rectangular patch.
+
+    Inset feed: depth y0 = (L/pi) arccos(sqrt(50/R_edge)) with R_edge from the
+    Balanis G1/G12 slot model (2.4 GHz, FR-4 4.4/1.6 mm: R_edge ~ 321 ohm,
+    y0 ~ 10.9 mm; the former fixed 0.3 L gave 8.8 mm).  The notch gap on each
+    side of the feed defaults to 1 mm: Matin & Sayeed's empirical g = c 4.65e-12 / (sqrt(2 eps_eff) f_GHz) gives
+    only ~0.2 mm at 2.4 GHz on FR-4, which is hard to etch and to mesh, while
+    ~1 mm (about feed_w/3) is the usual practical choice and barely changes the
+    resonance.  Both are starting points; refine inset/notch_g in the solver.
+    """
     if frequency_ghz <= 0:
         raise ValueError("frequency_ghz must be positive")
     if epsilon_r < 1.0:
@@ -74,10 +140,15 @@ def design_patch(
     # ~50 ohm microstrip width (Wheeler rough estimate)
     # Simplified: for FR4 1.6mm ~3mm; scale with h
     feed_width_mm = max(0.5, min(height_mm * 2.0, width_mm * 0.2))
-    # Inset for ~50 ohm (empirical)
+    r_edge = edge_resistance(width_m, length_m, lambda0_m)
     inset_mm = 0.0
     if feed_type == "inset":
-        inset_mm = max(0.1, length_mm * 0.3)
+        inset_mm = max(0.1, inset_depth(length_m, r_edge) * 1e3)
+    gap = 1.0 if notch_gap_mm is None else float(notch_gap_mm)
+    if not math.isfinite(gap) or gap <= 0:
+        raise ValueError("notch_gap_mm must be positive")
+    if feed_type == "inset" and feed_width_mm + 2 * gap >= width_mm:
+        raise ValueError("notch_gap_mm too large for the patch width")
 
     return PatchDesign(
         frequency_ghz=frequency_ghz,
@@ -91,6 +162,8 @@ def design_patch(
         ground_y_mm=gy,
         inset_mm=inset_mm,
         feed_width_mm=feed_width_mm,
+        notch_gap_mm=gap if feed_type == "inset" else 0.0,
+        edge_resistance_ohm=r_edge,
         lambda0_mm=lambda0_mm,
         eps_eff=eps_eff,
     )

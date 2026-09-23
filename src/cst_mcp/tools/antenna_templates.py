@@ -708,26 +708,31 @@ def _build_patch_antenna(args: dict) -> str:
 
     # Feed
     if feed_type == "inset":
+        # Inset notches are cut OUT of the patch (a Vacuum brick overlapping
+        # PEC does not remove metal: PEC wins, leaving an edge-fed patch).
         # Inset notch — left slot
         script.add_raw(_build_brick(
-            "Antenna", "InsetSlotL", "Vacuum",
+            "Antenna", "InsetSlotL", "PEC",
             -feed_w / 2 - inset_gap, -feed_w / 2,
             -L / 2 - 0.1, -L / 2 + inset_depth,
             h, h + 0.035,
         ))
         # Inset notch — right slot
         script.add_raw(_build_brick(
-            "Antenna", "InsetSlotR", "Vacuum",
+            "Antenna", "InsetSlotR", "PEC",
             feed_w / 2, feed_w / 2 + inset_gap,
             -L / 2 - 0.1, -L / 2 + inset_depth,
             h, h + 0.035,
         ))
-        # Feed line on top of substrate from edge to patch
-        gnd_y / 2 - L / 2
+        script.add_raw(
+            'Solid.Subtract "Antenna:Patch", "Antenna:InsetSlotL"\n'
+            'Solid.Subtract "Antenna:Patch", "Antenna:InsetSlotR"'
+        )
+        # Feed line runs from the board edge into the notch, to the inset point
         script.add_raw(_build_brick(
             "Antenna", "FeedLine", "PEC",
             -feed_w / 2, feed_w / 2,
-            -gnd_y / 2, -L / 2,
+            -gnd_y / 2, -L / 2 + inset_depth,
             h, h + 0.035,
         ))
         # Waveguide port flush with feed outer face (PortOnBound=False)

@@ -256,6 +256,14 @@
               "required": false
             },
             {
+              "name": "notch_gap_mm",
+              "type": "number",
+              "description": "Inset feed only: gap cut into the patch on each side of the feed line (CST parameter notch_g).",
+              "default": 1.0,
+              "enum": null,
+              "required": false
+            },
+            {
               "name": "project_path",
               "type": "string",
               "description": "Optional .cst path when creating a new project",
@@ -363,6 +371,14 @@
                 "microstrip",
                 "probe"
               ],
+              "required": false
+            },
+            {
+              "name": "notch_gap_mm",
+              "type": "number",
+              "description": "",
+              "default": 1.0,
+              "enum": null,
               "required": false
             }
           ],

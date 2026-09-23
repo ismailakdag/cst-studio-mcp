@@ -86,6 +86,14 @@ TOOLS: list[Tool] = [
                     "enum": ["inset", "microstrip", "probe"],
                     "default": "inset",
                 },
+                "notch_gap_mm": {
+                    "type": "number",
+                    "default": 1.0,
+                    "description": (
+                        "Inset feed only: gap cut into the patch on each side of the "
+                        "feed line (CST parameter notch_g)."
+                    ),
+                },
                 "project_path": {
                     "type": "string",
                     "description": "Optional .cst path when creating a new project",
@@ -135,6 +143,7 @@ TOOLS: list[Tool] = [
                     "enum": ["inset", "microstrip", "probe"],
                     "default": "inset",
                 },
+                "notch_gap_mm": {"type": "number", "default": 1.0},
             },
             "required": ["frequency_ghz"],
         },
@@ -301,6 +310,9 @@ def _store_params_vba(params: dict[str, float]) -> str:
     return "\n".join(lines)
 
 
+PARAMETER_STEP = "store_parameters"
+
+
 def _patch_vba_steps(design) -> list[tuple[str, str]]:
     """Return ordered (history_label, vba) steps for a parametric patch antenna.
 
@@ -333,6 +345,7 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
         "feed_w": fw,
         "inset": inset if d.feed_type == "inset" else 0.0,
         "metal_t": metal_t,
+        **({"notch_g": d.notch_gap_mm} if d.feed_type == "inset" else {}),
         "fmin_GHz": fmin,
         "fmax_GHz": fmax,
     }
@@ -354,8 +367,11 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
         )
     )
 
-    # Parameter List first — visible in CST and usable in expressions
-    steps.append(("store_parameters", _store_params_vba(design_params)))
+    # Parameter List first — visible in CST and usable in expressions.  The live
+    # workflow runs this step OUTSIDE model history (like cst_set_parameter):
+    # a StoreParameter replayed by every rebuild would fight later parameter
+    # changes ("Prevented attempt to change the value ... history rebuild").
+    steps.append((PARAMETER_STEP, _store_params_vba(design_params)))
 
     steps.append(
         (
@@ -432,6 +448,43 @@ def _patch_vba_steps(design) -> list[tuple[str, str]]:
             ),
         )
     )
+    if d.feed_type == "inset":
+        # Cut the two inset notches (gap notch_g beside the feed, depth inset)
+        # out of the patch BEFORE adding the feed.  Without them the feed just
+        # overlaps a full PEC rectangle and the antenna is edge-fed (~300 ohm).
+        # The notch tools start metal_t outside the patch edge so the boolean
+        # has no coplanar face at y = -patch_L/2.
+        for side, x_a, x_b in (
+            ("left", "-feed_w/2-notch_g", "-feed_w/2"),
+            ("right", "feed_w/2", "feed_w/2+notch_g"),
+        ):
+            steps.append(
+                (
+                    f"brick_notch_{side}",
+                    _brick_expr(
+                        "Antenna",
+                        f"Notch_{side}",
+                        "PEC",
+                        x_a,
+                        x_b,
+                        "-patch_L/2-metal_t",
+                        "-patch_L/2+inset",
+                        "sub_h",
+                        "sub_h+metal_t",
+                    ),
+                )
+            )
+        steps.append(
+            (
+                "boolean_inset_notches",
+                "\n".join(
+                    [
+                        'Solid.Subtract "Antenna:Patch", "Antenna:Notch_left"',
+                        'Solid.Subtract "Antenna:Patch", "Antenna:Notch_right"',
+                    ]
+                ),
+            )
+        )
     if d.feed_type in ("inset", "microstrip"):
         # Outer end = -gnd_y/2 (port plane); inner toward patch
         y_inner = (
@@ -537,6 +590,11 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
                 height_mm=float(args.get("height_mm") or 1.6),
                 tan_delta=float(args.get("tan_delta") or 0.02),
                 feed_type=str(args.get("feed_type") or "inset"),
+                notch_gap_mm=(
+                    float(args["notch_gap_mm"])
+                    if args.get("notch_gap_mm") is not None
+                    else None
+                ),
             )
             return as_json({"design": d.to_dict()})
 
@@ -547,6 +605,11 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
                 height_mm=float(args.get("height_mm") or 1.6),
                 tan_delta=float(args.get("tan_delta") or 0.02),
                 feed_type=str(args.get("feed_type") or "inset"),
+                notch_gap_mm=(
+                    float(args["notch_gap_mm"])
+                    if args.get("notch_gap_mm") is not None
+                    else None
+                ),
             )
             steps: list[dict[str, Any]] = []
             if args.get("create_project", True):
@@ -562,7 +625,12 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
             step_results: list[dict[str, Any]] = []
             fatal = False
             for label, vba in vba_steps:
-                run = client.execute_vba(vba, history_label=label)
+                if label == PARAMETER_STEP and client.connected and client.has_project:
+                    # Parameter List outside history (same path as cst_set_parameter)
+                    run = client._run_model3d_vba(vba)
+                    run = {**run, "history_written": False}
+                else:
+                    run = client.execute_vba(vba, history_label=label)
                 entry = {"label": label, **run}
                 # Drop huge vba from response except on error
                 if entry.get("status") != "error":
@@ -573,7 +641,7 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
                     if label in {"units", "store_parameters"}:
                         entry["note"] = f"{label} failed (non-fatal); continuing."
                         continue
-                    if label.startswith("brick_") or label.startswith("material_"):
+                    if label.startswith(("brick_", "material_", "boolean_")):
                         fatal = True
                         break
 
@@ -593,8 +661,9 @@ async def handle(name: str, args: dict[str, Any], client: Any) -> list[TextConte
                     "design": d.to_dict(),
                     "parameters_in_project": params_now,
                     "parameter_hint": (
-                        "Edit patch_W, patch_L, sub_h, feed_w, inset, gnd_x, gnd_y in "
-                        "CST Parameter List, then Rebuild (or cst_param_sweep_solve)."
+                        "Change patch_W, patch_L, sub_h, feed_w, inset, notch_g, gnd_x, "
+                        "gnd_y with cst_set_parameter (stored outside model history, "
+                        "full rebuild) or cst_refine_antenna."
                     ),
                     "steps": steps,
                     "vba": _build_patch_model(d) if status == "offline" else None,
