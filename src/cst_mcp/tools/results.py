@@ -2425,7 +2425,9 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
         vba = _build_export_result_vba(result_path, output_file, fmt)
 
         if client.connected:
-            result = client.execute_vba(vba)
+            # Exports must not become model-history steps (they would re-run on
+            # every rebuild), so never fall back to add_to_history.
+            result = client.execute_vba_silent(vba, history_fallback=False)
             if result.get("status") != "error":
                 result["result_path"] = result_path
                 result["output_file"] = output_file

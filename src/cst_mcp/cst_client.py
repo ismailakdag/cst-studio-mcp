@@ -91,8 +91,8 @@ class CSTClient(CSTSession):
         return {"status": "ok", "values": values, "errors": errors,
                 "source": "VBA query via output capture (no model history)"}
 
-    def execute_vba_silent(self, vba_code: str) -> dict:
-        return self.run_vba_silent(vba_code)
+    def execute_vba_silent(self, vba_code: str, *, history_fallback: bool = True) -> dict:
+        return self.run_vba_silent(vba_code, history_fallback=history_fallback)
 
     def get_result(self, tree_path: str, run_id: int = 0) -> dict:
         """Read a saved 1D curve without changing GUI plot settings."""

@@ -369,9 +369,15 @@ def _query_mesh(client: CSTClient) -> dict:
     if result.get("status") != "ok":
         return result
     values = {k: (v if k == "mesh_type" else _to_number(v)) for k, v in result["values"].items()}
+    errors = dict(result.get("errors") or {})
+    # Right after a mesh setting change CST can report 0 cells while the point
+    # count is already populated; a zero there is stale, not a real count.
+    if values.get("total_cells") == 0 and isinstance(values.get("mesh_points"), (int, float)) and values["mesh_points"] > 0:
+        values.pop("total_cells")
+        errors["total_cells"] = "stale cell count (0 cells with mesh points present); query again"
     out = {"status": "ok", **values, "source": result.get("source")}
-    if result.get("errors"):
-        out["unavailable"] = result["errors"]
+    if errors:
+        out["unavailable"] = errors
         out["note"] = ("Some values are unavailable (typically no mesh has been generated yet); "
                        "this tool never triggers meshing.")
     return out

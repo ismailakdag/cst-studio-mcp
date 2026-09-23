@@ -250,3 +250,46 @@ def _run(coro):
     import asyncio
 
     return asyncio.run(coro)
+
+
+def test_mesh_query_marks_stale_zero_cell_count():
+    from types import SimpleNamespace
+
+    from cst_mcp.tools import mesh
+
+    client = SimpleNamespace(query_values=lambda fields: {
+        "status": "ok",
+        "values": {"mesh_type": "PBA", "total_cells": "0", "mesh_points": "27540"},
+        "errors": {},
+        "source": "test",
+    })
+    out = mesh._query_mesh(client)
+    assert "total_cells" not in out
+    assert "total_cells" in out["unavailable"]
+    assert out["mesh_points"] == 27540
+
+
+def test_export_result_never_writes_history():
+    import asyncio
+    import json
+
+    from cst_mcp.tools import results
+
+    calls = []
+
+    class Client:
+        connected = True
+
+        def execute_vba(self, *a, **kw):
+            calls.append(("history", kw))
+            return {"status": "executed"}
+
+        def execute_vba_silent(self, code, **kw):
+            calls.append(("silent", kw))
+            return {"status": "executed"}
+
+    res = asyncio.run(results.handle("cst_export_result", {
+        "result_path": "1D Results\S-Parameters\S1,1", "output_file": "s11.csv", "format": "csv",
+    }, Client()))
+    assert json.loads(res[0].text)["status"] == "executed"
+    assert calls == [("silent", {"history_fallback": False})]
