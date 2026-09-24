@@ -40,7 +40,12 @@ TOOLS: list[Tool] = [
         description=(
             "Set boundary conditions for the simulation domain. Each face of "
             "the bounding box can be assigned an independent boundary type "
-            "(open, electric, magnetic, periodic, etc.)."
+            "(open, electric, magnetic, periodic, etc.). Note: 'open' adds no space, "
+            "and CST extends geometry touching an open boundary into the PML "
+            "(virtually infinite); a waveguide port on such a face with the board "
+            "ending there leaks power into the PML (efficiency/gain unreliable). "
+            "The response warns about plain 'open' faces; prefer 'expanded open' "
+            "with an internal port (PortOnBound False) on a closed coax/SMA feed."
         ),
         inputSchema={
             "type": "object",
@@ -68,6 +73,16 @@ TOOLS: list[Tool] = [
                 "z_max": {
                     **_BOUNDARY_PROPERTY,
                     "description": "Boundary condition on the +Z face",
+                },
+                "waveguide_port_faces": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["x_min", "x_max", "y_min", "y_max", "z_min", "z_max"]},
+                    "maxItems": 6,
+                    "default": [],
+                    "description": (
+                        "Optional: faces that carry a waveguide port with structure touching them. "
+                        "A port on a plain 'open' face is reported as an error-level warning."
+                    ),
                 },
             },
             "required": ["x_min", "x_max", "y_min", "y_max", "z_min", "z_max"],
@@ -258,9 +273,20 @@ async def _handle_set_boundary(
         .set("Zmin", faces["z_min"])
         .set("Zmax", faces["z_max"])
     )
+    from cst_mcp.execution.model_checks import check_setup
+
+    port_faces = arguments.get("waveguide_port_faces") or []
+    check = check_setup(
+        faces,
+        [{"port_number": i + 1, "orientation": f.replace("_", ""), "type": "waveguide"}
+         for i, f in enumerate(port_faces)],
+    )
+
     script = vba.build()
     result = client.execute_vba(script)
     result["boundaries"] = faces
+    if check["issues"]:
+        result["warnings"] = check["issues"]
 
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 

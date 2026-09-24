@@ -197,6 +197,17 @@ TOOLS: list[Tool] = [
                         "Each hole is extruded with the same height and removed with Solid.Subtract."
                     ),
                 },
+                "extrude_direction": {
+                    "type": "string",
+                    "enum": ["up", "down"],
+                    "default": "up",
+                    "description": (
+                        "'up' (default, unchanged behaviour): solid spans offset..offset+height along "
+                        "+axis (e.g. copper on top of a substrate whose top face is z=offset). 'down': "
+                        "offset-height..offset (e.g. copper under a board). Implemented by the profile "
+                        "winding, which sets the ExtrudeCurve direction in CST 2026."
+                    ),
+                },
             },
             "required": ["component", "name", "points", "height"],
         },
@@ -347,7 +358,12 @@ TOOLS: list[Tool] = [
             "Convenience tool combining polygon profile creation (Polygon3D curve) and extrusion "
             "(ExtrudeCurve). The profile lies at the base plane given by x/y/z_offset for the chosen "
             "axis; optional 'holes' (lists of [x, y]) are extruded the same way and removed with "
-            "Solid.Subtract, e.g. for slotted/fractal patches."
+            "Solid.Subtract, e.g. for slotted/fractal patches. Z placement: CST's ExtrudeCurve "
+            "extrudes along the closed curve's normal, which follows the point winding (a clockwise "
+            "profile at z=0 with positive thickness lands at z=-t..0, e.g. copper embedded in the "
+            "substrate). This tool normalises the winding, so extrude_direction='up' (default) gives "
+            "offset..offset+height along +axis and 'down' gives offset-height..offset; the response "
+            "reports the expected range."
         ),
         inputSchema={
             "type": "object",
@@ -399,6 +415,17 @@ TOOLS: list[Tool] = [
                     "description": (
                         "Optional holes/slots: each a list of [x, y] pairs in the same profile plane. "
                         "Each hole is extruded with the same height and removed with Solid.Subtract."
+                    ),
+                },
+                "extrude_direction": {
+                    "type": "string",
+                    "enum": ["up", "down"],
+                    "default": "up",
+                    "description": (
+                        "'up' (default, unchanged behaviour): solid spans offset..offset+height along "
+                        "+axis (e.g. copper on top of a substrate whose top face is z=offset). 'down': "
+                        "offset-height..offset (e.g. copper under a board). Implemented by the profile "
+                        "winding, which sets the ExtrudeCurve direction in CST 2026."
                     ),
                 },
             },
@@ -871,9 +898,17 @@ def _build_polygon_extrude(args: dict) -> str:
             return (pt[0], offset, -pt[1])
         return (pt[0], pt[1], offset)
 
+    direction = args.get("extrude_direction", "up") or "up"
+    if direction not in ("up", "down"):
+        raise ValueError("extrude_direction must be 'up' or 'down'")
+    if direction == "down":
+        # Clockwise winding flips the curve normal -> extrusion towards -axis.
+        points = points[::-1]
+        holes = [h[::-1] for h in holes]
+
     curve = f"{name}_curves"
     script = VBAScript()
-    script.add_comment(f"Polygon extrude: {component}:{name}")
+    script.add_comment(f"Polygon extrude: {component}:{name} ({direction}, winding sets direction)")
     script.add_raw(f'Curve.NewCurve "{_q(curve, "name")}"')
     _polygon_curve_extrude(script, name, curve, f"{name}_profile", component, material,
                            height, point, points)
@@ -883,6 +918,25 @@ def _build_polygon_extrude(args: dict) -> str:
                                material, height, point, hole)
         script.add_raw(_subtract_block(component, name, hole_name))
     return script.build()
+
+
+def _polygon_extrusion_note(args: dict) -> dict:
+    """Expected extent along the extrusion axis (winding-normalised profile)."""
+    axis = args.get("axis", "z")
+    offset = float(args.get(_OFFSET_KEYS.get(axis, "z_offset"), 0) or 0)
+    height = float(args["height"])
+    direction = args.get("extrude_direction", "up") or "up"
+    sign = 1.0 if direction == "up" else -1.0
+    a, b = sorted((offset, offset + sign * height))
+    return {
+        "axis": axis,
+        "direction": direction,
+        "expected_range": [a, b],
+        "note": ("CST ExtrudeCurve follows the curve winding; this tool orders the points so the "
+                 f"solid spans {axis} = {a:g}..{b:g}. Raw clockwise Polygon + ExtrudeCurve VBA with a "
+                 "positive thickness extrudes towards -axis instead (verify with "
+                 "Solid.GetLooseBoundingBoxOfShape)."),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -927,6 +981,8 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
     try:
         vba_code = builder_fn(arguments)
         result = client.execute_vba(vba_code)
+        if name == "cst_create_polygon_extrude" and isinstance(result, dict):
+            result["extrusion"] = _polygon_extrusion_note(arguments)
         return [TextContent(type="text", text=json.dumps(result))]
     except Exception as e:
         return [TextContent(type="text", text=json.dumps({

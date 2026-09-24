@@ -57,6 +57,9 @@ _READ_ONLY_EXTRA = frozenset(
         "cst_matching_quarter_wave",
         "cst_impedance_smith_transform",
         "cst_matching_microstrip_impedance",
+        # Read saved 1D power curves / inspect a described setup; no CST writes.
+        "cst_check_power_balance",
+        "cst_check_model_setup",
     }
 )
 
@@ -90,6 +93,8 @@ _FILE_OUTPUT_TOOLS = frozenset(
         "cst_technical_drawing",
         "cst_plot_1d_results",
         "cst_plot_farfield",
+        # Connected mode selects the tree item and runs ASCIIExport (plot state).
+        "cst_plot_surface_current",
     }
 )
 
@@ -184,6 +189,7 @@ _TITLE_WORDS = {
     "pifa": "PIFA",
     "vswr": "VSWR",
     "pml": "PML",
+    "sma": "SMA",
     "ie": "IE",
     "s11": "S11",
     "s": "S",

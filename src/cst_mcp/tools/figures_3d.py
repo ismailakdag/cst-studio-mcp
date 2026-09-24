@@ -84,6 +84,105 @@ TOOLS: list[Tool] = [
             "additionalProperties": False,
         },
     ),
+    Tool(
+        name="cst_plot_surface_current",
+        description=(
+            "Top-view surface-current |J| map(s) in dB with matplotlib (shared scale across panels "
+            "optional, maximum marked) plus metrics (max A/m and location, integral of |J| dA). Data: "
+            "data_files (CST ASCIIExport of '2D/3D Results\\Surface Current\\surface current (f=X) [1]': "
+            "x y z KxRe KxIm KyRe KyIm KzRe KzIm Area), or, when connected, the open project's item is "
+            "exported via ASCIIExport. Needed because Plot.ExportImage in a quiet Design Environment "
+            "returns only the geometry. Surface current requires an Hfield monitor (CST 2026 has no "
+            "'Surfacecurrent' type). Top/bottom faces of a copper sheet are summed as complex vectors "
+            "per cell (total sheet current). Never solves."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "data_files": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "maxItems": 8,
+                    "description": "Existing surface-current ASCIIExport files (one panel each; offline).",
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "maxItems": 8,
+                    "description": "Panel labels (default: file stems / tree item).",
+                },
+                "project_path": {
+                    "type": "string",
+                    "description": "Connected mode: project to open if it is not the current one.",
+                },
+                "frequency_ghz": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Connected mode: selects 'surface current (f=X) [1]'.",
+                },
+                "tree_path": {"type": "string", "description": "Connected mode: exact surface-current tree item."},
+                "export_step": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 0.25,
+                    "description": "ASCIIExport FixedWidth step (model units).",
+                },
+                "subvolume": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "minItems": 6,
+                    "maxItems": 6,
+                    "description": "Optional ASCIIExport subvolume [xmin, xmax, ymin, ymax, zmin, zmax].",
+                },
+                "cell": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 0.4,
+                    "description": "Top-view binning cell size (model units).",
+                },
+                "z_range": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Keep samples with z in [zmin, zmax] (e.g. the copper layer).",
+                },
+                "extent": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "description": "[xmin, xmax, ymin, ymax] of the map (default: data bounds).",
+                },
+                "layer_split_z": {
+                    "type": "number",
+                    "description": "z separating the two face layers summed per cell (default: midpoint "
+                    "of the selected z span).",
+                },
+                "include_kz": {"type": "boolean", "default": False},
+                "shared_scale": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": "One dB reference (largest cell over all panels).",
+                },
+                "dynamic_range_db": {"type": "number", "minimum": 5, "maximum": 120, "default": 40},
+                "formats": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["pdf", "svg", "png", "eps"]},
+                    "uniqueItems": True,
+                    "default": ["png"],
+                },
+                "title": {"type": "string"},
+                "out_dir": {
+                    "type": "string",
+                    "description": "Output folder (default <CST_WORK_DIR>/figures/surface_current).",
+                },
+                "file_stem": {"type": "string"},
+            },
+            "required": [],
+            "additionalProperties": False,
+        },
+    ),
 ]
 
 
@@ -170,7 +269,91 @@ def _validate(args: dict[str, Any]) -> str | None:
     return None
 
 
+async def _handle_surface_current(args: dict[str, Any], client: Any):
+    allowed = set(_schema(TOOLS[1])["properties"])
+    extra = sorted(set(args) - allowed)
+    if extra:
+        return err(f"Unknown argument(s): {', '.join(extra)}")
+    for f in args.get("formats") or []:
+        if f not in ("pdf", "svg", "png", "eps"):
+            return err("formats entries must be pdf, svg, png or eps")
+    try:
+        from cst_mcp.execution.academic_style import require_matplotlib
+
+        require_matplotlib()
+    except ImportError as exc:
+        return err(str(exc))
+    from cst_mcp.execution.surface_current import grid_top_view, parse_surface_current_ascii, render_maps
+
+    work_dir = Path(getattr(getattr(client, "config", None), "work_dir", None) or Path.cwd())
+    out_dir = (Path(args["out_dir"]).expanduser() if args.get("out_dir")
+               else work_dir / "figures" / "surface_current")
+    sources: list[dict[str, Any]] = []
+    files = [Path(f).expanduser() for f in args.get("data_files") or []]
+    if files:
+        missing = [str(f) for f in files if not f.is_file()]
+        if missing:
+            return err(f"data_files not found: {missing}")
+        sources = [{"kind": "data_file", "path": str(f)} for f in files]
+    else:
+        if not getattr(client, "is_connected", False):
+            return err("Not connected to CST. Pass data_files (surface-current ASCIIExport files) to render "
+                       "offline, or connect (cst_connect) and open the solved project.")
+        project_path = args.get("project_path")
+        if project_path:
+            current = getattr(client, "project_path", None)
+            same = current and Path(current).resolve() == Path(project_path).expanduser().resolve()
+            if not same or not client.has_project:
+                opened = client.open_project(project_path)
+                if opened.get("status") not in ("opened", "ok"):
+                    return err(f"Could not open project: {opened.get('message')}", open_result=opened)
+        if not client.has_project:
+            return err("No project open. Pass project_path or data_files.")
+        from cst_mcp.execution.surface_current import acquire as _sc_acquire
+
+        acq = _sc_acquire(client, args, work_dir)
+        if acq.get("status") != "ok":
+            if acq.get("status") == "error":
+                return err(acq.get("message", "export failed"),
+                           **{k: v for k, v in acq.items() if k not in ("status", "message")})
+            return as_json(acq)
+        files = [Path(acq["path"])]
+        sources = [{"kind": "cst_export", "path": acq["path"], "tree_path": acq["tree_path"],
+                    "method": "ASCIIExport"}]
+    labels = list(args.get("labels") or [])
+    grids = []
+    unit = "mm"
+    for i, f in enumerate(files):
+        samples = parse_surface_current_ascii(f)
+        unit = samples.length_unit or unit
+        g = grid_top_view(
+            samples,
+            cell=float(args.get("cell", 0.4)),
+            extent=tuple(args["extent"]) if args.get("extent") else None,
+            z_range=tuple(args["z_range"]) if args.get("z_range") else None,
+            layer_split_z=args.get("layer_split_z"),
+            include_kz=bool(args.get("include_kz", False)),
+        )
+        label = labels[i] if i < len(labels) else (
+            sources[i].get("tree_path", "").split(chr(92))[-1] or f.stem)
+        grids.append((label, g))
+    stem = _stem(args.get("file_stem") or ("surface_current_" + "_".join(_stem(lb) for lb, _ in grids))[:80])
+    out = render_maps(grids, out_dir, stem=stem, shared_scale=bool(args.get("shared_scale", True)),
+                      dynamic_range_db=float(args.get("dynamic_range_db", 40)), formats=args.get("formats"),
+                      title=args.get("title"), length_unit=unit)
+    return ok(**out, sources=sources, note=(
+        "|J| per cell = |sum over face layers of the area-weighted mean K phasor| (peak phasor A/m for the "
+        "solver's excitation). 0 dB = scale_ref_A_per_m."))
+
+
 async def handle(name, arguments, client):
+    if name == "cst_plot_surface_current":
+        try:
+            return await _handle_surface_current(dict(arguments or {}), client)
+        except ValueError as exc:
+            return err(str(exc))
+        except Exception as exc:  # noqa: BLE001
+            return err(f"cst_plot_surface_current failed: {exc}")
     if name != "cst_plot_farfield":
         return err(f"Unknown tool: {name}")
     args = dict(arguments or {})

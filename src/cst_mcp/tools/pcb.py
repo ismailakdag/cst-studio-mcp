@@ -728,6 +728,72 @@ TOOLS: list[Tool] = [
             ],
         },
     ),
+    # 13. Edge-launch SMA connector with internal coax port
+    Tool(
+        name="cst_add_sma_edge_connector",
+        description=(
+            "Add a parametric edge-launch SMA connector at a board edge: PEC body (default 9.5 x 9.5 x 6 mm) "
+            "standing off the edge by 'gap', PTFE coax (er 2.1, pin radius 0.635, outer radius 2.1 mm = "
+            "49.5 ohm; or target_impedance), pin overlapping the signal strip with a solder block, PEC legs "
+            "bonded to the CPW grounds (or a bottom leg on a microstrip ground), and an internal waveguide "
+            "port on the coax back face (PortOnBound False). This closed feed avoids a port on an 'open' "
+            "boundary, where CST extends the board into the PML and the power balance/gain break; use it "
+            "with ALL boundaries 'expanded open'. Mirrors a model verified in CST 2026 (balance closed "
+            "within 0.6 %). copper_z_convention is required: pin/legs start at the copper TOP face, and a "
+            "wrong convention leaves a 35 um air gap that the mesh resolves as an open circuit."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "edge": {"type": "string", "enum": ["xmin", "xmax", "ymin", "ymax"],
+                         "description": "Board edge the connector sits on; the port orientation equals it."},
+                "edge_position": {"type": "number", "default": 0,
+                                  "description": "Coordinate of that board edge (y for ymin/ymax, x for xmin/xmax)."},
+                "feed_center": {"type": "number", "default": 0,
+                                "description": "Signal-strip centre along the edge (x for y-edges, y for x-edges)."},
+                "substrate_top_z": {"type": "number", "default": 0, "description": "z of the substrate top face."},
+                "substrate_thickness": {"type": "number", "exclusiveMinimum": 0, "default": 1.6},
+                "copper_thickness": {"type": "number", "exclusiveMinimum": 0, "default": 0.035},
+                "copper_z_convention": {
+                    "type": "string", "enum": ["copper_below_top", "copper_above_top"],
+                    "description": (
+                        "'copper_below_top': copper at substrate_top_z - t .. substrate_top_z (what a raw "
+                        "clockwise Polygon + ExtrudeCurve with positive thickness gives). 'copper_above_top': "
+                        "substrate_top_z .. +t (cst_create_polygon_extrude, extrude_direction 'up')."
+                    ),
+                },
+                "ground_type": {"type": "string", "enum": ["cpw", "microstrip"], "default": "cpw",
+                                "description": "cpw: two top legs on the coplanar grounds; microstrip: one leg "
+                                "under the board on the back-side ground."},
+                "pin_radius": {"type": "number", "exclusiveMinimum": 0, "default": 0.635},
+                "outer_radius": {"type": "number", "exclusiveMinimum": 0, "default": 2.1,
+                                 "description": "Coax dielectric outer radius (2.1 mm -> 49.5 ohm with er 2.1)."},
+                "target_impedance": {"type": "number", "exclusiveMinimum": 0,
+                                     "description": "If set, outer_radius is computed for this Z0 (ohm)."},
+                "dielectric_epsilon": {"type": "number", "exclusiveMinimum": 0, "default": 2.1},
+                "dielectric_tand": {"type": "number", "minimum": 0, "default": 0.0002},
+                "body_half": {"type": "number", "exclusiveMinimum": 0, "default": 4.75,
+                              "description": "Half of the square body cross-section."},
+                "body_length": {"type": "number", "exclusiveMinimum": 0, "default": 6.0},
+                "gap": {"type": "number", "minimum": 0, "default": 0.3,
+                        "description": "Air gap between board edge and body front face."},
+                "pin_overlap": {"type": "number", "minimum": 0, "default": 1.5,
+                                "description": "Pin length over the signal strip (from the board edge)."},
+                "solder_width": {"type": "number", "exclusiveMinimum": 0, "default": 1.0},
+                "leg_inner": {"type": "number", "minimum": 0, "default": 2.9,
+                              "description": "Leg inner offset from the feed centre (on the grounds)."},
+                "leg_outer": {"type": "number", "exclusiveMinimum": 0, "default": 4.4},
+                "leg_thickness": {"type": "number", "exclusiveMinimum": 0, "default": 0.5},
+                "leg_on_board": {"type": "number", "minimum": 0, "default": 1.5,
+                                 "description": "How far the legs extend onto the board from the edge."},
+                "component": {"type": "string", "default": "sma"},
+                "dielectric_material": {"type": "string", "default": "PTFE_er2.1"},
+                "metal_material": {"type": "string", "default": "PEC"},
+                "port_number": {"type": "integer", "minimum": 1, "default": 1},
+            },
+            "required": ["edge", "copper_z_convention"],
+        },
+    ),
 ]
 
 
@@ -2263,6 +2329,15 @@ async def handle(
             return await _handle_calculate_coupling(arguments, client)
         if name == "cst_pcb_siw_waveguide":
             return await _handle_siw_waveguide(arguments, client)
+        if name == "cst_add_sma_edge_connector":
+            from cst_mcp.execution.sma_connector import build_sma_vba
+
+            vba_code, summary = build_sma_vba(arguments)
+            result = client.execute_vba(vba_code)
+            result.update(summary)
+            if not client.connected:
+                result["vba_script"] = vba_code
+            return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
         return [TextContent(type="text", text=json.dumps({
             "status": "error", "message": f"Unknown PCB tool: {name}",

@@ -1,7 +1,7 @@
 {
   "name": "cst-studio-mcp",
   "version": "1.1.0",
-  "total_tools": 188,
+  "total_tools": 192,
   "categories": [
     {
       "id": "official",
@@ -583,7 +583,7 @@
         },
         {
           "name": "cst_get_farfield_metrics",
-          "description": "Read antenna metrics after a solve: S11 + radiation/total efficiency from 1D Results, plus max realized gain via official FarfieldPlot.GetMax (SelectTreeItem Farfields\\farfield (f=X) [1] → Plot → GetMax). Does NOT use ASCIIExportSummary (that API spams Message on CST 2026). Solve sonrası S11, verimlilik ve max gain; GUI farfield ile uyumlu.",
+          "description": "Read antenna metrics after a solve: S11 + radiation/total efficiency from 1D Results, plus max realized gain via official FarfieldPlot.GetMax (SelectTreeItem Farfields\\farfield (f=X) [1] → Plot → GetMax). Does NOT use ASCIIExportSummary (that API spams Message on CST 2026). When 1D power + loss curves exist and (P_acc - P_rad - P_loss)/P_acc exceeds 3 %, adds power_balance_warning: efficiencies/gain are then unreliable (typically geometry touching an 'open' boundary is extended into the PML); see cst_check_power_balance. Solve sonrası S11, verimlilik ve max gain; GUI farfield ile uyumlu.",
           "category_id": "workflows",
           "params": [
             {
@@ -1340,6 +1340,17 @@
               "default": [],
               "enum": null,
               "required": false
+            },
+            {
+              "name": "extrude_direction",
+              "type": "string",
+              "description": "'up' (default, unchanged behaviour): solid spans offset..offset+height along +axis (e.g. copper on top of a substrate whose top face is z=offset). 'down': offset-height..offset (e.g. copper under a board). Implemented by the profile winding, which sets the ExtrudeCurve direction in CST 2026.",
+              "default": "up",
+              "enum": [
+                "up",
+                "down"
+              ],
+              "required": false
             }
           ],
           "required": [
@@ -1719,7 +1730,7 @@
         },
         {
           "name": "cst_create_polygon_extrude",
-          "description": "Create a polygon and extrude it along an axis in CST Studio. Convenience tool combining polygon profile creation (Polygon3D curve) and extrusion (ExtrudeCurve). The profile lies at the base plane given by x/y/z_offset for the chosen axis; optional 'holes' (lists of [x, y]) are extruded the same way and removed with Solid.Subtract, e.g. for slotted/fractal patches.",
+          "description": "Create a polygon and extrude it along an axis in CST Studio. Convenience tool combining polygon profile creation (Polygon3D curve) and extrusion (ExtrudeCurve). The profile lies at the base plane given by x/y/z_offset for the chosen axis; optional 'holes' (lists of [x, y]) are extruded the same way and removed with Solid.Subtract, e.g. for slotted/fractal patches. Z placement: CST's ExtrudeCurve extrudes along the closed curve's normal, which follows the point winding (a clockwise profile at z=0 with positive thickness lands at z=-t..0, e.g. copper embedded in the substrate). This tool normalises the winding, so extrude_direction='up' (default) gives offset..offset+height along +axis and 'down' gives offset-height..offset; the response reports the expected range.",
           "category_id": "geometry",
           "params": [
             {
@@ -1804,6 +1815,17 @@
               "description": "Optional holes/slots: each a list of [x, y] pairs in the same profile plane. Each hole is extruded with the same height and removed with Solid.Subtract.",
               "default": [],
               "enum": null,
+              "required": false
+            },
+            {
+              "name": "extrude_direction",
+              "type": "string",
+              "description": "'up' (default, unchanged behaviour): solid spans offset..offset+height along +axis (e.g. copper on top of a substrate whose top face is z=offset). 'down': offset-height..offset (e.g. copper under a board). Implemented by the profile winding, which sets the ExtrudeCurve direction in CST 2026.",
+              "default": "up",
+              "enum": [
+                "up",
+                "down"
+              ],
               "required": false
             }
           ],
@@ -3422,7 +3444,7 @@
       "tools": [
         {
           "name": "cst_set_boundary",
-          "description": "Set boundary conditions for the simulation domain. Each face of the bounding box can be assigned an independent boundary type (open, electric, magnetic, periodic, etc.).",
+          "description": "Set boundary conditions for the simulation domain. Each face of the bounding box can be assigned an independent boundary type (open, electric, magnetic, periodic, etc.). Note: 'open' adds no space, and CST extends geometry touching an open boundary into the PML (virtually infinite); a waveguide port on such a face with the board ending there leaks power into the PML (efficiency/gain unreliable). The response warns about plain 'open' faces; prefer 'expanded open' with an internal port (PortOnBound False) on a closed coax/SMA feed.",
           "category_id": "boundaries",
           "params": [
             {
@@ -3520,6 +3542,14 @@
                 "expanded open"
               ],
               "required": true
+            },
+            {
+              "name": "waveguide_port_faces",
+              "type": "array",
+              "description": "Optional: faces that carry a waveguide port with structure touching them. A port on a plain 'open' face is reported as an error-level warning.",
+              "default": [],
+              "enum": null,
+              "required": false
             }
           ],
           "required": [
@@ -3939,7 +3969,7 @@
             {
               "name": "accuracy",
               "type": "number",
-              "description": "Accuracy level in dB — solver stops when energy has decayed to this level (default -40)",
+              "description": "Steady-state accuracy in dB (Solver.SteadyStateLimit, integer in [-80, 0]) — solver stops when energy has decayed to this level (default -40)",
               "default": -40,
               "enum": null,
               "required": false
@@ -3947,7 +3977,7 @@
             {
               "name": "max_time_steps",
               "type": "integer",
-              "description": "Maximum number of time steps; 0 means automatic (default 0)",
+              "description": "Deprecated/ignored: CST 2026's Solver has no MaxTimeSteps (a note is returned when non-zero). 0 means automatic (default 0)",
               "default": 0,
               "enum": null,
               "required": false
@@ -3963,7 +3993,7 @@
             {
               "name": "excitation_type",
               "type": "string",
-              "description": "Excitation signal shape (default Gaussian)",
+              "description": "Excitation signal shape (default Gaussian). Only Gaussian (CST's default signal) is applied; other shapes need an excitation-signal definition and return a note.",
               "default": "Gaussian",
               "enum": [
                 "Gaussian",
@@ -3975,7 +4005,7 @@
             {
               "name": "normalize_to_fixed_impedance",
               "type": "boolean",
-              "description": "Normalize S-parameters to a fixed reference impedance (default true)",
+              "description": "Normalize S-parameters to a fixed reference impedance (default true; Solver.AutoNormImpedance True + NormingImpedance). False: port impedance.",
               "default": true,
               "enum": null,
               "required": false
@@ -3985,6 +4015,46 @@
               "type": "number",
               "description": "Reference impedance in ohms when normalization is enabled (default 50)",
               "default": 50,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "activate_power_loss_1d",
+              "type": "boolean",
+              "description": "Enable Solver.ActivatePowerLoss1DMonitor: 1D 'Loss in Dielectrics/Metals' curves. Without it losses exist only at 3D field-monitor frequencies, so the power balance (cst_check_power_balance) cannot be checked at farfield frequencies. Omitted/false leaves the project setting unchanged.",
+              "default": false,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "power_loss_1d_use_field_monitors",
+              "type": "boolean",
+              "description": "Use3DFieldMonitorForPowerLoss1DMonitor (losses at 3D field-monitor frequencies).",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "power_loss_1d_use_farfield_monitors",
+              "type": "boolean",
+              "description": "UseFarFieldMonitorForPowerLoss1DMonitor (losses at farfield-monitor frequencies; internal full-domain monitors, extra memory).",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "power_loss_1d_extra_frequencies",
+              "type": "array",
+              "description": "Extra frequencies (project unit) via UseExtraFreqForPowerLoss1DMonitor + AddPowerLoss1DMonitorExtraFreq.",
+              "default": [],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "power_loss_1d_per_solid",
+              "type": "boolean",
+              "description": "PowerLoss1DMonitorPerSolid: extra per-solid loss subfolder.",
+              "default": false,
               "enum": null,
               "required": false
             }
@@ -4487,25 +4557,15 @@
         },
         {
           "name": "cst_add_field_monitor",
-          "description": "Add a field monitor at a specific frequency to the CST project. Field monitors must be defined before running a simulation to capture field distributions, far-field patterns, surface currents, or power flow at the desired frequency.",
+          "description": "Add a field monitor at a specific frequency to the CST project. Field monitors must be defined before running a simulation to capture field distributions, far-field patterns, surface currents, or power flow at the desired frequency. CST 2026 has no 'Surfacecurrent' FieldType (it is silently ignored): requests for surface current are mapped to an 'Hfield' monitor, which yields '2D/3D Results\\H-Field\\...' and '2D/3D Results\\Surface Current\\surface current (f=X) [1]'. The response lists the expected result tree items. Note: 1D power-loss curves (Loss in Dielectrics/Metals) are only computed at field-monitor frequencies unless cst_configure_time_domain_solver activate_power_loss_1d=true.",
           "category_id": "results",
           "params": [
             {
               "name": "monitor_type",
               "type": "string",
-              "description": "Type of field monitor to add. Options: Efield (electric field), Hfield (magnetic field), Powerflow (Poynting vector), Current (volume current), Powerloss (loss density), Farfield (radiation pattern), Surfacecurrent (surface current density).",
+              "description": "CST Monitor.FieldType: Efield, Hfield, Powerflow, Current, Powerloss, Eenergy, Henergy, Farfield, Fieldsource, Spacecharge, Particlecurrentdensity. Hfield also gives the surface current. Aliases such as 'surface current'/'Surfacecurrent' are translated to Hfield; anything else undocumented is rejected.",
               "default": null,
-              "enum": [
-                "Efield",
-                "Hfield",
-                "Powerflow",
-                "Current",
-                "Powerloss",
-                "Eenergy",
-                "Henergy",
-                "Farfield",
-                "Surfacecurrent"
-              ],
+              "enum": null,
               "required": true
             },
             {
@@ -4598,7 +4658,7 @@
         },
         {
           "name": "cst_get_efficiency",
-          "description": "Get antenna radiation efficiency from a completed CST simulation at a specific frequency. Returns total efficiency (including mismatch), radiation efficiency (excluding mismatch), and mismatch loss in dB.",
+          "description": "Get antenna radiation efficiency from a completed CST simulation at a specific frequency. Returns total efficiency (including mismatch), radiation efficiency (excluding mismatch), and mismatch loss in dB. Connected, it adds power_balance_warning when loss curves exist and the balance P_acc = P_rad + P_loss misses by more than 3 % (e.g. structure extended into the PML by an 'open' boundary); run cst_check_power_balance for details.",
           "category_id": "results",
           "params": [
             {
@@ -4887,7 +4947,7 @@
         },
         {
           "name": "cst_get_surface_current",
-          "description": "Extract surface current density distribution from a completed CST simulation at a specific frequency. Useful for understanding current flow on antenna structures and identifying hot spots. Requires a surface current monitor at the specified frequency.",
+          "description": "Extract surface current density distribution from a completed CST simulation at a specific frequency. Useful for understanding current flow on antenna structures and identifying hot spots. Requires an Hfield monitor at the specified frequency (CST 2026 has no 'Surfacecurrent' monitor type; the Hfield monitor produces the 'Surface Current' result). Offline it returns an ASCIIExport VBA script; for data + a top-view |J| figure use cst_plot_surface_current.",
           "category_id": "results",
           "params": [
             {
@@ -5999,7 +6059,7 @@
       "blurb_en": "Logs, delete results, auto-dismiss blocking CST dialogs.",
       "blurb_tr": "Loglar, sonuç silme, engelleyen CST diyaloglarını kapatma.",
       "module": "diagnostics",
-      "count": 5,
+      "count": 7,
       "tools": [
         {
           "name": "cst_delete_results",
@@ -6044,6 +6104,128 @@
           "category_id": "diagnostics",
           "params": [],
           "required": []
+        },
+        {
+          "name": "cst_check_power_balance",
+          "description": "Read-only power-balance diagnostic. From 1D Results\\Power\\Excitation [n]\\ (Power Stimulated/Accepted/Radiated, Loss in Dielectrics/Metals) of a saved project (or inline curves) and optional realized-gain farfield grids, computes per frequency: eta_farfield = P_rad/P_acc, eta_loss = 1 - P_loss/P_acc, eta_pattern = mean(realized gain)*P_stim/P_acc, unaccounted = (P_acc-P_rad-P_loss)/P_acc, and flags |unaccounted| > threshold (3 %). A non-closing balance usually means geometry touches an 'open' boundary and is extended into the PML (virtually infinite), absorbing power that is neither radiated nor counted as loss, so efficiency/gain are unreliable; fix: 'expanded open' + internal port (PortOnBound False) on a closed coax/SMA feed. Loss curves exist only at field-monitor frequencies unless the solver's 1D power-loss monitor is enabled (cst_configure_time_domain_solver activate_power_loss_1d=true).",
+          "category_id": "diagnostics",
+          "params": [
+            {
+              "name": "project_path",
+              "type": "string",
+              "description": "Saved .cst project to read (cst.results). Defaults to the connected session's project.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "frequencies_ghz",
+              "type": "array",
+              "description": "Frequencies to evaluate (project frequency unit, normally GHz). Default: the loss-curve sample frequencies.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "excitation",
+              "type": "string",
+              "description": "Excitation folder under 1D Results\\Power.",
+              "default": "Excitation [1]",
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "run_id",
+              "type": "integer",
+              "description": "",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "threshold",
+              "type": "number",
+              "description": "Flag when |unaccounted| (or the pattern vs P_rad spread) exceeds this.",
+              "default": 0.03,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "farfield_grids",
+              "type": "array",
+              "description": "Optional realized-gain grids for the pattern-integral estimate.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "power_curves",
+              "type": "object",
+              "description": "Inline curves instead of a project: keys P_stim, P_acc, P_rad, P_loss_diel, P_loss_metal, each {x: [...GHz], y: [...W]}.",
+              "default": null,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": []
+        },
+        {
+          "name": "cst_check_model_setup",
+          "description": "Read-only sanity check of a described setup (nothing is sent to CST). Warns when a waveguide port sits on an 'open' (no added space) boundary face and the structure touches that face: CST extends geometry touching an open boundary into the PML (virtually infinite), so power is absorbed there, the balance P_acc = P_rad + P_loss does not close and efficiency/gain are unreliable. Also flags plain 'open' faces the structure reaches, PortOnBound True on faces with added space, and farfield frequencies without loss data (ActivatePowerLoss1DMonitor off).",
+          "category_id": "diagnostics",
+          "params": [
+            {
+              "name": "boundaries",
+              "type": "object",
+              "description": "Face -> boundary type, e.g. {'y_min': 'open', 'x_min': 'expanded open'} (keys x_min..z_max or xmin..zmax).",
+              "default": null,
+              "enum": null,
+              "required": true
+            },
+            {
+              "name": "ports",
+              "type": "array",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "structure_bbox",
+              "type": "object",
+              "description": "Structure bounding box {xmin, xmax, ymin, ymax, zmin, zmax} (model units).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "power_loss_1d",
+              "type": "boolean",
+              "description": "Whether Solver.ActivatePowerLoss1DMonitor is enabled.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "farfield_frequencies_ghz",
+              "type": "array",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "field_monitor_frequencies_ghz",
+              "type": "array",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": [
+            "boundaries"
+          ]
         }
       ]
     },
@@ -6897,7 +7079,7 @@
       "blurb_en": "Stackups, traces, vias, ground planes, Gerber import.",
       "blurb_tr": "Stackup, hat, via, toprak düzlemi, Gerber import.",
       "module": "pcb",
-      "count": 12,
+      "count": 13,
       "tools": [
         {
           "name": "cst_pcb_create_stackup",
@@ -7854,6 +8036,236 @@
             "length_mm",
             "layer"
           ]
+        },
+        {
+          "name": "cst_add_sma_edge_connector",
+          "description": "Add a parametric edge-launch SMA connector at a board edge: PEC body (default 9.5 x 9.5 x 6 mm) standing off the edge by 'gap', PTFE coax (er 2.1, pin radius 0.635, outer radius 2.1 mm = 49.5 ohm; or target_impedance), pin overlapping the signal strip with a solder block, PEC legs bonded to the CPW grounds (or a bottom leg on a microstrip ground), and an internal waveguide port on the coax back face (PortOnBound False). This closed feed avoids a port on an 'open' boundary, where CST extends the board into the PML and the power balance/gain break; use it with ALL boundaries 'expanded open'. Mirrors a model verified in CST 2026 (balance closed within 0.6 %). copper_z_convention is required: pin/legs start at the copper TOP face, and a wrong convention leaves a 35 um air gap that the mesh resolves as an open circuit.",
+          "category_id": "pcb",
+          "params": [
+            {
+              "name": "edge",
+              "type": "string",
+              "description": "Board edge the connector sits on; the port orientation equals it.",
+              "default": null,
+              "enum": [
+                "xmin",
+                "xmax",
+                "ymin",
+                "ymax"
+              ],
+              "required": true
+            },
+            {
+              "name": "edge_position",
+              "type": "number",
+              "description": "Coordinate of that board edge (y for ymin/ymax, x for xmin/xmax).",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "feed_center",
+              "type": "number",
+              "description": "Signal-strip centre along the edge (x for y-edges, y for x-edges).",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "substrate_top_z",
+              "type": "number",
+              "description": "z of the substrate top face.",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "substrate_thickness",
+              "type": "number",
+              "description": "",
+              "default": 1.6,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "copper_thickness",
+              "type": "number",
+              "description": "",
+              "default": 0.035,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "copper_z_convention",
+              "type": "string",
+              "description": "'copper_below_top': copper at substrate_top_z - t .. substrate_top_z (what a raw clockwise Polygon + ExtrudeCurve with positive thickness gives). 'copper_above_top': substrate_top_z .. +t (cst_create_polygon_extrude, extrude_direction 'up').",
+              "default": null,
+              "enum": [
+                "copper_below_top",
+                "copper_above_top"
+              ],
+              "required": true
+            },
+            {
+              "name": "ground_type",
+              "type": "string",
+              "description": "cpw: two top legs on the coplanar grounds; microstrip: one leg under the board on the back-side ground.",
+              "default": "cpw",
+              "enum": [
+                "cpw",
+                "microstrip"
+              ],
+              "required": false
+            },
+            {
+              "name": "pin_radius",
+              "type": "number",
+              "description": "",
+              "default": 0.635,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "outer_radius",
+              "type": "number",
+              "description": "Coax dielectric outer radius (2.1 mm -> 49.5 ohm with er 2.1).",
+              "default": 2.1,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "target_impedance",
+              "type": "number",
+              "description": "If set, outer_radius is computed for this Z0 (ohm).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "dielectric_epsilon",
+              "type": "number",
+              "description": "",
+              "default": 2.1,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "dielectric_tand",
+              "type": "number",
+              "description": "",
+              "default": 0.0002,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "body_half",
+              "type": "number",
+              "description": "Half of the square body cross-section.",
+              "default": 4.75,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "body_length",
+              "type": "number",
+              "description": "",
+              "default": 6.0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "gap",
+              "type": "number",
+              "description": "Air gap between board edge and body front face.",
+              "default": 0.3,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "pin_overlap",
+              "type": "number",
+              "description": "Pin length over the signal strip (from the board edge).",
+              "default": 1.5,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "solder_width",
+              "type": "number",
+              "description": "",
+              "default": 1.0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "leg_inner",
+              "type": "number",
+              "description": "Leg inner offset from the feed centre (on the grounds).",
+              "default": 2.9,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "leg_outer",
+              "type": "number",
+              "description": "",
+              "default": 4.4,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "leg_thickness",
+              "type": "number",
+              "description": "",
+              "default": 0.5,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "leg_on_board",
+              "type": "number",
+              "description": "How far the legs extend onto the board from the edge.",
+              "default": 1.5,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "component",
+              "type": "string",
+              "description": "",
+              "default": "sma",
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "dielectric_material",
+              "type": "string",
+              "description": "",
+              "default": "PTFE_er2.1",
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "metal_material",
+              "type": "string",
+              "description": "",
+              "default": "PEC",
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "port_number",
+              "type": "integer",
+              "description": "",
+              "default": 1,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": [
+            "edge",
+            "copper_z_convention"
+          ]
         }
       ]
     },
@@ -8469,7 +8881,7 @@
       "blurb_en": "Polar cuts, heatmaps and 3D patterns with gain/HPBW/F-B metrics.",
       "blurb_tr": "Polar kesitler, ısı haritaları ve 3B desenler; kazanç/HPBW/F-B metrikleri.",
       "module": "figures_3d",
-      "count": 1,
+      "count": 2,
       "tools": [
         {
           "name": "cst_plot_farfield",
@@ -8615,6 +9027,160 @@
               "name": "file_stem",
               "type": "string",
               "description": "Base name for output files.",
+              "default": null,
+              "enum": null,
+              "required": false
+            }
+          ],
+          "required": []
+        },
+        {
+          "name": "cst_plot_surface_current",
+          "description": "Top-view surface-current |J| map(s) in dB with matplotlib (shared scale across panels optional, maximum marked) plus metrics (max A/m and location, integral of |J| dA). Data: data_files (CST ASCIIExport of '2D/3D Results\\Surface Current\\surface current (f=X) [1]': x y z KxRe KxIm KyRe KyIm KzRe KzIm Area), or, when connected, the open project's item is exported via ASCIIExport. Needed because Plot.ExportImage in a quiet Design Environment returns only the geometry. Surface current requires an Hfield monitor (CST 2026 has no 'Surfacecurrent' type). Top/bottom faces of a copper sheet are summed as complex vectors per cell (total sheet current). Never solves.",
+          "category_id": "figures_farfield",
+          "params": [
+            {
+              "name": "data_files",
+              "type": "array",
+              "description": "Existing surface-current ASCIIExport files (one panel each; offline).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "labels",
+              "type": "array",
+              "description": "Panel labels (default: file stems / tree item).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "project_path",
+              "type": "string",
+              "description": "Connected mode: project to open if it is not the current one.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "frequency_ghz",
+              "type": "number",
+              "description": "Connected mode: selects 'surface current (f=X) [1]'.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "tree_path",
+              "type": "string",
+              "description": "Connected mode: exact surface-current tree item.",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "export_step",
+              "type": "number",
+              "description": "ASCIIExport FixedWidth step (model units).",
+              "default": 0.25,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "subvolume",
+              "type": "array",
+              "description": "Optional ASCIIExport subvolume [xmin, xmax, ymin, ymax, zmin, zmax].",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "cell",
+              "type": "number",
+              "description": "Top-view binning cell size (model units).",
+              "default": 0.4,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "z_range",
+              "type": "array",
+              "description": "Keep samples with z in [zmin, zmax] (e.g. the copper layer).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "extent",
+              "type": "array",
+              "description": "[xmin, xmax, ymin, ymax] of the map (default: data bounds).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "layer_split_z",
+              "type": "number",
+              "description": "z separating the two face layers summed per cell (default: midpoint of the selected z span).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "include_kz",
+              "type": "boolean",
+              "description": "",
+              "default": false,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "shared_scale",
+              "type": "boolean",
+              "description": "One dB reference (largest cell over all panels).",
+              "default": true,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "dynamic_range_db",
+              "type": "number",
+              "description": "",
+              "default": 40,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "formats",
+              "type": "array",
+              "description": "",
+              "default": [
+                "png"
+              ],
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "description": "",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "out_dir",
+              "type": "string",
+              "description": "Output folder (default <CST_WORK_DIR>/figures/surface_current).",
+              "default": null,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "file_stem",
+              "type": "string",
+              "description": "",
               "default": null,
               "enum": null,
               "required": false

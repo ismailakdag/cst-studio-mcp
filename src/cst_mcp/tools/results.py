@@ -15,7 +15,11 @@ import json
 from mcp.types import TextContent, Tool
 
 from cst_mcp.cst_client import CSTClient
-from cst_mcp.types import FieldMonitorType
+from cst_mcp.types import (
+    FieldMonitorType,
+    expected_monitor_tree_items,
+    normalize_field_monitor_type,
+)
 from cst_mcp.validators import validate_file_path, validate_frequency, validate_port_number
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 from cst_mcp.vba_safety import validate_file_path as _qf
@@ -137,7 +141,14 @@ TOOLS: list[Tool] = [
             "Add a field monitor at a specific frequency to the CST project. "
             "Field monitors must be defined before running a simulation to "
             "capture field distributions, far-field patterns, surface currents, "
-            "or power flow at the desired frequency."
+            "or power flow at the desired frequency. CST 2026 has no "
+            "'Surfacecurrent' FieldType (it is silently ignored): requests for "
+            "surface current are mapped to an 'Hfield' monitor, which yields "
+            "'2D/3D Results\\H-Field\\...' and '2D/3D Results\\Surface Current\\"
+            "surface current (f=X) [1]'. The response lists the expected result "
+            "tree items. Note: 1D power-loss curves (Loss in Dielectrics/Metals) are "
+            "only computed at field-monitor frequencies unless "
+            "cst_configure_time_domain_solver activate_power_loss_1d=true."
         ),
         inputSchema={
             "type": "object",
@@ -145,13 +156,13 @@ TOOLS: list[Tool] = [
                 "monitor_type": {
                     "type": "string",
                     "description": (
-                        "Type of field monitor to add. Options: "
-                        "Efield (electric field), Hfield (magnetic field), "
-                        "Powerflow (Poynting vector), Current (volume current), "
-                        "Powerloss (loss density), Farfield (radiation pattern), "
-                        "Surfacecurrent (surface current density)."
+                        "CST Monitor.FieldType: "
+                        + ", ".join(e.value for e in FieldMonitorType)
+                        + ". Hfield also gives the surface current. Aliases such as "
+                        "'surface current'/'Surfacecurrent' are translated to Hfield; "
+                        "anything else undocumented is rejected."
                     ),
-                    "enum": [e.value for e in FieldMonitorType],
+                    "examples": ["Efield", "Hfield", "Farfield", "surface current"],
                 },
                 "frequency": {
                     "type": "number",
@@ -237,7 +248,10 @@ TOOLS: list[Tool] = [
             "Get antenna radiation efficiency from a completed CST simulation "
             "at a specific frequency. Returns total efficiency (including "
             "mismatch), radiation efficiency (excluding mismatch), and "
-            "mismatch loss in dB."
+            "mismatch loss in dB. Connected, it adds power_balance_warning when "
+            "loss curves exist and the balance P_acc = P_rad + P_loss misses by "
+            "more than 3 % (e.g. structure extended into the PML by an 'open' "
+            "boundary); run cst_check_power_balance for details."
         ),
         inputSchema={
             "type": "object",
@@ -507,7 +521,10 @@ TOOLS: list[Tool] = [
             "Extract surface current density distribution from a completed CST "
             "simulation at a specific frequency. Useful for understanding "
             "current flow on antenna structures and identifying hot spots. "
-            "Requires a surface current monitor at the specified frequency."
+            "Requires an Hfield monitor at the specified frequency (CST 2026 has no "
+            "'Surfacecurrent' monitor type; the Hfield monitor produces the "
+            "'Surface Current' result). Offline it returns an ASCIIExport VBA script; "
+            "for data + a top-view |J| figure use cst_plot_surface_current."
         ),
         inputSchema={
             "type": "object",
@@ -750,6 +767,11 @@ def _farfield_tree_path(frequency: float, monitor_name: str | None = None) -> st
     return f"Farfields\\farfield (f={frequency})"
 
 
+def _surface_current_tree_path(frequency: float) -> str:
+    """Surface-current item created by an Hfield monitor (observed in CST 2026)."""
+    return f"2D/3D Results\\Surface Current\\surface current (f={float(frequency):g}) [1]"
+
+
 def _impedance_tree_path(port: int) -> str:
     """Build the CST result tree path for Z-parameters."""
     return f"1D Results\\Z-Parameters\\Z{port},{port}"
@@ -867,7 +889,6 @@ def _build_add_monitor_vba(
             "Current": "current",
             "Powerloss": "loss",
             "Farfield": "farfield",
-            "Surfacecurrent": "surface-current",
             "Eenergy": "e-energy",
             "Henergy": "h-energy",
         }
@@ -1350,8 +1371,7 @@ def _build_axial_ratio_vba(
 
 def _build_surface_current_vba(frequency: float, component: str | None) -> str:
     """Build VBA script for extracting surface current density."""
-    monitor_name = f"surface-current (f={frequency})"
-    tree_path = f"2D/3D Results\\Surface Current\\{monitor_name}"
+    tree_path = _surface_current_tree_path(frequency)
     script = VBAScript()
     script.add_comment(f"Extract surface current density at {frequency} GHz")
     script.add_comment(f"Result tree path: {tree_path}")
@@ -1378,7 +1398,13 @@ def _build_surface_current_vba(frequency: float, component: str | None) -> str:
         "  Dim ascii As Object",
         "  Set ascii = ASCIIExport",
         "  ascii.Reset",
-        f'  ascii.FileName "surface_current_{frequency}GHz.txt"',
+        "  ' ASCIIExport.FileName needs an absolute path (CST help): write next to the project",
+        f'  ascii.FileName GetProjectPath("Project") & "\\surface_current_{frequency:g}GHz.txt"',
+        '  ascii.SetFileType "ascii"',
+        '  ascii.Mode "FixedWidth"',
+        "  ascii.StepX 0.25",
+        "  ascii.StepY 0.25",
+        "  ascii.StepZ 0.25",
         '  ascii.Execute',
         "",
         '  Debug.Print "Surface current exported for ' + f'{frequency} GHz"',
@@ -2054,12 +2080,12 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
 
         validate_frequency(frequency)
 
-        valid_types = [e.value for e in FieldMonitorType]
-        if monitor_type not in valid_types:
-            return _text({
-                "status": "error",
-                "message": f"Invalid monitor_type '{monitor_type}'. Must be one of: {valid_types}",
-            })
+        requested_type = monitor_type
+        try:
+            monitor_type, type_note = normalize_field_monitor_type(monitor_type)
+        except ValueError as exc:
+            return _text({"status": "error", "message": str(exc),
+                          "valid_types": [e.value for e in FieldMonitorType]})
 
         vba = _build_add_monitor_vba(monitor_type, frequency, monitor_name)
         result = client.execute_vba(vba)
@@ -2076,12 +2102,21 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
                 "Current": "current",
                 "Powerloss": "loss",
                 "Farfield": "farfield",
-                "Surfacecurrent": "surface-current",
                 "Eenergy": "e-energy",
                 "Henergy": "h-energy",
             }
             prefix = type_prefix_map.get(monitor_type, monitor_type.lower())
             result["monitor_name"] = f"{prefix} (f={frequency})"
+        if type_note:
+            result["requested_type"] = requested_type
+            result["type_note"] = type_note
+        result["expected_tree_items"] = expected_monitor_tree_items(
+            monitor_type, result["monitor_name"], frequency)
+        if monitor_type == "Hfield":
+            result["surface_current_note"] = (
+                "Surface current is read from the 'Surface Current' item of this Hfield monitor "
+                "(e.g. with cst_plot_surface_current); Plot.ExportImage in a quiet DE shows only geometry."
+            )
 
         if not client.connected:
             result["instructions"] = (
@@ -2733,16 +2768,21 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
 
         validate_frequency(frequency)
 
-        monitor_name = f"surface-current (f={frequency})"
-        tree_path = f"2D/3D Results\\Surface Current\\{monitor_name}"
+        tree_path = _surface_current_tree_path(frequency)
 
         if client.connected:
-            result = client.get_result(tree_path)
-            result["frequency_ghz"] = frequency
-            result["tree_path"] = tree_path
-            if component:
-                result["component"] = component
-            return _text(result)
+            # 2D/3D field items are not 1D curves; get_result refuses them.
+            return _text({
+                "status": "error",
+                "code": "requires_dedicated_field_export",
+                "frequency_ghz": frequency,
+                "tree_path": tree_path,
+                "component": component,
+                "message": (
+                    "Surface current is a 2D/3D field result. Use cst_plot_surface_current "
+                    "(ASCIIExport of this tree item + top-view |J| map)."
+                ),
+            })
 
         vba = _build_surface_current_vba(frequency, component)
         return _text({
@@ -2758,9 +2798,9 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
                 ),
             },
             "prerequisite": (
-                "A surface current monitor (Surfacecurrent) must be defined "
-                "at the desired frequency BEFORE running the simulation. "
-                "Use cst_add_field_monitor with monitor_type='Surfacecurrent'."
+                "An H-field monitor (FieldType 'Hfield'; CST 2026 has no 'Surfacecurrent' "
+                "type) must be defined at the desired frequency BEFORE running the "
+                "simulation. Use cst_add_field_monitor with monitor_type='Hfield'."
             ),
             "vba_script": vba,
             "instructions": (

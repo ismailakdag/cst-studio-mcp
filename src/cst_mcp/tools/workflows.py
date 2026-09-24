@@ -61,6 +61,7 @@ FARFIELD_METRICS_OUTPUT_SCHEMA: dict[str, Any] = {
         "tree_path": {"type": ["string", "null"]},
         "path": {"type": ["string", "null"]},
         "note": {"type": "string"},
+        "power_balance_warning": {"type": "object"},
     },
     "required": ["status"],
     "if": {"properties": {"status": {"const": "ok"}}, "required": ["status"]},
@@ -244,6 +245,9 @@ TOOLS: list[Tool] = [
             "from 1D Results, plus max realized gain via official FarfieldPlot.GetMax "
             "(SelectTreeItem Farfields\\farfield (f=X) [1] → Plot → GetMax). "
             "Does NOT use ASCIIExportSummary (that API spams Message on CST 2026). "
+            "When 1D power + loss curves exist and (P_acc - P_rad - P_loss)/P_acc exceeds 3 %, "
+            "adds power_balance_warning: efficiencies/gain are then unreliable (typically geometry "
+            "touching an 'open' boundary is extended into the PML); see cst_check_power_balance. "
             "Solve sonrası S11, verimlilik ve max gain; GUI farfield ile uyumlu."
         ),
         inputSchema={

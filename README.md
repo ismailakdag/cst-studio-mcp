@@ -483,7 +483,7 @@ MIT
 <a id="full-tool-catalog"></a>
 
 <!-- TOOL_CATALOG_START -->
-## Full tool catalog (188 tools)
+## Full tool catalog (192 tools)
 
 Interactive bilingual docs: open [`docs/index.html`](docs/index.html) (EN/TR toggle, search, full-width cards). Rebuild: `python scripts/build_docs.py`.
 
@@ -744,7 +744,7 @@ Goal-driven evaluation and refinement helpers.
 | `cst_analyze_impedance` | Analyze antenna impedance match quality across frequency bands using S-parameter data. Exports S11 from a completed simulation, computes … |
 | `cst_refine_antenna` | Run an automated Nelder-Mead optimization loop to tune CST design parameters toward VSWR goals across specified frequency bands. Each ite… |
 
-### Diagnostics (5)
+### Diagnostics (7)
 
 Logs, delete results, auto-dismiss blocking CST dialogs.
 
@@ -755,6 +755,8 @@ Logs, delete results, auto-dismiss blocking CST dialogs.
 | `cst_dismiss_dialogs` | Find and dismiss any visible CST dialog windows (error popups, 'Results Incompatible' dialogs, solver warnings). Returns the title and te… |
 | `cst_start_dialog_watcher` | Start a background thread that automatically detects and dismisses CST dialog windows as they appear. Essential for long-running operatio… |
 | `cst_stop_dialog_watcher` | Stop the background dialog watcher and return its log of all dialogs that were auto-dismissed. Use after completing an operation that req… |
+| `cst_check_power_balance` | Read-only power-balance diagnostic. From 1D Results\Power\Excitation [n]\ (Power Stimulated/Accepted/Radiated, Loss in Dielectrics/Metals… |
+| `cst_check_model_setup` | Read-only sanity check of a described setup (nothing is sent to CST). Warns when a waveguide port sits on an 'open' (no added space) boun… |
 
 ### Antenna templates (13)
 
@@ -791,7 +793,7 @@ Linear/planar/circular arrays, beam steering, taper.
 | `cst_array_grating_lobe_analysis` | Analyse whether grating lobes exist for a given element spacing and maximum scan angle. Returns safe spacing and grating lobe angles. |
 | `cst_array_mutual_coupling` | Set up a multi-port S-parameter simulation in CST for mutual coupling extraction between array elements. |
 
-### PCB / SI (12)
+### PCB / SI (13)
 
 Stackups, traces, vias, ground planes, Gerber import.
 
@@ -809,6 +811,7 @@ Stackups, traces, vias, ground planes, Gerber import.
 | `cst_pcb_cpw_transition` | Create a coplanar waveguide (CPW) to microstrip transition in CST Studio. Generates a tapered geometry that linearly tapers the center co… |
 | `cst_pcb_calculate_coupling` | Calculate electromagnetic coupling between parallel PCB traces. Computes even/odd mode impedances, coupling coefficient, and near-end/far… |
 | `cst_pcb_siw_waveguide` | Create a Substrate Integrated Waveguide (SIW) in CST Studio. Generates top and bottom copper planes with two rows of via fences forming t… |
+| `cst_add_sma_edge_connector` | Add a parametric edge-launch SMA connector at a board edge: PEC body (default 9.5 x 9.5 x 6 mm) standing off the edge by 'gap', PTFE coax… |
 
 ### Matching networks (8)
 
@@ -833,13 +836,14 @@ IEEE-style 1D result and farfield figures from saved projects (PDF/SVG/PNG).
 |------|--------------|
 | `cst_plot_1d_results` | Publication-quality (IEEE column, serif, PDF/SVG/PNG) figures of 1D results read offline from a saved .cst via cst.results (no GUI, no so… |
 
-### Farfield figures (1)
+### Farfield figures (2)
 
 Polar cuts, heatmaps and 3D patterns with gain/HPBW/F-B metrics.
 
 | Tool | What it does |
 |------|--------------|
 | `cst_plot_farfield` | Publication-quality farfield figures (IEEE sizes, serif, grayscale-safe): polar dB cuts (E/H-plane, co/cross-pol when Ludwig-3/spherical … |
+| `cst_plot_surface_current` | Top-view surface-current \|J\| map(s) in dB with matplotlib (shared scale across panels optional, maximum marked) plus metrics (max A/m a… |
 
 ### Technical drawings (1)
 

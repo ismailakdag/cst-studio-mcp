@@ -1524,6 +1524,34 @@ class CSTSession:
         *,
         try_farfield_plot: bool = True,
     ) -> dict[str, Any]:
+        """Radiation metrics plus a power-balance warning when it does not close.
+
+        When the saved project has 1D power + loss curves at ``frequency_ghz``
+        and ``(P_acc - P_rad - P_loss) / P_acc`` exceeds 3 %, the result gets a
+        ``power_balance_warning`` (geometry extended into the PML through an
+        "open" boundary makes efficiency/gain unreliable).
+        """
+        result = self._get_farfield_metrics_impl(
+            frequency_ghz, monitor_name, try_farfield_plot=try_farfield_plot
+        )
+        if isinstance(result, dict) and result.get("status") == "ok" and self._project_path:
+            try:
+                from cst_mcp.execution.power_balance import farfield_warning
+
+                warning = farfield_warning(self._project_path, frequency_ghz)
+            except Exception:  # noqa: BLE001
+                warning = None
+            if warning:
+                result["power_balance_warning"] = warning
+        return result
+
+    def _get_farfield_metrics_impl(
+        self,
+        frequency_ghz: float | None = None,
+        monitor_name: str | None = None,
+        *,
+        try_farfield_plot: bool = True,
+    ) -> dict[str, Any]:
         """Antenna radiation metrics for reports.
 
         1. Always reads 1D Results via ``cst.results`` (S11 + efficiencies).

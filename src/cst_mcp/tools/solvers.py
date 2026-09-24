@@ -28,12 +28,16 @@ TOOLS: list[Tool] = [
             "properties": {
                 "accuracy": {
                     "type": "number",
-                    "description": "Accuracy level in dB — solver stops when energy has decayed to this level (default -40)",
+                    "description": "Steady-state accuracy in dB (Solver.SteadyStateLimit, integer in "
+                    "[-80, 0]) — solver stops when energy has decayed to this level (default -40)",
                     "default": -40,
+                    "minimum": -80,
+                    "maximum": 0,
                 },
                 "max_time_steps": {
                     "type": "integer",
-                    "description": "Maximum number of time steps; 0 means automatic (default 0)",
+                    "description": "Deprecated/ignored: CST 2026's Solver has no MaxTimeSteps (a note is "
+                    "returned when non-zero). 0 means automatic (default 0)",
                     "default": 0,
                 },
                 "stimulation_port": {
@@ -44,18 +48,49 @@ TOOLS: list[Tool] = [
                 "excitation_type": {
                     "type": "string",
                     "enum": ["Gaussian", "Rectangular", "Smooth"],
-                    "description": "Excitation signal shape (default Gaussian)",
+                    "description": "Excitation signal shape (default Gaussian). Only Gaussian (CST's default "
+                    "signal) is applied; other shapes need an excitation-signal definition and return a note.",
                     "default": "Gaussian",
                 },
                 "normalize_to_fixed_impedance": {
                     "type": "boolean",
-                    "description": "Normalize S-parameters to a fixed reference impedance (default true)",
+                    "description": "Normalize S-parameters to a fixed reference impedance (default true; "
+                    "Solver.AutoNormImpedance True + NormingImpedance). False: port impedance.",
                     "default": True,
                 },
                 "fixed_impedance": {
                     "type": "number",
                     "description": "Reference impedance in ohms when normalization is enabled (default 50)",
                     "default": 50,
+                },
+                "activate_power_loss_1d": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": (
+                        "Enable Solver.ActivatePowerLoss1DMonitor: 1D 'Loss in Dielectrics/Metals' "
+                        "curves. Without it losses exist only at 3D field-monitor frequencies, so the "
+                        "power balance (cst_check_power_balance) cannot be checked at farfield "
+                        "frequencies. Omitted/false leaves the project setting unchanged."
+                    ),
+                },
+                "power_loss_1d_use_field_monitors": {
+                    "type": "boolean", "default": True,
+                    "description": "Use3DFieldMonitorForPowerLoss1DMonitor (losses at 3D field-monitor frequencies).",
+                },
+                "power_loss_1d_use_farfield_monitors": {
+                    "type": "boolean", "default": True,
+                    "description": "UseFarFieldMonitorForPowerLoss1DMonitor (losses at farfield-monitor "
+                    "frequencies; internal full-domain monitors, extra memory).",
+                },
+                "power_loss_1d_extra_frequencies": {
+                    "type": "array", "items": {"type": "number", "exclusiveMinimum": 0}, "maxItems": 64,
+                    "default": [],
+                    "description": "Extra frequencies (project unit) via UseExtraFreqForPowerLoss1DMonitor "
+                    "+ AddPowerLoss1DMonitorExtraFreq.",
+                },
+                "power_loss_1d_per_solid": {
+                    "type": "boolean", "default": False,
+                    "description": "PowerLoss1DMonitorPerSolid: extra per-solid loss subfolder.",
                 },
             },
             "required": [],
@@ -305,6 +340,44 @@ async def handle(
         )]
 
 
+def build_power_loss_1d_vba(
+    *,
+    use_field_monitors: bool = True,
+    use_farfield_monitors: bool = True,
+    extra_frequencies: list[float] | tuple[float, ...] = (),
+    per_solid: bool = False,
+) -> str:
+    """Solver block enabling the 1D power-loss monitor (CST 2026 Solver object).
+
+    Methods per the installed VBA help (special_vbasolver_solver_object):
+    ActivatePowerLoss1DMonitor, PowerLoss1DMonitorPerSolid,
+    Use3DFieldMonitorForPowerLoss1DMonitor, UseFarFieldMonitorForPowerLoss1DMonitor,
+    UseExtraFreqForPowerLoss1DMonitor, ResetPowerLoss1DMonitorExtraFreq,
+    AddPowerLoss1DMonitorExtraFreq.  Same string-argument form as the campaign
+    model that computed losses at every farfield frequency.
+    """
+    from cst_mcp.vba_safety import vba_number
+
+    extras = [vba_number(f, "power_loss_1d_extra_frequencies") for f in extra_frequencies]
+
+    def b(v: bool) -> str:
+        return "True" if v else "False"
+
+    lines = [
+        "With Solver",
+        '  .ActivatePowerLoss1DMonitor "True"',
+        f'  .PowerLoss1DMonitorPerSolid "{b(per_solid)}"',
+        f'  .Use3DFieldMonitorForPowerLoss1DMonitor "{b(use_field_monitors)}"',
+        f'  .UseFarFieldMonitorForPowerLoss1DMonitor "{b(use_farfield_monitors)}"',
+        f'  .UseExtraFreqForPowerLoss1DMonitor "{b(bool(extras))}"',
+    ]
+    if extras:
+        lines.append("  .ResetPowerLoss1DMonitorExtraFreq")
+        lines += [f'  .AddPowerLoss1DMonitorExtraFreq "{f}"' for f in extras]
+    lines.append("End With")
+    return "\n".join(lines)
+
+
 def _configure_time_domain(arguments: dict, client: CSTClient) -> list[TextContent]:
     accuracy = float(arguments.get("accuracy", -40))
     max_time_steps = int(arguments.get("max_time_steps", 0))
@@ -313,7 +386,7 @@ def _configure_time_domain(arguments: dict, client: CSTClient) -> list[TextConte
     normalize = arguments.get("normalize_to_fixed_impedance", True)
     fixed_impedance = float(arguments.get("fixed_impedance", 50))
 
-    validate_range(accuracy, -100, 0, "accuracy")
+    validate_range(accuracy, -80, 0, "accuracy")
     if max_time_steps < 0:
         max_time_steps = 0
     if stimulation_port < 1:
@@ -321,17 +394,46 @@ def _configure_time_domain(arguments: dict, client: CSTClient) -> list[TextConte
     validate_enum_value(excitation_type, ExcitationType, "excitation_type")
     validate_positive(fixed_impedance, "fixed_impedance")
 
+    # Methods of the CST 2026 Solver object (special_vbasolver_solver_object):
+    # the steady-state accuracy is SteadyStateLimit (integer dB in [-80, 0]);
+    # AutoNormImpedance True normalises to NormingImpedance, False to the
+    # port impedance.  AccuracyOrder / MaxTimeSteps / NormalizeToFixedImpedance /
+    # FixedImpedance do not exist ("no such property or method", live
+    # CST 2026) and Solver.ExcitationType is the Automatic/Standard/Broadband
+    # mode setting, not the signal shape, so none of them is emitted.
+    notes: list[str] = []
     vba = VBABuilder("Solver")
-    vba.set_number("AccuracyOrder", accuracy)
-    vba.set_number("MaxTimeSteps", max_time_steps)
+    vba.set("SteadyStateLimit", str(int(round(accuracy))))
     vba.set_number("StimulationPort", stimulation_port)
-    vba.set("ExcitationType", excitation_type)
-    vba.set_bool("NormalizeToFixedImpedance", normalize)
-    vba.set_number("FixedImpedance", fixed_impedance)
-    vba.set_bool("AutoNormImpedance", not normalize)
+    vba.set_bool("AutoNormImpedance", bool(normalize))
+    if normalize:
+        vba.set_number("NormingImpedance", fixed_impedance)
     script = vba.build()
+    if max_time_steps:
+        notes.append("max_time_steps is not applied: the CST 2026 Solver object has no MaxTimeSteps "
+                     "(the run length is limited by SteadyStateLimit / NumberOfPulseWidths).")
+    if excitation_type != "Gaussian":
+        notes.append(f"excitation_type '{excitation_type}' is not applied: the signal shape is an "
+                     "excitation-signal definition, not a Solver setting; the default Gaussian is used.")
+    power_loss = None
+    if arguments.get("activate_power_loss_1d"):
+        script = script + "\n" + build_power_loss_1d_vba(
+            use_field_monitors=bool(arguments.get("power_loss_1d_use_field_monitors", True)),
+            use_farfield_monitors=bool(arguments.get("power_loss_1d_use_farfield_monitors", True)),
+            extra_frequencies=arguments.get("power_loss_1d_extra_frequencies") or [],
+            per_solid=bool(arguments.get("power_loss_1d_per_solid", False)),
+        )
+        power_loss = {
+            "activated": True,
+            "use_field_monitors": bool(arguments.get("power_loss_1d_use_field_monitors", True)),
+            "use_farfield_monitors": bool(arguments.get("power_loss_1d_use_farfield_monitors", True)),
+            "extra_frequencies": list(arguments.get("power_loss_1d_extra_frequencies") or []),
+            "result_items": "1D Results\\Power\\Excitation [1]\\Loss in Dielectrics / Loss in Metals",
+        }
 
     result = client.execute_vba(script)
+    if power_loss:
+        result["power_loss_1d"] = power_loss
     result["solver"] = "Time Domain"
     result["accuracy_db"] = accuracy
     result["max_time_steps"] = max_time_steps
@@ -339,6 +441,8 @@ def _configure_time_domain(arguments: dict, client: CSTClient) -> list[TextConte
     result["excitation_type"] = excitation_type
     result["normalize_to_fixed_impedance"] = normalize
     result["fixed_impedance_ohm"] = fixed_impedance
+    if notes:
+        result["notes"] = notes
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 
