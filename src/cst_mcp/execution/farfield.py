@@ -242,6 +242,46 @@ def parse_farfield_summary_text(text: str) -> dict[str, Any]:
 
     return metrics
 
+_ASCII_COL_RE = re.compile(r"([A-Za-z.]+(?:\([^)]*\))?)\s*\[([^\]]*)\]")
+
+
+def parse_cst_farfield_ascii(text: str) -> dict[str, Any] | None:
+    """Parse a CST ``ASCIIExport`` farfield table.
+
+    Live CST 2026 format: a header such as
+    ``Theta [deg.]  Phi   [deg.]  Abs(Grlz)[dBi   ]  Abs(Theta)[dBi   ] ...``,
+    a dashed separator line, then whitespace-separated numeric rows.
+    Returns ``{"columns", "rows", "value_col"}`` or ``None`` when ``text`` is
+    not in that format.  ``value_col`` is the first ``Abs(...)`` column (the
+    main quantity, e.g. realized gain), not the last column.
+    """
+    lines = text.splitlines()
+    header_i = next(
+        (i for i, ln in enumerate(lines[:20]) if ln.lstrip().lower().startswith("theta")), None
+    )
+    if header_i is None:
+        return None
+    columns = [
+        f"{''.join(name.split())} [{' '.join(unit.split())}]"
+        for name, unit in _ASCII_COL_RE.findall(lines[header_i])
+    ]
+    rows: list[list[float]] = []
+    for ln in lines[header_i + 1:]:
+        parts = ln.split()
+        if not parts or set(ln.strip()) <= {"-"}:
+            continue
+        try:
+            rows.append([float(p) for p in parts])
+        except ValueError:
+            continue
+    if not rows:
+        return None
+    value_col = next((i for i, c in enumerate(columns) if c.lower().startswith("abs(")), None)
+    if value_col is None:
+        value_col = 2 if len(rows[0]) > 2 else len(rows[0]) - 1
+    return {"columns": columns, "rows": rows, "value_col": value_col}
+
+
 def parse_farfield_pattern_csv(path: str | Path, max_points: int = 500) -> dict[str, Any]:
     """Best-effort parse of a farfield cut/pattern CSV into peak gain."""
     path = Path(path)
@@ -249,6 +289,23 @@ def parse_farfield_pattern_csv(path: str | Path, max_points: int = 500) -> dict[
         return {"status": "error", "message": f"File not found: {path}"}
 
     text = path.read_text(encoding="utf-8", errors="replace")
+    table = parse_cst_farfield_ascii(text)
+    if table is not None:
+        rows, vc = table["rows"], table["value_col"]
+        rows = [r for r in rows if len(r) > vc]
+        peak = max(rows, key=lambda r: r[vc] if math.isfinite(r[vc]) else -1e300)
+        step = max(1, len(rows) // max_points)
+        return {
+            "status": "ok",
+            "source": "cst_ascii_export",
+            "columns": table["columns"],
+            "value_column": table["columns"][vc] if vc < len(table["columns"]) else vc,
+            "n_points": len(rows),
+            "metrics": {"peak_value": peak[vc], "theta_or_col0": peak[0],
+                        "phi_or_col1": peak[1] if len(peak) > 2 else None},
+            "sample": rows[::step][:max_points],
+            "path": str(path),
+        }
     rows: list[list[float]] = []
     for line in text.splitlines():
         line = line.strip()
@@ -336,6 +393,12 @@ def build_farfield_metrics_vba(tree_path: str, metrics_path: str) -> str:
             '  Print #1, "GetTotalEfficiency=" & CStr(FarfieldPlot.GetTotalEfficiency)',
             '  Print #1, "GetTRP=" & CStr(FarfieldPlot.GetTRP)',
             '  Print #1, "GetPlotMode=" & CStr(FarfieldPlot.GetPlotMode)',
+            '  FarfieldPlot.SetPlotMode ("gain")',
+            "  FarfieldPlot.Plot",
+            '  Print #1, "GetMaxGain=" & CStr(FarfieldPlot.GetMax)',
+            '  FarfieldPlot.SetPlotMode ("directivity")',
+            "  FarfieldPlot.Plot",
+            '  Print #1, "GetMaxDirectivity=" & CStr(FarfieldPlot.GetMax)',
             '  Print #1, "err=" & Err.Description',
             "Else",
             f'  Print #1, "error=SelectTreeItem failed: {safe_tree}"',
@@ -380,7 +443,14 @@ def parse_farfield_metrics_kv(text: str) -> dict[str, Any]:
     if gmax is not None:
         # -200 is CST's empty-marker for efficiency; for gain 0 can be valid
         metrics["max_realized_gain_dbi"] = gmax
-        metrics["max_gain_dbi"] = gmax  # plot mode dependent; documented by caller
+        # GetMax follows the plot mode ("realized gain" here); the IEEE gain
+        # and directivity maxima are dumped separately (live CST 2026: a
+        # mismatched patch gave realized -6.5 dBi vs gain ~+3.7 dBi).
+        gain = _f("GetMaxGain")
+        metrics["max_gain_dbi"] = gain if gain is not None else gmax
+    directivity = _f("GetMaxDirectivity")
+    if directivity is not None:
+        metrics["max_directivity_dbi"] = directivity
     if gmin is not None:
         metrics["min_plot_value"] = gmin
     if gmean is not None:

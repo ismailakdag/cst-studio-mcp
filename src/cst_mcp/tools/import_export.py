@@ -14,6 +14,8 @@ from mcp.types import TextContent, Tool
 from cst_mcp.cst_client import CSTClient
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 from cst_mcp.validators import validate_file_path, validate_name
+from cst_mcp.vba_safety import validate_file_path as _vba_file_path
+from cst_mcp.vba_safety import vba_escape, vba_number
 
 
 # ---------------------------------------------------------------------------
@@ -152,10 +154,16 @@ TOOLS: list[Tool] = [
                     "type": "string",
                     "enum": ["csv", "ffs", "nsf"],
                     "description": (
-                        "Export format: csv (comma-separated), ffs (CST far-field source), "
-                        "nsf (NSI near-to-far-field)."
+                        "Export format: csv = realized-gain table of the selected farfield via the "
+                        "ASCIIExport object; ffs = farfield SOURCE file via "
+                        "FarfieldPlot.ASCIIExportAsSource (for excitation, not a gain table); "
+                        "nsf is not documented in CST 2026 and returns an error."
                     ),
                     "default": "csv",
+                },
+                "monitor_name": {
+                    "type": "string",
+                    "description": "Exact farfield tree name under Farfields (e.g. 'farfield (f=2.4) [1]').",
                 },
             },
             "required": ["file_path", "frequency"],
@@ -278,39 +286,70 @@ def _build_export_touchstone(args: dict) -> str:
     return script.build()
 
 
+def _farfield_export_tree(args: dict) -> str:
+    monitor = args.get("monitor_name")
+    if monitor:
+        return f"Farfields\\{vba_escape(monitor, 'monitor_name')}"
+    return f"Farfields\\farfield (f={vba_number(args['frequency'], 'frequency')})"
+
+
 def _build_export_farfield(args: dict) -> str:
-    """Build VBA script for far-field data export."""
-    file_path = validate_file_path(args["file_path"])
-    frequency = float(args["frequency"])
+    """Far-field export using only documented CST 2026 VBA.
+
+    * ``csv`` (gain table): SelectTreeItem + ``FarfieldPlot.Plot`` + the
+      ``ASCIIExport`` object (help: supports "1D and 2D/3D farfields").
+      ``FarfieldPlot`` itself has no ``ASCIIExport``/``Export`` method.
+    * ``ffs``: ``FarfieldPlot.ASCIIExportAsSource`` -- a farfield *source*
+      file for excitation, not a gain table.
+    * ``nsf``: no documented FarfieldPlot export exists -> error.
+    """
+    file_path = _vba_file_path(validate_file_path(args["file_path"]))
+    frequency = float(vba_number(args["frequency"], "frequency"))
     fmt = args.get("format", "csv")
 
     if frequency <= 0:
         raise ValueError("Frequency must be positive")
     if frequency > 1000:
         raise ValueError(f"Frequency {frequency} GHz exceeds 1 THz maximum")
+    if fmt == "nsf":
+        raise ValueError(
+            "format 'nsf' is not supported: the CST 2026 FarfieldPlot object documents no NSI "
+            "export. Use 'csv' (gain table via ASCIIExport) or 'ffs' (ASCIIExportAsSource)."
+        )
+    if fmt not in {"csv", "ffs"}:
+        raise ValueError("format must be 'csv' or 'ffs'")
 
+    tree = _farfield_export_tree(args)
     script = VBAScript()
-    script.add_comment(f"Export far-field data at {frequency} GHz: {file_path}")
-
-    # CST far-field export uses the FarfieldPlot object
-    vba = (
-        VBABuilder("FarfieldPlot")
-        .call("Reset")
-        .set("Frequency", str(frequency))
-    )
-
-    # Set export type based on format
+    script.add_comment(f"Export far-field data at {frequency} GHz ({fmt}): {file_path}")
+    lines = [
+        f'If Not SelectTreeItem("{tree}") Then',
+        f'  Err.Raise vbObjectError + 1, , "Farfield tree item not found: {tree}"',
+        "End If",
+    ]
     if fmt == "ffs":
-        vba.set("ExportType", "FarfieldSource")
-    elif fmt == "nsf":
-        vba.set("ExportType", "NSI")
+        lines += [
+            "With FarfieldPlot",
+            '  .Plottype ("3d")',
+            "  .Plot",
+            f'  .ASCIIExportAsSource ("{file_path}")',
+            "End With",
+        ]
     else:
-        vba.set("ExportType", "ASCII")
-
-    vba.set("FileName", file_path)
-    vba.call("Export")
-
-    script.add_block(vba)
+        lines += [
+            "With FarfieldPlot",
+            '  .Plottype ("3d")',
+            '  .SetPlotMode ("realized gain")',
+            "  .SetScaleLinear (False)",
+            "  .Plot",
+            "End With",
+            "With ASCIIExport",
+            "  .Reset",
+            f'  .FileName ("{file_path}")',
+            "  .Execute",
+            "End With",
+        ]
+    script.add_raw("\n".join(lines))
     return script.build()
 
 
@@ -349,7 +388,39 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
             return _text({"status": "error", "message": f"Unknown import/export tool: {name}"})
 
         vba_code = builder_fn(arguments)
-        result = client.execute_vba(vba_code)
+        if name == "cst_export_farfield" and getattr(client, "connected", False):
+            fmt = arguments.get("format", "csv")
+            if fmt == "csv" and hasattr(client, "export_farfield_ascii"):
+                # Documented, history-free path (SelectTreeItem + Plot + ASCIIExport)
+                # with farfield tree-name discovery.
+                result = client.export_farfield_ascii(
+                    float(arguments["frequency"]),
+                    filepath=arguments["file_path"],
+                    monitor_name=arguments.get("monitor_name"),
+                )
+            elif fmt == "ffs" and not arguments.get("monitor_name"):
+                # Live CST 2026: after a TD solve the item is "farfield (f=X) [1]";
+                # try the documented tree-name variants until SelectTreeItem succeeds.
+                from cst_mcp.execution.farfield import farfield_tree_candidates
+
+                tried = []
+                result = {"status": "error", "message": "No farfield tree item found"}
+                for tree in farfield_tree_candidates(float(arguments["frequency"])):
+                    if not tree.startswith("Farfields\\"):
+                        continue
+                    label = tree.split("\\", 1)[1]
+                    tried.append(tree)
+                    result = client.execute_vba_silent(
+                        builder_fn({**arguments, "monitor_name": label}), history_fallback=False
+                    )
+                    if result.get("status") == "executed":
+                        result["tree_path"] = tree
+                        break
+                result["tried_paths"] = tried
+            else:
+                result = client.execute_vba_silent(vba_code, history_fallback=False)
+        else:
+            result = client.execute_vba(vba_code)
 
         # Annotate result with tool-specific metadata
         if name == "cst_import_cad":

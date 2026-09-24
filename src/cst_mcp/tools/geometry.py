@@ -16,6 +16,8 @@ from cst_mcp.cst_client import CSTClient
 from cst_mcp.vba_builder import VBABuilder, VBAScript
 from cst_mcp.validators import validate_name, validate_positive, validate_non_negative
 from cst_mcp.vba_safety import vba_escape as _q
+from cst_mcp.vba_safety import vba_number as _vba_number
+from cst_mcp.vba_safety import vba_string_literal as _vba_string_literal
 
 # ---------------------------------------------------------------------------
 # Tool definitions
@@ -133,7 +135,11 @@ TOOLS: list[Tool] = [
     # 6. Extrude
     Tool(
         name="cst_create_extrude",
-        description="Extrude a 2D polygon profile into a 3D solid in CST Studio.",
+        description=(
+            "Extrude a 2D polygon profile into a 3D solid in CST Studio (Extrude object, Mode "
+            "'pointlist'). The profile lies in the plane normal to 'axis' (default z) at the given "
+            "x/y/z_offset; optional 'holes' are extruded the same way and subtracted (Solid.Subtract)."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
@@ -152,6 +158,45 @@ TOOLS: list[Tool] = [
                     "description": "List of [x, y] coordinate pairs forming the profile polygon",
                 },
                 "height": {"type": "number", "description": "Extrusion height"},
+                "axis": {
+                    "type": "string",
+                    "enum": ["x", "y", "z"],
+                    "default": "z",
+                    "description": "Extrusion axis (profile plane normal). z: (u,v)=(x,y); x: (u,v)=(y,z); y: (u,v)=(x,-z).",
+                },
+                "x_offset": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Base-plane position on the x axis (only valid with axis='x').",
+                },
+                "y_offset": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Base-plane position on the y axis (only valid with axis='y').",
+                },
+                "z_offset": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Base-plane position on the z axis (only valid with axis='z', the default).",
+                },
+                "holes": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {"type": "number"},
+                            "minItems": 2,
+                            "maxItems": 2,
+                        },
+                        "minItems": 3,
+                    },
+                    "default": [],
+                    "description": (
+                        "Optional holes/slots: each a list of [x, y] pairs in the same profile plane. "
+                        "Each hole is extruded with the same height and removed with Solid.Subtract."
+                    ),
+                },
             },
             "required": ["component", "name", "points", "height"],
         },
@@ -299,7 +344,10 @@ TOOLS: list[Tool] = [
         name="cst_create_polygon_extrude",
         description=(
             "Create a polygon and extrude it along an axis in CST Studio. "
-            "Convenience tool combining polygon profile creation and extrusion."
+            "Convenience tool combining polygon profile creation (Polygon3D curve) and extrusion "
+            "(ExtrudeCurve). The profile lies at the base plane given by x/y/z_offset for the chosen "
+            "axis; optional 'holes' (lists of [x, y]) are extruded the same way and removed with "
+            "Solid.Subtract, e.g. for slotted/fractal patches."
         ),
         inputSchema={
             "type": "object",
@@ -320,6 +368,39 @@ TOOLS: list[Tool] = [
                 },
                 "height": {"type": "number", "description": "Extrusion height"},
                 "axis": {"type": "string", "enum": ["x", "y", "z"], "description": "Extrusion axis", "default": "z"},
+                "x_offset": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Base-plane position on the x axis (only valid with axis='x').",
+                },
+                "y_offset": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Base-plane position on the y axis (only valid with axis='y').",
+                },
+                "z_offset": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Base-plane position on the z axis (only valid with axis='z', the default).",
+                },
+                "holes": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {"type": "number"},
+                            "minItems": 2,
+                            "maxItems": 2,
+                        },
+                        "minItems": 3,
+                    },
+                    "default": [],
+                    "description": (
+                        "Optional holes/slots: each a list of [x, y] pairs in the same profile plane. "
+                        "Each hole is extruded with the same height and removed with Solid.Subtract."
+                    ),
+                },
             },
             "required": ["component", "name", "points", "height"],
         },
@@ -471,36 +552,123 @@ def _build_torus(args: dict) -> str:
     return vba.build()
 
 
-def _build_extrude(args: dict) -> str:
-    component = validate_name(args["component"], "component")
-    name = validate_name(args["name"], "name")
-    material = args.get("material", "PEC")
-    points: list[list[float]] = args["points"]
-    height: float = args["height"]
+_OFFSET_KEYS = {"x": "x_offset", "y": "y_offset", "z": "z_offset"}
+# Extrude object plane per axis: (Uvector, Vvector); the profile's (u, v)
+# map to the same world axes as cst_create_polygon_extrude's Polygon3D points.
+_EXTRUDE_PLANES = {
+    "z": ((1, 0, 0), (0, 1, 0)),
+    "x": ((0, 1, 0), (0, 0, 1)),
+    "y": ((1, 0, 0), (0, 0, -1)),
+}
 
+
+def _num(value, field: str) -> float:
+    """Coerce through vba_safety.vba_number (finite, non-bool) to a float."""
+    return float(_vba_number(value, field))
+
+
+def _profile_points(points, field: str) -> list[tuple[float, float]]:
+    if not isinstance(points, (list, tuple)) or len(points) < 3:
+        raise ValueError(f"{field} must contain at least 3 [x, y] points")
+    out = []
+    for i, pt in enumerate(points):
+        if not isinstance(pt, (list, tuple)) or len(pt) != 2:
+            raise ValueError(f"{field}[{i}] must be an [x, y] pair")
+        out.append((_num(pt[0], f"{field}[{i}][0]"), _num(pt[1], f"{field}[{i}][1]")))
+    return out
+
+
+def _signed_area(points: list[tuple[float, float]]) -> float:
+    return 0.5 * sum(
+        x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(points, points[1:] + points[:1])
+    )
+
+
+def _extrude_axis_offset_holes(args: dict):
+    """Validate axis, base-plane offset and holes shared by both extrude tools."""
+    axis = args.get("axis", "z")
+    if axis not in _OFFSET_KEYS:
+        raise ValueError("axis must be x, y, or z")
+    for other_axis, key in _OFFSET_KEYS.items():
+        if other_axis != axis and args.get(key) not in (None, 0):
+            raise ValueError(f"{key} only applies to axis='{other_axis}'; use {_OFFSET_KEYS[axis]} for axis='{axis}'")
+    offset = _num(args.get(_OFFSET_KEYS[axis], 0) or 0, _OFFSET_KEYS[axis])
+    points = _profile_points(args["points"], "points")
+    outer_area = _signed_area(points)
+    if outer_area == 0:
+        raise ValueError("points must enclose a non-zero area")
+    # Live CST 2026: ExtrudeCurve extrudes along the Polygon3D curve normal,
+    # which follows the winding (a clockwise square at z=1.6 went to
+    # z=1.565..1.6).  Normalise to counter-clockwise in (u, v) so the solid
+    # always grows towards +axis; the Extrude object is winding-independent.
+    if outer_area < 0:
+        points = points[::-1]
+        outer_area = -outer_area
+    holes = []
+    raw_holes = args.get("holes") or []
+    if not isinstance(raw_holes, (list, tuple)):
+        raise ValueError("holes must be a list of point lists")
+    for h, raw in enumerate(raw_holes):
+        hole = _profile_points(raw, f"holes[{h}]")
+        area = _signed_area(hole)
+        if area == 0:
+            raise ValueError(f"holes[{h}] must enclose a non-zero area")
+        # Same (counter-clockwise) winding as the outline so the hole is
+        # extruded in the same direction as the main solid.
+        if area < 0:
+            hole = hole[::-1]
+        holes.append(hole)
+    return axis, offset, points, holes
+
+
+def _subtract_block(component: str, name: str, tool_name: str) -> str:
+    target = _vba_string_literal(f"{component}:{name}", "solid")
+    tool = _vba_string_literal(f"{component}:{tool_name}", "solid")
+    return f"Solid.Subtract {target}, {tool}"
+
+
+def _extrude_block(name, component, material, height, axis, offset, points) -> VBABuilder:
+    u_vec, v_vec = _EXTRUDE_PLANES[axis]
+    origin = {"z": (0, 0, offset), "x": (offset, 0, 0), "y": (0, offset, 0)}[axis]
     vba = (
         VBABuilder("Extrude")
         .call("Reset")
         .set("Name", name)
         .set("Component", component)
         .set("Material", material)
-        .set_number("Mode", 0)
+        .set("Mode", "pointlist")
         .set_number("Height", height)
-        .set("Origin", "0.0, 0.0, 0.0")
-        .set("Uvector", "1.0, 0.0, 0.0")
-        .set("Vvector", "0.0, 1.0, 0.0")
+        .set_triple("Origin", *origin)
+        .set_triple("Uvector", *u_vec)
+        .set_triple("Vvector", *v_vec)
     )
-
-    # First point
-    vba.set_double("Point", points[0][0], points[0][1])
-    # Subsequent points as LineTo
+    # First point, subsequent points as LineTo, closed back to the first point.
+    vba.set_double("Point", *points[0])
     for pt in points[1:]:
-        vba.set_double("LineTo", pt[0], pt[1])
-    # Close back to first point
-    vba.set_double("LineTo", points[0][0], points[0][1])
-
+        vba.set_double("LineTo", *pt)
+    vba.set_double("LineTo", *points[0])
     vba.call("Create")
-    return vba.build()
+    return vba
+
+
+def _build_extrude(args: dict) -> str:
+    component = validate_name(args["component"], "component")
+    name = validate_name(args["name"], "name")
+    material = args.get("material", "PEC")
+    height = _num(args["height"], "height")
+    axis, offset, points, holes = _extrude_axis_offset_holes(args)
+
+    main = _extrude_block(name, component, material, height, axis, offset, points)
+    if not holes:
+        return main.build()
+    script = VBAScript()
+    script.add_comment(f"Extrude with {len(holes)} hole(s): {component}:{name}")
+    script.add_block(main)
+    for h, hole in enumerate(holes):
+        hole_name = validate_name(f"{name}_hole{h + 1}", "hole name")
+        script.add_block(_extrude_block(hole_name, component, material, height, axis, offset, hole))
+        script.add_raw(_subtract_block(component, name, hole_name))
+    return script.build()
 
 
 def _build_loft(args: dict) -> str:
@@ -657,37 +825,22 @@ def _build_ecylinder(args: dict) -> str:
     return vba.build()
 
 
-def _build_polygon_extrude(args: dict) -> str:
-    component = validate_name(args["component"], "component")
-    name = validate_name(args["name"], "name")
-    material = args.get("material", "PEC")
-    points: list[list[float]] = args["points"]
-    height: float = args["height"]
-    axis: str = args.get("axis", "z")
-
-    script = VBAScript()
-    script.add_comment(f"Polygon extrude: {component}:{name}")
-    script.add_raw(f'Curve.NewCurve "{_q(name, "name")}_curves"')
-    if axis not in {"x", "y", "z"}:
-        raise ValueError("axis must be x, y, or z")
-    def point(pt):
-        return (0, pt[0], pt[1]) if axis == "x" else ((pt[0], 0, -pt[1]) if axis == "y" else (pt[0], pt[1], 0))
-
-    # Create the polygon curve
+def _polygon_curve_extrude(script: VBAScript, name, curve, item, component, material,
+                           height, point_fn, points) -> None:
     poly_vba = (
         VBABuilder("Polygon3D")
         .call("Reset")
-        .set("Name", f"{name}_profile")
-        .set("Curve", f"{name}_curves")
+        .set("Name", item)
+        .set("Curve", curve)
     )
     for pt in points:
-        poly_vba.set_triple("Point", *point(pt))
+        poly_vba.set_triple("Point", *point_fn(pt))
     # Close the polygon
-    poly_vba.set_triple("Point", *point(points[0]))
+    poly_vba.set_triple("Point", *point_fn(points[0]))
     poly_vba.call("Create")
     script.add_block(poly_vba)
 
-    # Extrude the curve into a solid
+    # Extrude the closed planar curve item into a solid (the curve item is consumed).
     extrude_vba = (
         VBABuilder("ExtrudeCurve")
         .call("Reset")
@@ -697,12 +850,38 @@ def _build_polygon_extrude(args: dict) -> str:
         .set_number("Thickness", height)
         .set_number("Twistangle", 0)
         .set_number("Taperangle", 0)
-        .set("Curve", f"{name}_curves:{name}_profile")
+        .set("Curve", f"{curve}:{item}")
     )
     # The closed curve's plane sets the extrusion direction in CST.
     extrude_vba.call("Create")
     script.add_block(extrude_vba)
 
+
+def _build_polygon_extrude(args: dict) -> str:
+    component = validate_name(args["component"], "component")
+    name = validate_name(args["name"], "name")
+    material = args.get("material", "PEC")
+    height = _num(args["height"], "height")
+    axis, offset, points, holes = _extrude_axis_offset_holes(args)
+
+    def point(pt):
+        if axis == "x":
+            return (offset, pt[0], pt[1])
+        if axis == "y":
+            return (pt[0], offset, -pt[1])
+        return (pt[0], pt[1], offset)
+
+    curve = f"{name}_curves"
+    script = VBAScript()
+    script.add_comment(f"Polygon extrude: {component}:{name}")
+    script.add_raw(f'Curve.NewCurve "{_q(curve, "name")}"')
+    _polygon_curve_extrude(script, name, curve, f"{name}_profile", component, material,
+                           height, point, points)
+    for h, hole in enumerate(holes):
+        hole_name = validate_name(f"{name}_hole{h + 1}", "hole name")
+        _polygon_curve_extrude(script, hole_name, curve, f"{hole_name}_profile", component,
+                               material, height, point, hole)
+        script.add_raw(_subtract_block(component, name, hole_name))
     return script.build()
 
 

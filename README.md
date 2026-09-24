@@ -495,7 +495,7 @@ Read local CST Python/VBA help and complex saved results without opening CST.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_search_help` | Search the installed official CST Python/VBA help by topic filename. Does not start CST. Read the matching help before constructing API c… |
+| `cst_search_help` | Full-text search of the installed official CST Python/VBA help (offline; does not start CST). Every query word must appear in the topic's… |
 | `cst_read_help` | Read a paginated official local CST help topic returned by cst_search_help. No GUI or solver. |
 | `cst_list_saved_results` | List exact result tree paths and run IDs from a saved, unpacked, completed .cst file using cst.results. No connection or CST GUI is requi… |
 | `cst_read_saved_result` | Read a complete complex 1D curve by exact tree path and run_id from a completed saved .cst, without opening CST. Raw real/imag are preser… |
@@ -506,7 +506,7 @@ Attach to CST explicitly; disconnect without closing user projects.
 
 | Tool | What it does |
 |------|--------------|
-| `cst_connect` | Explicitly attach to a running CST Design Environment or start one. Disabled mode never connects. |
+| `cst_connect` | Explicitly attach to a CST Design Environment (DE). Disabled mode never connects. mode='any' (default) uses connect_to_any_or_new(): it a… |
 | `cst_disconnect` | Detach this MCP session without closing CST, projects, or a running solver. |
 
 ### Workflows (start here) (8)
@@ -550,14 +550,14 @@ Create, open, save projects and check CST connection.
 | `cst_create_cone` | Create a cone or truncated cone in CST Studio. |
 | `cst_create_sphere` | Create a sphere in CST Studio. |
 | `cst_create_torus` | Create a torus in CST Studio. |
-| `cst_create_extrude` | Extrude a 2D polygon profile into a 3D solid in CST Studio. |
+| `cst_create_extrude` | Extrude a 2D polygon profile into a 3D solid in CST Studio (Extrude object, Mode 'pointlist'). The profile lies in the plane normal to 'a… |
 | `cst_create_loft` | Create a lofted solid between two or more 2D profiles in CST Studio. |
 | `cst_create_wire` | Create a bondwire / wire between two points in CST Studio. |
 | `cst_create_polygon3d` | Create a 3D polygon curve in CST Studio. |
 | `cst_create_analytical_curve` | Create a parametric analytical curve in CST Studio using expressions of parameter t. |
 | `cst_create_face_from_curves` | Create a planar face from one or more closed curves in CST Studio. |
 | `cst_create_ecylinder` | Create an elliptical cylinder in CST Studio. |
-| `cst_create_polygon_extrude` | Create a polygon and extrude it along an axis in CST Studio. Convenience tool combining polygon profile creation and extrusion. |
+| `cst_create_polygon_extrude` | Create a polygon and extrude it along an axis in CST Studio. Convenience tool combining polygon profile creation (Polygon3D curve) and ex… |
 
 ### Boolean operations (4)
 

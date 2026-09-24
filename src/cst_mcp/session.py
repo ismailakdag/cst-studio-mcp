@@ -88,13 +88,80 @@ class CSTSession:
     # Connection
     # ------------------------------------------------------------------
 
-    def connect(self) -> dict[str, Any]:
-        """Connect to a running CST or launch a new Design Environment."""
+    CONNECT_MODES = ("any", "new")
+
+    @staticmethod
+    def _running_de_pids(interface: Any) -> list[int] | None:
+        """PIDs of running Design Environments, or ``None`` when unknown."""
+        lister = getattr(interface, "running_design_environments", None)
+        if not callable(lister):
+            return None
+        try:
+            pids = []
+            for item in list(lister() or []):
+                try:
+                    pids.append(int(item))
+                except (TypeError, ValueError):
+                    pids.append(item)
+            return pids
+        except Exception:  # noqa: BLE001
+            logger.debug("running_design_environments failed", exc_info=True)
+            return None
+
+    @staticmethod
+    def _de_pid(de: Any) -> int | None:
+        getter = getattr(de, "pid", None)
+        if not callable(getter):
+            return None
+        try:
+            return int(getter())
+        except Exception:  # noqa: BLE001
+            logger.debug("DesignEnvironment.pid() failed", exc_info=True)
+            return None
+
+    @staticmethod
+    def _open_project_paths(de: Any, open_projects: list[Any]) -> list[str]:
+        """Paths of projects open in ``de`` (list_open_projects, else handles)."""
+        lister = getattr(de, "list_open_projects", None)
+        if callable(lister):
+            try:
+                return [str(p) for p in list(lister() or [])]
+            except Exception:  # noqa: BLE001
+                logger.debug("list_open_projects failed", exc_info=True)
+        paths = []
+        for ref in open_projects:
+            if isinstance(ref, (str, Path)):
+                paths.append(str(ref))
+                continue
+            try:
+                paths.append(str(ref.filename()))
+            except Exception:  # noqa: BLE001
+                paths.append(repr(ref))
+        return paths
+
+    def connect(self, mode: str = "any") -> dict[str, Any]:
+        """Connect to a Design Environment.
+
+        ``mode="any"`` (default, backwards compatible) attaches to any running
+        DE -- possibly one the user opened interactively -- or starts a new one
+        when none is running (``connect_to_any_or_new``).  ``mode="new"``
+        always starts a fresh DE via ``DesignEnvironment.new()`` and never
+        attaches to an existing DE or project.  The result always reports the
+        attached PID (when the binding exposes ``pid()``), whether the DE was
+        newly started, and the projects that were already open in it.
+        """
+        mode = str(mode or "any").lower()
+        if mode not in self.CONNECT_MODES:
+            return {
+                "status": "error",
+                "message": f"Unknown connect mode {mode!r}; use one of {list(self.CONNECT_MODES)}",
+            }
         if self.is_connected:
             return {
                 "status": "connected",
                 "message": "Already connected",
                 "project_path": self._project_path,
+                "de_pid": self._de_pid(self._de),
             }
 
         # A failed/stale connection must not leave a project handle associated
@@ -120,20 +187,37 @@ class CSTSession:
             return {"status": "offline", "message": f"import cst.interface failed: {exc}"}
 
         try:
-            # Preferred modern API
-            if hasattr(cst.interface.DesignEnvironment, "connect_to_any_or_new"):
-                self._de = cst.interface.DesignEnvironment.connect_to_any_or_new()
-                msg = "Connected via connect_to_any_or_new()"
-            else:
-                running = []
-                if hasattr(cst.interface, "running_design_environments"):
-                    running = list(cst.interface.running_design_environments() or [])
-                if running:
-                    self._de = cst.interface.DesignEnvironment.connect(running[0])
-                    msg = f"Connected to running DE (pid={running[0]})"
+            factory = cst.interface.DesignEnvironment
+            before = self._running_de_pids(cst.interface)
+            newly_started: bool | None
+            if mode == "new":
+                if hasattr(factory, "new"):
+                    self._de = factory.new()
                 else:
-                    self._de = cst.interface.DesignEnvironment()
+                    self._de = factory()  # default StartMode.New
+                msg = "Started a new Design Environment (mode='new')"
+                newly_started = True
+            elif hasattr(factory, "connect_to_any_or_new"):
+                self._de = factory.connect_to_any_or_new()
+                msg = "Connected via connect_to_any_or_new() (mode='any')"
+                newly_started = None
+            else:
+                running = list(before or [])
+                if running:
+                    self._de = factory.connect(running[0])
+                    msg = f"Connected to running DE (pid={running[0]})"
+                    newly_started = False
+                else:
+                    self._de = factory()
                     msg = "Launched new Design Environment"
+                    newly_started = True
+
+            pid = self._de_pid(self._de)
+            if newly_started is None:
+                if before is not None and pid is not None:
+                    newly_started = pid not in before
+                elif before == []:
+                    newly_started = True
 
             # Attach to the active project when possible.  Depending on the CST
             # binding build, get_open_projects() may return Project handles or
@@ -153,16 +237,33 @@ class CSTSession:
                 self._project = active or self._project_from_open_ref(self._de, open_projects[0])
                 self._project_path = self._safe_filename(self._project)
 
-            return {
+            open_paths = self._open_project_paths(self._de, open_projects)
+            result: dict[str, Any] = {
                 "status": "connected",
                 "message": msg,
+                "mode": mode,
+                "de_pid": pid,
+                "newly_started": newly_started,
+                "running_des_before": before,
                 "open_projects": len(open_projects),
+                "open_project_paths": open_paths,
                 "project_path": self._project_path,
                 "cst_path": str(self.config.cst_path) if self.config.cst_path else None,
                 "python_lib_path": (
                     str(self.config.python_lib_path) if self.config.python_lib_path else None
                 ),
             }
+            if newly_started is not True:
+                result["warning"] = (
+                    "Attached to a Design Environment that was already running"
+                    if newly_started is False
+                    else "Could not determine whether this Design Environment was already running"
+                ) + (
+                    f" (pid={pid}); it may be the user's interactive session"
+                    f" with {len(open_paths)} open project(s)."
+                    " Use cst_connect mode='new' for an isolated Design Environment."
+                )
+            return result
         except Exception as exc:  # noqa: BLE001
             self._de = None
             self._project = None

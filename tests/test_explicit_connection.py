@@ -27,6 +27,22 @@ async def test_reconnect_preserves_existing_session():
 @pytest.mark.asyncio
 async def test_failed_connection_is_a_tool_error():
     client = SimpleNamespace(config=SimpleNamespace(connect_mode="manual"), connected=False,
-                             connect=lambda: {"status": "offline", "message": "mock loader failure"})
+                             connect=lambda **kw: {"status": "offline", "message": "mock loader failure"})
     result = await handle("cst_connect", {}, client)
     assert json.loads(result[0].text)["status"] == "error"
+
+
+@pytest.mark.asyncio
+async def test_connect_forwards_mode_and_rejects_unknown_mode():
+    seen = {}
+
+    def fake_connect(mode="any"):
+        seen["mode"] = mode
+        return {"status": "connected", "mode": mode, "de_pid": 4242, "newly_started": True}
+
+    client = SimpleNamespace(config=SimpleNamespace(connect_mode="manual"), connected=False,
+                             connect=fake_connect)
+    result = json.loads((await handle("cst_connect", {"mode": "new"}, client))[0].text)
+    assert seen["mode"] == "new" and result["de_pid"] == 4242
+    result = json.loads((await handle("cst_connect", {"mode": "bogus"}, client))[0].text)
+    assert result["status"] == "error"

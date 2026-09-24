@@ -436,3 +436,99 @@ def test_results_present_parses_probe_output(monkeypatch) -> None:
     assert "On Error Resume Next" in probes[0]
     assert 'Resulttree.GetFirstChildName("1D Results")' in probes[0]
     assert "mcpCount < 50" in probes[0]
+
+
+def _install_fake_interface(monkeypatch, factory, running=None):
+    interface = SimpleNamespace(DesignEnvironment=factory)
+    if running is not None:
+        interface.running_design_environments = lambda: list(running)
+    package = SimpleNamespace(interface=interface)
+    monkeypatch.setitem(sys.modules, "cst", package)
+    monkeypatch.setitem(sys.modules, "cst.interface", interface)
+
+
+def _connect_config():
+    return SimpleNamespace(
+        cst_available=True, cst_path=None, python_lib_path=None, version="2026", work_dir=Path(".")
+    )
+
+
+def test_connect_any_reports_preexisting_de_and_open_projects(monkeypatch) -> None:
+    user_project = SimpleNamespace(model3d=FakeModel3D(), filename=lambda: r"C:\user\antenna.cst")
+    de = FakeDesignEnvironment()
+    de.pid = lambda: 33984
+    de.get_open_projects = lambda: [user_project]
+    de.list_open_projects = lambda: [r"C:\user\antenna.cst"]
+    de.has_active_project = lambda: True
+    de.active_project = lambda: user_project
+    calls = []
+
+    class Factory:
+        @staticmethod
+        def connect_to_any_or_new():
+            calls.append("any_or_new")
+            return de
+
+        @staticmethod
+        def new():
+            raise AssertionError("mode='any' must not start a new DE explicitly")
+
+    _install_fake_interface(monkeypatch, Factory, running=[33984])
+    result = CSTSession(config=_connect_config()).connect()
+    assert calls == ["any_or_new"]
+    assert result["status"] == "connected" and result["mode"] == "any"
+    assert result["de_pid"] == 33984
+    assert result["newly_started"] is False
+    assert result["running_des_before"] == [33984]
+    assert result["open_project_paths"] == [r"C:\user\antenna.cst"]
+    assert "33984" in result["warning"] and "mode='new'" in result["warning"]
+
+
+def test_connect_any_detects_newly_started_de(monkeypatch) -> None:
+    de = FakeDesignEnvironment()
+    de.pid = lambda: 555
+    de.get_open_projects = lambda: []
+
+    class Factory:
+        @staticmethod
+        def connect_to_any_or_new():
+            return de
+
+    _install_fake_interface(monkeypatch, Factory, running=[])
+    result = CSTSession(config=_connect_config()).connect(mode="any")
+    assert result["newly_started"] is True and result["de_pid"] == 555
+    assert "warning" not in result
+
+
+def test_connect_new_always_starts_fresh_de(monkeypatch) -> None:
+    de = FakeDesignEnvironment()
+    de.pid = lambda: 777
+    de.get_open_projects = lambda: []
+    de.list_open_projects = lambda: []
+
+    class Factory:
+        @staticmethod
+        def connect_to_any_or_new():
+            raise AssertionError("mode='new' must never attach to an existing DE")
+
+        @staticmethod
+        def connect_to_any():
+            raise AssertionError("mode='new' must never attach to an existing DE")
+
+        @staticmethod
+        def new():
+            return de
+
+    _install_fake_interface(monkeypatch, Factory, running=[33984])
+    session = CSTSession(config=_connect_config())
+    result = session.connect(mode="new")
+    assert result["status"] == "connected" and result["mode"] == "new"
+    assert result["newly_started"] is True and result["de_pid"] == 777
+    assert result["running_des_before"] == [33984]
+    assert result["open_project_paths"] == [] and result["project_path"] is None
+    assert session._de is de and "warning" not in result
+
+
+def test_connect_rejects_unknown_mode() -> None:
+    result = CSTSession(config=_connect_config()).connect(mode="existing")
+    assert result["status"] == "error"

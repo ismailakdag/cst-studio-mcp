@@ -21,6 +21,11 @@ from cst_mcp.vba_builder import VBABuilder, VBAScript
 from cst_mcp.vba_safety import validate_file_path as _qf
 from cst_mcp.vba_safety import vba_escape as _q
 from cst_mcp.vba_safety import vba_number as _n
+from cst_mcp.execution.farfield_vba import (
+    list_table_lines as _ff_list_table,
+    plot_setup_lines as _ff_setup,
+    select_farfield_lines as _ff_select,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -823,40 +828,27 @@ def _build_s_parameter_vba(port_out: int, port_in: int, fmt: str) -> str:
 
 
 def _build_farfield_vba(frequency: float, monitor_name: str | None) -> str:
-    """Build VBA script for extracting far-field results."""
+    """Far-field summary via documented FarfieldPlot secondary results."""
     tree_path = _farfield_tree_path(frequency, monitor_name)
+
     script = VBAScript()
     script.add_comment(f"Extract far-field results at {frequency} GHz")
     script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
     script.add_blank()
 
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  ' Access far-field result object",
-        "  Dim ff As Object",
-        '  Set ff = FarfieldPlot',
-        "",
-        "  ' Read key far-field metrics",
-        "  ff.Reset",
-        '  ff.Plottype "3D"',
-        '  ff.SetPlotMode "Gain"',
-        "",
-        "  ' Peak gain and direction",
-        "  Dim peakGain As Double",
-        "  peakGain = ff.GetMainLobeDirection",
-        "",
-        "  ' Beam widths",
-        "  Dim bwE As Double, bwH As Double",
-        '  ff.SetPlotMode "Gain"',
-        "",
-        "  ' Print summary",
-        '  Debug.Print "Peak Gain (dBi): " & ff.GetResultValue("max gain")',
-        '  Debug.Print "Directivity (dBi): " & ff.GetResultValue("directivity")',
-        '  Debug.Print "Efficiency: " & ff.GetResultValue("rad. efficiency")',
-        '  Debug.Print "3dB Beam Width E-plane: " & ff.GetResultValue("angular width (3db), theta")',
-        '  Debug.Print "3dB Beam Width H-plane: " & ff.GetResultValue("angular width (3db), phi")',
+    lines = ["Sub Main()"] + _ff_setup("realized gain") + _ff_select(tree_path) + [
+        "  FarfieldPlot.Plot",
+        "  Dim x As Double, y As Double, z As Double",
+        '  Debug.Print "Max realized gain (dBi): " & FarfieldPlot.GetMax',
+        '  Debug.Print "Radiation efficiency (dB): " & FarfieldPlot.GetRadiationEfficiency',
+        '  Debug.Print "Total efficiency (dB): " & FarfieldPlot.GetTotalEfficiency',
+        '  Debug.Print "TRP (W): " & FarfieldPlot.GetTRP',
+        "  FarfieldPlot.GetMainLobeVector x, y, z",
+        '  Debug.Print "Main lobe vector: " & x & ", " & y & ", " & z',
+        '  FarfieldPlot.SetPlotMode ("directivity")',
+        "  FarfieldPlot.Plot",
+        '  Debug.Print "Max directivity (dBi): " & FarfieldPlot.GetMax',
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -992,33 +984,24 @@ def _build_vswr_vba(port: int) -> str:
 
 
 def _build_gain_vba(frequency: float) -> str:
-    """Build VBA script for extracting antenna gain."""
+    """Peak gain via documented FarfieldPlot.GetMax / GetMainLobeVector."""
     tree_path = _farfield_tree_path(frequency)
+
     script = VBAScript()
     script.add_comment(f"Extract antenna gain at {frequency} GHz")
     script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
     script.add_blank()
 
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
-        '  ff.Plottype "3D"',
-        '  ff.SetPlotMode "Gain"',
-        "",
-        "  ' Get peak gain",
-        '  Dim peakGain As Double',
-        '  peakGain = ff.GetResultValue("max gain")',
-        '  Debug.Print "Peak Gain (dBi): " & peakGain',
-        "",
-        "  ' Get direction of maximum gain",
-        '  Dim theta As Double, phi As Double',
-        '  theta = ff.GetResultValue("main lobe direction, theta")',
-        '  phi = ff.GetResultValue("main lobe direction, phi")',
-        '  Debug.Print "Max Gain Direction: theta=" & theta & ", phi=" & phi',
+    lines = ["Sub Main()"] + _ff_setup("gain") + _ff_select(tree_path) + [
+        "  FarfieldPlot.Plot",
+        '  Debug.Print "Peak Gain (dBi): " & FarfieldPlot.GetMax',
+        "  Dim x As Double, y As Double, z As Double",
+        "  FarfieldPlot.GetMainLobeVector x, y, z",
+        '  Debug.Print "Max gain direction (unit vector): " & x & ", " & y & ", " & z',
+        '  FarfieldPlot.SetPlotMode ("realized gain")',
+        "  FarfieldPlot.Plot",
+        '  Debug.Print "Peak Realized Gain (dBi): " & FarfieldPlot.GetMax',
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -1026,39 +1009,24 @@ def _build_gain_vba(frequency: float) -> str:
 
 
 def _build_efficiency_vba(frequency: float) -> str:
-    """Build VBA script for extracting radiation efficiency."""
+    """Radiation/total efficiency via documented FarfieldPlot getters."""
     tree_path = _farfield_tree_path(frequency)
+
     script = VBAScript()
     script.add_comment(f"Extract antenna efficiency at {frequency} GHz")
     script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
     script.add_blank()
 
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
-        "",
-        "  ' Radiation efficiency (excludes mismatch loss)",
-        '  Dim radEff As Double',
-        '  radEff = ff.GetResultValue("rad. efficiency")',
-        '  Debug.Print "Radiation Efficiency: " & radEff',
-        "",
-        "  ' Total efficiency (includes mismatch loss)",
-        '  Dim totEff As Double',
-        '  totEff = ff.GetResultValue("tot. efficiency")',
-        '  Debug.Print "Total Efficiency: " & totEff',
-        "",
-        "  ' Mismatch loss in dB",
-        "  Dim mismatch As Double",
-        "  If totEff > 0 And radEff > 0 Then",
-        "    mismatch = 10 * Log(totEff / radEff) / Log(10)",
-        "  Else",
-        "    mismatch = -99",
-        "  End If",
-        '  Debug.Print "Mismatch Loss (dB): " & mismatch',
+    lines = ["Sub Main()"] + _ff_setup("gain") + _ff_select(tree_path) + [
+        "  FarfieldPlot.Plot",
+        "  Dim radEff As Double, totEff As Double",
+        "  radEff = FarfieldPlot.GetRadiationEfficiency",
+        "  totEff = FarfieldPlot.GetTotalEfficiency",
+        "  ' Values are in dB (-200 = no data); linear = 10^(dB/10)",
+        '  Debug.Print "Radiation Efficiency (dB): " & radEff',
+        '  Debug.Print "Total Efficiency (dB): " & totEff',
+        '  Debug.Print "Mismatch Loss (dB): " & (totEff - radEff)',
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -1266,52 +1234,35 @@ def _build_group_delay_vba(port_out: int, port_in: int) -> str:
 def _build_pattern_cut_vba(
     frequency: float, plane: str, phi_cut: float, theta_cut: float
 ) -> str:
-    """Build VBA script for extracting a radiation pattern cut."""
+    """Pattern cut (gain vs theta at constant phi) via the documented list route."""
     tree_path = _farfield_tree_path(frequency)
-    script = VBAScript()
-    script.add_comment(f"Extract {plane}-plane pattern cut at {frequency} GHz")
-    script.add_comment(f"Result tree path: {tree_path}")
-    script.add_blank()
-
     if plane == "E":
         phi_val = 0.0
-        cut_type = "polar"
     elif plane == "H":
         phi_val = 90.0
-        cut_type = "polar"
     else:
-        phi_val = phi_cut
-        cut_type = "polar"
+        phi_val = float(_n(phi_cut, "phi_cut"))
+    step = 1.0
+    if plane == "custom" and theta_cut:
+        step = float(_n(theta_cut, "theta_cut"))
+        if not 0 < step <= 90:
+            raise ValueError("theta_cut (step) must be in (0, 90] degrees for a custom cut")
 
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
-        f'  ff.Plottype "{cut_type}"',
-        '  ff.SetPlotMode "Gain"',
-        f'  ff.Step "{int(theta_cut) if plane == "custom" else 1}"',
-        '  ff.SetScaleLinear "False"',
-        "",
-        f"  ' Set phi cut plane to {phi_val} degrees",
-        '  ff.Vary "angle1"',
-        f'  ff.Phi "{_n(phi_val, "phi_cut")}"',
-        "",
-        "  ' Export the pattern cut data",
-        '  ff.Plot',
-        "",
-        "  ' Read gain values vs angle",
-        "  Dim nPoints As Long",
-        '  nPoints = ff.GetNPoints',
-        "  Dim i As Long",
-        "  For i = 0 To nPoints - 1",
-        "    Dim angle As Double, gain As Double",
-        "    angle = ff.GetAngle(i)",
-        "    gain = ff.GetValue(i)",
-        '    Debug.Print angle & "," & gain',
-        "  Next i",
+    script = VBAScript()
+    script.add_comment(f"Extract {plane}-plane pattern cut at {frequency} GHz (phi={phi_val} and phi+180)")
+    script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
+    script.add_blank()
+
+    out = None
+    lines = ["Sub Main()"] + _ff_setup("gain", plottype="polar") + _ff_select(tree_path) + _ff_list_table(
+        out,
+        [("spherical abs", "Gain_abs[dBi]"),
+         ("spherical linear theta abs", "Gain_theta[dBi]"),
+         ("spherical linear phi abs", "Gain_phi[dBi]")],
+        theta=(0, 180, step),
+        phi_values=[phi_val, (phi_val + 180.0) % 360.0],
+    ) + [
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -1319,51 +1270,43 @@ def _build_pattern_cut_vba(
 
 
 def _build_cross_polarization_vba(frequency: float, definition: str) -> str:
-    """Build VBA script for extracting cross-polarization data."""
+    """Co/cross-pol peaks via CalculateList + GetList (documented components)."""
     tree_path = _farfield_tree_path(frequency)
+    comps = {
+        "Ludwig3": ("ludwig3 linear copolar abs", "ludwig3 linear crosspolar abs"),
+        "Ludwig2": ("ludwig2ae linear copolar abs", "ludwig2ae linear crosspolar abs"),
+        "circular": ("spherical circular left abs", "spherical circular right abs"),
+    }
+    co, cross = comps.get(definition, comps["Ludwig3"])
+
     script = VBAScript()
     script.add_comment(f"Extract cross-polarization ({definition}) at {frequency} GHz")
     script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
     script.add_blank()
 
-    pol_mode_map = {
-        "Ludwig3": "ludwig3",
-        "Ludwig2": "ludwig2",
-        "circular": "circular",
-    }
-    pol_mode = pol_mode_map.get(definition, "ludwig3")
-
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
-        '  ff.Plottype "polar"',
-        '  ff.SetPlotMode "Gain"',
-        "",
-        f"  ' Set polarization definition to {definition}",
-        f'  ff.SetPolarizationType "{pol_mode}"',
-        "",
-        "  ' Get co-pol peak gain",
-        '  ff.SetPlotComponent "copol"',
-        '  ff.Plot',
-        '  Dim copolGain As Double',
-        '  copolGain = ff.GetResultValue("max gain")',
-        '  Debug.Print "Co-pol peak gain (dBi): " & copolGain',
-        "",
-        "  ' Get cross-pol peak",
-        '  ff.SetPlotComponent "crosspol"',
-        '  ff.Plot',
-        '  Dim xpolGain As Double',
-        '  xpolGain = ff.GetResultValue("max gain")',
-        '  Debug.Print "Cross-pol peak (dBi): " & xpolGain',
-        "",
-        "  ' Cross-polarization discrimination",
-        "  Dim xpd As Double",
-        "  xpd = copolGain - xpolGain",
-        '  Debug.Print "XPD (dB): " & xpd',
+    lines = ["Sub Main()"] + _ff_setup("gain") + _ff_select(tree_path) + [
+        "  Dim th As Double, ph As Double, i As Long",
+        "  Dim co As Variant, xp As Variant",
+        "  Dim coMax As Double, xpMax As Double",
+        "  FarfieldPlot.Plot",
+        "  For ph = 0 To 355 Step 5",
+        "    For th = 0 To 180 Step 5",
+        '      FarfieldPlot.AddListEvaluationPoint(th, ph, 0, "spherical", "", 0)',
+        "    Next th",
+        "  Next ph",
+        '  FarfieldPlot.CalculateList("")',
+        f'  co = FarfieldPlot.GetList("{co}")',
+        f'  xp = FarfieldPlot.GetList("{cross}")',
+        "  coMax = -1E+30",
+        "  xpMax = -1E+30",
+        "  For i = LBound(co) To UBound(co)",
+        "    If co(i) > coMax Then coMax = co(i)",
+        "    If xp(i) > xpMax Then xpMax = xp(i)",
+        "  Next i",
+        '  Debug.Print "Co-pol peak gain (dBi): " & coMax',
+        '  Debug.Print "Cross-pol peak (dBi): " & xpMax',
+        '  Debug.Print "XPD (dB): " & (coMax - xpMax)',
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -1373,58 +1316,34 @@ def _build_cross_polarization_vba(frequency: float, definition: str) -> str:
 def _build_axial_ratio_vba(
     frequency: float, mode: str, theta_cut: float, phi_cut: float
 ) -> str:
-    """Build VBA script for extracting axial ratio."""
+    """Axial ratio via documented "spherical circular axialratio" component."""
     tree_path = _farfield_tree_path(frequency)
+    phi_s = _n(phi_cut, "phi_cut")
+    theta_s = _n(theta_cut, "theta_cut")
+
     script = VBAScript()
     script.add_comment(f"Extract axial ratio at {frequency} GHz ({mode})")
     script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
     script.add_blank()
 
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
-        '  ff.Plottype "polar"',
-        '  ff.SetPlotMode "Axial Ratio"',
-        "",
-    ]
-
+    lines = ["Sub Main()"] + _ff_setup("gain") + _ff_select(tree_path)
     if mode == "vs_angle":
+        out = None
+        lines += _ff_list_table(
+            out,
+            [("spherical circular axialratio", "AxialRatio[dB]")],
+            theta=(0, 180, 1),
+            phi_values=[float(phi_s)],
+        )
+    else:  # single direction (frequency sweep needs one run per farfield monitor)
         lines += [
-            f"  ' Plot axial ratio vs theta at phi={phi_cut} deg",
-            '  ff.Vary "angle1"',
-            f'  ff.Phi "{_n(phi_cut, "phi_cut")}"',
-            '  ff.Plot',
-            "",
-            "  ' Read axial ratio values vs angle",
-            "  Dim nPoints As Long",
-            '  nPoints = ff.GetNPoints',
-            "  Dim i As Long",
-            "  For i = 0 To nPoints - 1",
-            "    Dim angle As Double, ar As Double",
-            "    angle = ff.GetAngle(i)",
-            "    ar = ff.GetValue(i)",
-            '    Debug.Print angle & "," & ar',
-            "  Next i",
+            "  FarfieldPlot.Plot",
+            "  Dim ar As Double",
+            f'  ar = FarfieldPlot.CalculatePoint({theta_s}, {phi_s}, "spherical circular axialratio", "")',
+            f'  Debug.Print "Axial Ratio (dB) at theta={theta_s}, phi={phi_s}: " & ar',
         ]
-    else:  # vs_frequency
-        lines += [
-            f"  ' Extract axial ratio at theta={theta_cut}, phi={phi_cut}",
-            f'  ff.SetObservationAngle "{_n(theta_cut, "theta_cut")}", "{_n(phi_cut, "phi_cut")}"',
-            '  ff.Plot',
-            "",
-            "  ' Read axial ratio at the observation direction",
-            '  Dim ar As Double',
-            '  ar = ff.GetResultValue("axial ratio")',
-            '  Debug.Print "Axial Ratio (dB): " & ar',
-        ]
-
-    lines += [
-        "End Sub",
-    ]
+    lines.append("End Sub")
     script.add_raw("\n".join(lines))
     return script.build()
 
@@ -1482,24 +1401,17 @@ def _build_efficiency_breakdown_vba(frequency: float) -> str:
         "Sub Main()",
         f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
         "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
+        "  FarfieldPlot.Plot",
         "",
-        "  ' Get efficiency values from far-field",
+        "  ' Documented CST 2026 getters; values in dB (-200 = no data)",
         "  Dim radEff As Double, totEff As Double",
-        '  radEff = ff.GetResultValue("rad. efficiency")',
-        '  totEff = ff.GetResultValue("tot. efficiency")',
-        '  Debug.Print "Radiation Efficiency: " & radEff',
-        '  Debug.Print "Total Efficiency: " & totEff',
+        "  radEff = FarfieldPlot.GetRadiationEfficiency",
+        "  totEff = FarfieldPlot.GetTotalEfficiency",
+        '  Debug.Print "Radiation Efficiency (dB): " & radEff',
+        '  Debug.Print "Total Efficiency (dB): " & totEff',
         "",
-        "  ' Compute mismatch loss",
         "  Dim mismatchLoss As Double",
-        "  If radEff > 0 And totEff > 0 Then",
-        "    mismatchLoss = 10 * Log(totEff / radEff) / Log(10)",
-        "  Else",
-        "    mismatchLoss = -99",
-        "  End If",
+        "  mismatchLoss = totEff - radEff",
         '  Debug.Print "Mismatch Loss (dB): " & mismatchLoss',
         "",
         "  ' Read power budget from Tables for loss breakdown",
@@ -1733,45 +1645,35 @@ def _build_bandwidth_vba(port: int, threshold_db: float, criterion: str) -> str:
 def _build_radiation_pattern_3d_vba(
     frequency: float, resolution_deg: float, coordinate: str
 ) -> str:
-    """Build VBA script for exporting full 3D radiation pattern."""
+    """Full-sphere gain table via AddListEvaluationPoint + CalculateList + GetList.
+
+    ``FarfieldPlot.ASCIIExportAsSource`` (used previously) writes a farfield
+    *source* file for excitation, not a gain table, so it is not used here.
+    """
+    if coordinate != "spherical":
+        raise ValueError("Only spherical (theta/phi) gain tables are supported")
+    step = float(_n(resolution_deg, "resolution_deg"))
+    if not 0 < step <= 90:
+        raise ValueError("resolution_deg must be in (0, 90]")
     tree_path = _farfield_tree_path(frequency)
+
     script = VBAScript()
-    script.add_comment(f"Export full 3D radiation pattern at {frequency} GHz")
-    script.add_comment(f"Resolution: {resolution_deg} degrees")
-    script.add_comment(f"Coordinate system: {coordinate}")
+    script.add_comment(f"Export full 3D gain table at {frequency} GHz, step {resolution_deg} deg")
     script.add_comment(f"Result tree path: {tree_path}")
+    script.add_comment("Uses only FarfieldPlot methods documented in the CST 2026 help.")
     script.add_blank()
 
-    lines = [
-        "Sub Main()",
-        f'  SelectTreeItem "{_q(tree_path, "tree_path")}"',
-        "",
-        "  Dim ff As Object",
-        "  Set ff = FarfieldPlot",
-        "  ff.Reset",
-        '  ff.Plottype "3D"',
-        '  ff.SetPlotMode "Gain"',
-        f'  ff.Step "{_n(resolution_deg, "resolution_deg")}"',
-        "",
-    ]
-
-    if coordinate == "cartesian":
-        lines += [
-            '  ff.SetCoordinateSystemType "cartesian"',
-        ]
-    else:
-        lines += [
-            '  ff.SetCoordinateSystemType "spherical"',
-        ]
-
-    lines += [
-        "",
-        "  ' Export 3D pattern data to ASCII file",
-        f'  ff.ASCIIExportAsSource "farfield_3d_{frequency}GHz.txt"',
-        "",
-        '  Debug.Print "3D pattern exported at ' + f'{frequency} GHz"',
-        '  Debug.Print "Resolution: ' + f'{resolution_deg} deg"',
-        '  Debug.Print "Format: theta, phi, gain_abs, gain_theta, gain_phi, phase_theta, phase_phi"',
+    out = None
+    lines = ["Sub Main()"] + _ff_setup("gain", step_deg=step) + _ff_select(tree_path) + _ff_list_table(
+        out,
+        [("spherical abs", "Gain_abs[dBi]"),
+         ("spherical linear theta abs", "Gain_theta[dBi]"),
+         ("spherical linear phi abs", "Gain_phi[dBi]"),
+         ("spherical linear theta phase", "Phase_theta[deg]"),
+         ("spherical linear phi phase", "Phase_phi[deg]")],
+        theta=(0, 180, step),
+        phi=(0, 360 - step, step),
+    ) + [
         "End Sub",
     ]
     script.add_raw("\n".join(lines))
@@ -1954,6 +1856,35 @@ async def handle(name: str, arguments: dict, client: CSTClient) -> list[TextCont
         )]
 
 
+def _export_farfield_grid(client, frequency, step_deg, monitor_name=None, filepath=None) -> dict:
+    """Configure FarfieldPlot (3D realized gain, dB, locked step) and export the
+    selected farfield with the ASCIIExport route (live-verified in CST 2026)."""
+    settings = (VBABuilder("FarfieldPlot").call("Reset").set("Plottype", "3d")
+                .set("SetPlotMode", "realized gain").set_bool("SetScaleLinear", False)
+                .set_number("Step", step_deg).set_number("Step2", step_deg)
+                .set_bool("SetLockSteps", True).build())
+    configured = client.execute_vba_silent(settings)
+    if configured.get("status") != "executed":
+        return configured
+    return client.export_farfield_ascii(frequency, filepath=filepath, monitor_name=monitor_name)
+
+
+def _pattern_cut_from_table(table: dict, phi_deg: float) -> dict:
+    """Slice a theta/phi table into a -180..180 cut through phi and phi+180."""
+    vc = table["value_col"]
+    back = (phi_deg + 180.0) % 360.0
+    pts = []
+    for r in table["rows"]:
+        if len(r) <= vc:
+            continue
+        if abs((r[1] - phi_deg) % 360.0) < 1e-6:
+            pts.append((r[0], r[vc]))
+        elif abs((r[1] - back) % 360.0) < 1e-6 and 0 < r[0] < 180:
+            pts.append((-r[0], r[vc]))
+    pts.sort()
+    return {"angle_deg": [p[0] for p in pts], "value": [p[1] for p in pts]}
+
+
 async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[TextContent]:
     """Internal implementation of the result tool handler."""
 
@@ -1995,13 +1926,9 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
         resolution = float(arguments.get("resolution_deg", 5))
         if not 0 < resolution <= 90:
             return _text({"status": "error", "message": "resolution_deg must be in (0, 90]"})
-        settings = (VBABuilder("FarfieldPlot").call("Reset").set("Plottype", "3d")
-                    .set("SetPlotMode", "realized gain").set_bool("SetScaleLinear", False)
-                    .set_number("Step", resolution).set_number("Step2", resolution).set_bool("SetLockSteps", True).build())
-        configured = client.execute_vba_silent(settings)
-        if configured.get("status") != "executed":
-            return _text(configured)
-        result = client.export_farfield_ascii(frequency, monitor_name=arguments.get("monitor_name"))
+        result = _export_farfield_grid(client, frequency, resolution, arguments.get("monitor_name"))
+        if result.get("status") != "exported":
+            return _text(result)
         result.update(quantity="realized_gain", coordinate="spherical", requested_step_deg=resolution)
         return _text(result)
 
@@ -2607,11 +2534,38 @@ async def _handle_impl(name: str, arguments: dict, client: CSTClient) -> list[Te
         tree_path = _farfield_tree_path(frequency)
 
         if client.connected:
-            result = client.get_result(tree_path)
-            result["frequency_ghz"] = frequency
-            result["plane"] = plane
-            result["tree_path"] = tree_path
-            return _text(result)
+            from pathlib import Path as _Path
+
+            from cst_mcp.execution.farfield import parse_cst_farfield_ascii
+
+            phi_val = 0.0 if plane == "E" else (90.0 if plane == "H" else float(_n(phi_cut, "phi_cut")))
+            step = 1.0 if float(phi_val).is_integer() else 0.5
+            out = client.config.work_dir / "exports" / f"farfield_cut_{frequency}GHz_phi{phi_val:g}.txt"
+            result = _export_farfield_grid(client, frequency, step, arguments.get("monitor_name"), out)
+            if result.get("status") != "exported":
+                return _text(result)
+            table = parse_cst_farfield_ascii(_Path(result["path"]).read_text(encoding="utf-8", errors="replace"))
+            if table is None:
+                return _text({**result, "status": "error", "message": "Farfield export has no numeric table"})
+            cut = _pattern_cut_from_table(table, phi_val)
+            if not cut["value"]:
+                return _text({**result, "status": "error", "message": f"No rows at phi={phi_val:g} in export"})
+            peak_i = max(range(len(cut["value"])), key=cut["value"].__getitem__)
+            return _text({
+                "status": "ok",
+                "frequency_ghz": frequency,
+                "plane": plane,
+                "phi_deg": phi_val,
+                "quantity": table["columns"][table["value_col"]] if table["value_col"] < len(table["columns"]) else "value",
+                "angle_convention": "signed theta: +theta at phi, -theta at phi+180",
+                "tree_path": result.get("tree_path"),
+                "path": result.get("path"),
+                "peak_value": cut["value"][peak_i],
+                "peak_angle_deg": cut["angle_deg"][peak_i],
+                "n_points": len(cut["value"]),
+                "angle_deg": cut["angle_deg"],
+                "value": cut["value"],
+            })
 
         vba = _build_pattern_cut_vba(frequency, plane, phi_cut, theta_cut)
         return _text({

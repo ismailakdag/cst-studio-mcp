@@ -14,7 +14,7 @@
       "tools": [
         {
           "name": "cst_search_help",
-          "description": "Search the installed official CST Python/VBA help by topic filename. Does not start CST. Read the matching help before constructing API calls.",
+          "description": "Full-text search of the installed official CST Python/VBA help (offline; does not start CST). Every query word must appear in the topic's file name, title or page text (AND semantics, case-insensitive substring), so multi-word queries such as 'Polygon ExtrudeCurve' and in-page method names such as 'AddPotentialNumerically' are found. Title/file-name hits rank above body-only hits; each result carries a text snippet around the match. The index is built once (cached in memory and under the work dir). Read the matching help with cst_read_help before constructing API calls.",
           "category_id": "official",
           "params": [
             {
@@ -183,9 +183,21 @@
       "tools": [
         {
           "name": "cst_connect",
-          "description": "Explicitly attach to a running CST Design Environment or start one. Disabled mode never connects.",
+          "description": "Explicitly attach to a CST Design Environment (DE). Disabled mode never connects. mode='any' (default) uses connect_to_any_or_new(): it attaches to ANY running DE, including one the user opened interactively (and adopts its active project), or starts a new DE when none is running. mode='new' always starts a fresh DE via DesignEnvironment.new() and never touches an existing DE or its projects; prefer it for unattended/batch work while the user may have CST open. The response reports de_pid, newly_started, running_des_before and open_project_paths so you can see what was attached; a 'warning' is added when the DE may be a pre-existing (user) session.",
           "category_id": "connection",
-          "params": [],
+          "params": [
+            {
+              "name": "mode",
+              "type": "string",
+              "description": "'any' = attach to any running DE or start one; 'new' = always start a fresh DE.",
+              "default": "any",
+              "enum": [
+                "any",
+                "new"
+              ],
+              "required": false
+            }
+          ],
           "required": []
         },
         {
@@ -1242,7 +1254,7 @@
         },
         {
           "name": "cst_create_extrude",
-          "description": "Extrude a 2D polygon profile into a 3D solid in CST Studio.",
+          "description": "Extrude a 2D polygon profile into a 3D solid in CST Studio (Extrude object, Mode 'pointlist'). The profile lies in the plane normal to 'axis' (default z) at the given x/y/z_offset; optional 'holes' are extruded the same way and subtracted (Solid.Subtract).",
           "category_id": "geometry",
           "params": [
             {
@@ -1284,6 +1296,50 @@
               "default": null,
               "enum": null,
               "required": true
+            },
+            {
+              "name": "axis",
+              "type": "string",
+              "description": "Extrusion axis (profile plane normal). z: (u,v)=(x,y); x: (u,v)=(y,z); y: (u,v)=(x,-z).",
+              "default": "z",
+              "enum": [
+                "x",
+                "y",
+                "z"
+              ],
+              "required": false
+            },
+            {
+              "name": "x_offset",
+              "type": "number",
+              "description": "Base-plane position on the x axis (only valid with axis='x').",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "y_offset",
+              "type": "number",
+              "description": "Base-plane position on the y axis (only valid with axis='y').",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "z_offset",
+              "type": "number",
+              "description": "Base-plane position on the z axis (only valid with axis='z', the default).",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "holes",
+              "type": "array",
+              "description": "Optional holes/slots: each a list of [x, y] pairs in the same profile plane. Each hole is extruded with the same height and removed with Solid.Subtract.",
+              "default": [],
+              "enum": null,
+              "required": false
             }
           ],
           "required": [
@@ -1663,7 +1719,7 @@
         },
         {
           "name": "cst_create_polygon_extrude",
-          "description": "Create a polygon and extrude it along an axis in CST Studio. Convenience tool combining polygon profile creation and extrusion.",
+          "description": "Create a polygon and extrude it along an axis in CST Studio. Convenience tool combining polygon profile creation (Polygon3D curve) and extrusion (ExtrudeCurve). The profile lies at the base plane given by x/y/z_offset for the chosen axis; optional 'holes' (lists of [x, y]) are extruded the same way and removed with Solid.Subtract, e.g. for slotted/fractal patches.",
           "category_id": "geometry",
           "params": [
             {
@@ -1716,6 +1772,38 @@
                 "y",
                 "z"
               ],
+              "required": false
+            },
+            {
+              "name": "x_offset",
+              "type": "number",
+              "description": "Base-plane position on the x axis (only valid with axis='x').",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "y_offset",
+              "type": "number",
+              "description": "Base-plane position on the y axis (only valid with axis='y').",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "z_offset",
+              "type": "number",
+              "description": "Base-plane position on the z axis (only valid with axis='z', the default).",
+              "default": 0,
+              "enum": null,
+              "required": false
+            },
+            {
+              "name": "holes",
+              "type": "array",
+              "description": "Optional holes/slots: each a list of [x, y] pairs in the same profile plane. Each hole is extruded with the same height and removed with Solid.Subtract.",
+              "default": [],
+              "enum": null,
               "required": false
             }
           ],
@@ -5206,13 +5294,21 @@
             {
               "name": "format",
               "type": "string",
-              "description": "Export format: csv (comma-separated), ffs (CST far-field source), nsf (NSI near-to-far-field).",
+              "description": "Export format: csv = realized-gain table of the selected farfield via the ASCIIExport object; ffs = farfield SOURCE file via FarfieldPlot.ASCIIExportAsSource (for excitation, not a gain table); nsf is not documented in CST 2026 and returns an error.",
               "default": "csv",
               "enum": [
                 "csv",
                 "ffs",
                 "nsf"
               ],
+              "required": false
+            },
+            {
+              "name": "monitor_name",
+              "type": "string",
+              "description": "Exact farfield tree name under Farfields (e.g. 'farfield (f=2.4) [1]').",
+              "default": null,
+              "enum": null,
               "required": false
             }
           ],

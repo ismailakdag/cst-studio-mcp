@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import logging
 import re
+import threading
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -10,6 +14,8 @@ from mcp.types import Tool
 
 from cst_mcp.execution.curves import format_curve, read_curve
 from cst_mcp.tools.registry import as_json, err
+
+logger = logging.getLogger(__name__)
 
 
 def tool(name, description, properties, required=()):
@@ -28,7 +34,13 @@ def tool(name, description, properties, required=()):
 TOOLS = [
     tool(
         "cst_search_help",
-        "Search the installed official CST Python/VBA help by topic filename. Does not start CST. Read the matching help before constructing API calls.",
+        "Full-text search of the installed official CST Python/VBA help (offline; does not start CST). "
+        "Every query word must appear in the topic's file name, title or page text (AND semantics, "
+        "case-insensitive substring), so multi-word queries such as 'Polygon ExtrudeCurve' and in-page "
+        "method names such as 'AddPotentialNumerically' are found. Title/file-name hits rank above "
+        "body-only hits; each result carries a text snippet around the match. The index is built once "
+        "(cached in memory and under the work dir). Read the matching help with cst_read_help before "
+        "constructing API calls.",
         {
             "query": {"type": "string", "minLength": 2},
             "limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 15},
@@ -80,20 +92,162 @@ class TextOnly(HTMLParser):
         super().__init__()
         self.skip = 0
         self.parts = []
+        self.title = ""
+        self._in_title = False
 
     def handle_starttag(self, tag, attrs):
         if tag in {"script", "style"}:
             self.skip += 1
+        if tag == "title":
+            self._in_title = True
         if tag in {"p", "div", "br", "li", "tr", "h1", "h2", "h3", "dt", "dd"}:
             self.parts.append("\n")
 
     def handle_endtag(self, tag):
         if tag in {"script", "style"}:
             self.skip = max(0, self.skip - 1)
+        if tag == "title":
+            self._in_title = False
 
     def handle_data(self, data):
+        if self._in_title:
+            self.title += data
+            return
         if not self.skip:
             self.parts.append(data)
+
+
+_HELP_DIRS = ("Python", "PythonTutorial", "mergedProjects/VBA_3D", "mergedProjects/VBA_DES")
+# RoboHelp/Sphinx search-engine data and generated index pages are not topics.
+_HELP_SKIP_PARTS = {"whgdata", "whxdata", "_static", "_sources", "_images", "_plantuml"}
+_HELP_SKIP_NAMES = {"search.html", "genindex.html", "py-modindex.html"}
+_HELP_INDEX_VERSION = 1
+_HELP_INDEX_CACHE: dict[str, list[dict]] = {}
+_HELP_INDEX_LOCK = threading.Lock()
+
+
+def _html_to_text(raw: str) -> tuple[str, str]:
+    parser = TextOnly()
+    parser.feed(raw)
+    parser.close()
+    text = re.sub(r"[ \t\r\f\v\xa0]+", " ", "".join(parser.parts))
+    text = re.sub(r"\n\s*\n+", "\n\n", text).strip()
+    return parser.title.strip(), text
+
+
+def _help_files(root: Path) -> list[Path]:
+    files = []
+    for directory in _HELP_DIRS:
+        base = root / directory
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*.htm*"):
+            rel_parts = path.relative_to(root).parts
+            if _HELP_SKIP_PARTS.intersection(p.lower() for p in rel_parts):
+                continue
+            if path.name.lower() in _HELP_SKIP_NAMES or path.suffix.lower() not in {".htm", ".html"}:
+                continue
+            files.append(path)
+    return sorted(files)
+
+
+def _help_signature(root: Path, files: list[Path]) -> str:
+    digest = hashlib.sha1(f"{_HELP_INDEX_VERSION}|{root}".encode("utf-8"))
+    for path in files:
+        try:
+            st = path.stat()
+        except OSError:
+            continue
+        rel = path.relative_to(root).as_posix()
+        digest.update(f"{rel}|{st.st_size}|{int(st.st_mtime)}".encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _help_index(root: Path, work_dir=None) -> list[dict]:
+    """Full-text index of the installed help, built once per process.
+
+    Cached in memory and, when a writable work dir exists, as JSON under
+    ``<work_dir>/.cst_mcp_cache`` keyed by a signature of file names, sizes
+    and mtimes (so a CST update rebuilds it).  Never touches the network.
+    """
+    key = str(root)
+    with _HELP_INDEX_LOCK:
+        cached = _HELP_INDEX_CACHE.get(key)
+        if cached is not None:
+            return cached
+        files = _help_files(root)
+        signature = _help_signature(root, files)
+        cache_file = None
+        if work_dir:
+            try:
+                cache_file = Path(work_dir) / ".cst_mcp_cache" / f"help_index_{signature[:16]}.json"
+                if cache_file.is_file():
+                    data = json.loads(cache_file.read_text(encoding="utf-8"))
+                    if data.get("signature") == signature:
+                        _HELP_INDEX_CACHE[key] = data["entries"]
+                        return data["entries"]
+            except (OSError, ValueError, KeyError, TypeError):
+                logger.debug("help index cache unreadable", exc_info=True)
+        entries = []
+        for path in files:
+            try:
+                title, text = _html_to_text(path.read_text(encoding="utf-8", errors="replace"))
+            except Exception:  # noqa: BLE001 - one broken page must not kill search
+                logger.debug("could not index %s", path, exc_info=True)
+                continue
+            entries.append({"topic": path.relative_to(root).as_posix(), "title": title, "text": text})
+        _HELP_INDEX_CACHE[key] = entries
+        if cache_file is not None:
+            try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                tmp = cache_file.with_suffix(".tmp")
+                tmp.write_text(json.dumps({"signature": signature, "entries": entries}), encoding="utf-8")
+                tmp.replace(cache_file)
+            except OSError:
+                logger.debug("help index cache not written", exc_info=True)
+        return entries
+
+
+def _snippet(text: str, words: list[str], width: int = 110) -> str:
+    low = text.lower()
+    found = [(low.find(w), len(w)) for w in words if w in low]
+    if not found:
+        return re.sub(r"\s+", " ", text[: 2 * width]).strip()
+    # Anchor on the longest (most specific) word's first occurrence.
+    anchor = max(found, key=lambda t: t[1])[0]
+    start, end = max(0, anchor - width), min(len(text), anchor + width)
+    snippet = re.sub(r"\s+", " ", text[start:end]).strip()
+    return ("..." if start else "") + snippet + ("..." if end < len(text) else "")
+
+
+def _search_index(index: list[dict], words: list[str], query: str) -> list[dict]:
+    phrase = re.sub(r"\s+", " ", query.strip().lower())
+    scored = []
+    for entry in index:
+        head = (entry["topic"] + " " + entry["title"]).lower()
+        body = entry["text"].lower()
+        in_head = [w in head for w in words]
+        if not all(h or (w in body) for w, h in zip(words, in_head)):
+            continue
+        head_hits = sum(in_head)
+        tier = 0 if all(in_head) else (1 if head_hits else 2)
+        body_count = sum(body.count(w) for w in words)
+        phrase_hit = len(words) > 1 and phrase in body
+        key = (tier, -head_hits, not phrase_hit, -body_count, len(entry["topic"]), entry["topic"])
+        scored.append(
+            (
+                key,
+                {
+                    "topic": entry["topic"],
+                    "title": entry["title"],
+                    "match": "title" if tier == 0 else ("title+body" if tier == 1 else "body"),
+                    "body_hits": body_count,
+                    "snippet": _snippet(entry["text"], words),
+                },
+            )
+        )
+    scored.sort(key=lambda item: item[0])
+    return [item[1] for item in scored]
 
 
 async def handle(name, arguments, client):
@@ -102,27 +256,21 @@ async def handle(name, arguments, client):
             return err("CST installation not found; set CST_PATH")
         root = (Path(client.config.cst_path) / "Online Help").resolve()
         if name == "cst_search_help":
-            words = re.findall(r"[a-z0-9]+", arguments["query"].lower())
+            words = re.findall(r"[a-z0-9_]+", arguments["query"].lower())
             if not words:
                 return err("Enter a Python/VBA topic name")
-            matches = []
-            for directory in [
-                root / "Python",
-                root / "PythonTutorial",
-                root / "mergedProjects/VBA_3D",
-                root / "mergedProjects/VBA_DES",
-            ]:
-                for path in directory.rglob("*.htm*"):
-                    rel = path.relative_to(root).as_posix()
-                    if all(word in rel.lower() for word in words):
-                        matches.append(rel)
-            matches.sort(key=lambda s: (len(s), s))
+            index = _help_index(root, getattr(client.config, "work_dir", None))
+            results = _search_index(index, words, arguments["query"])
+            limit = arguments.get("limit", 15)
             return as_json(
                 {
                     "status": "ok",
                     "installation": str(client.config.cst_path),
-                    "count": len(matches),
-                    "topics": matches[: arguments.get("limit", 15)],
+                    "query_words": words,
+                    "indexed_topics": len(index),
+                    "count": len(results),
+                    "topics": [r["topic"] for r in results[:limit]],
+                    "results": results[:limit],
                 }
             )
         path = (root / arguments["topic"]).resolve()
