@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Historical import helper for RFingAdam/mcp-cst-studio; see root LICENSE and NOTICE.
+# This script overwrites maintained files; review changes and preserve notices before reuse.
+
 """Port all tools from _reference into cst_mcp with package renames."""
 
 from __future__ import annotations

@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Derived from mcp-cst-studio by RFingAdam; see NOTICE.
+# Modified in cst-studio-mcp: 2026-08-02 through 2026-09-23.
+# Attribution/license notice added 2026-11-02.
+
 """Input validation and VBA injection prevention."""
 
 from __future__ import annotations

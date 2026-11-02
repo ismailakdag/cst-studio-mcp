@@ -262,6 +262,9 @@ def build_catalog(tools: list[dict]) -> dict:
         categories.append({**cat, "count": len(items), "tools": items})
     return {
         "name": "cst-studio-mcp",
+        "package_license": "AGPL-3.0-or-later",
+        "upstream": "https://github.com/RFingAdam/mcp-cst-studio",
+        "license_scope": "https://github.com/ismailakdag/cst-studio-mcp/blob/main/LICENSE",
         "version": __import__("cst_mcp").__version__,
         "total_tools": len(tools),
         "categories": categories,

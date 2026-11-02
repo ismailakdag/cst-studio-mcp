@@ -1,0 +1,109 @@
+cst-studio-mcp
+==============
+
+Based on mcp-cst-studio by RFingAdam, licensed AGPL-3.0-or-later:
+https://github.com/RFingAdam/mcp-cst-studio
+
+This derivative is maintained by Ismail Akdag. These credits identify the
+upstream project and this project's maintainer, not exclusive ownership of
+every file. No separate commercial license or other permission is claimed.
+
+Provenance verified on 2026-11-02
+-------------------------------
+The imported baseline was compared with upstream commit
+0269660ceb2a8da36af49e09a870a20742b22ceb (dated 2026-05-27), whose
+pyproject.toml specifies AGPL-3.0-or-later. Upstream history records the
+Apache-2.0 to AGPL-3.0-or-later change at
+75f73e1870628ed9ad93e33c7bcdc9c13a3f118e (dated 2026-05-13).
+The current upstream LICENSE is unchanged from that AGPL baseline.
+Commit dates describe the available history, not independent proof of when
+a particular repository was publicly accessible.
+
+A corroborating public derivative is:
+https://github.com/guardianer9-debug/cst-studio-orchestrator-mcp
+commit 14b7f89d28a15b8c64af5c511d95bce1307a60ea (dated 2026-06-29).
+Its NOTICE credits RFingAdam's mcp-cst-studio and AGPL-3.0-or-later.
+It is comparison evidence; this notice does not claim that it was the
+actual route by which the original source was obtained.
+
+Our initial import is commit 3c082816aff2eade3b9dc7bf60f6feb52de34cb5
+(dated 2026-08-02). scripts/port_tools.py records the copy from _reference/
+and the mcp_cst_studio -> cst_mcp package rename. Comparison with each of
+the above baselines finds 18 Python files identical at that initial commit
+after only package-name and CRLF normalization. This is provenance evidence,
+not a measure of authorship or contribution percentages.
+
+Imported files and modification notices
+---------------------------------------
+The following paths derive from the corresponding upstream package paths.
+Dates below record this repository's import and latest recorded file change
+before the license correction, through e027735f0f61e666801fe18a6e0f93cfbfff9f69.
+Attribution/license notices were added on 2026-11-02; no runtime behavior
+was changed by that correction. Upstream files did not carry individual
+copyright headers; no ownership dates have been invented.
+
+- src/cst_mcp/__init__.py: adapted/modified 2026-08-02 through 2026-09-16.
+- src/cst_mcp/config.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/cst_client.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/dialog_handler.py: unchanged apart from line endings before attribution.
+- src/cst_mcp/server.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/__init__.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/antenna_templates.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/arrays.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/boolean.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/boundaries.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/diagnostics.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/geometry.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/import_export.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/matching.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/materials.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/mesh.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/optimization.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/parameters.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/pcb.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/ports.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/project.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/results.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/simulation.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/solvers.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/tools/transforms.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/tools/vba.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/types.py: adapted/modified 2026-08-02 through 2026-09-24.
+- src/cst_mcp/validators.py: adapted/modified 2026-08-02 through 2026-09-23.
+- src/cst_mcp/vba_builder.py: adapted/modified 2026-08-02 through 2026-09-23.
+
+The following upstream data files are unchanged apart from line-ending
+normalization and remain under the package's AGPL-3.0-or-later terms:
+- src/cst_mcp/data/antenna_templates.json
+- src/cst_mcp/data/materials/common_dielectrics.json
+- src/cst_mcp/data/materials/common_metals.json
+- src/cst_mcp/data/materials/ferrites.json
+- src/cst_mcp/data/materials/substrates.json
+- src/cst_mcp/data/pcb_stackups.json
+- src/cst_mcp/data/vba_reference.json
+
+Development in this derivative
+------------------------------
+The upstream already used the official CST Python API. This project builds
+on that implementation and its tool catalog. Additions and revisions include:
+- Explicit session attachment/launch controls, solver-busy and existing-result
+  guards, timeout handling, VBA validation, and isolation of MCP stdout
+  (session.py, vba_safety.py, server.py and tools/connection.py).
+- Complex saved-result reading/analysis and local official-help search
+  (execution/results_reader.py, execution/results_api.py, tools/official.py).
+- Publication figures, farfield metrics and STL-based technical drawings
+  (execution/figures_*, execution/farfield*, execution/drawing_*).
+- Real inset-notch cuts, coaxial probe geometry and RF workflow corrections
+  (domain/antennas/patch.py, tools/workflows.py, tools/antenna_templates.py,
+  tools/ports.py and execution/port_helpers.py).
+- Offline regression tests and usage/validation documentation (tests/, docs/).
+These descriptions identify concrete development areas, not exclusive claims
+to the underlying algorithms or to all code in those areas.
+
+License correction, 2026-11-02
+-----------------------------
+The previous server/package MIT labels were incorrect for the imported
+AGPL derivative. This correction restores AGPL-3.0-or-later, upstream credit,
+dated modification notices and distribution of the license/notice files.
+Independent site, documentation, presentation and font content is not
+blanket-relicensed; see LICENSE for scope and third-party exceptions.

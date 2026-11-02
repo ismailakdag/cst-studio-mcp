@@ -1,5 +1,8 @@
 {
   "name": "cst-studio-mcp",
+  "package_license": "AGPL-3.0-or-later",
+  "upstream": "https://github.com/RFingAdam/mcp-cst-studio",
+  "license_scope": "https://github.com/ismailakdag/cst-studio-mcp/blob/main/LICENSE",
   "version": "1.1.0",
   "total_tools": 192,
   "categories": [

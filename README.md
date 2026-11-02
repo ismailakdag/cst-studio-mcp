@@ -2,6 +2,11 @@
 
 **Python-first MCP server for CST Studio Suite · version 1.1.0**
 
+Based on [mcp-cst-studio](https://github.com/RFingAdam/mcp-cst-studio) by
+**RFingAdam**, licensed **AGPL-3.0-or-later**. This project builds on its server
+and tool catalog; see [NOTICE](NOTICE) for provenance and changes, and
+[License](#license) for the scope of the server/package license.
+
 Drive CST from an AI assistant: open projects, build geometry, set materials and ports,
 run solvers, read S-parameters and farfield metrics, and generate design reports — through
 structured MCP tools on your Windows machine.
@@ -473,9 +478,43 @@ Optional live CST scripts under `scripts/` (require license). Prefer unit tests 
 
 ---
 
+## Upstream and development
+
+The upstream already used the official CST Python API. Development here builds
+on that foundation, including explicit CST session/launch controls and safety
+guards; complex saved-result analysis and official-help search; publication
+figures, farfield metrics and STL technical drawings; real inset cuts and probe
+feed geometry; and regression tests and usage documentation. See [NOTICE](NOTICE)
+for the source files behind these changes and the imported baseline.
+
 ## License
 
-MIT
+The server/package, bundled JSON data, supporting Python scripts, tests and
+package/build configuration are licensed under **GNU AGPL version 3 or (at your
+option) any later version**, SPDX **AGPL-3.0-or-later**. The complete license is
+in [LICENSES/AGPL-3.0-or-later.txt](LICENSES/AGPL-3.0-or-later.txt); [LICENSE](LICENSE)
+defines the scope and [NOTICE](NOTICE) preserves attribution and change notices.
+
+This correction does not relicense all website, documentation or presentation
+content. Generated/copied server tool descriptions and schemas retain the
+server's terms; independent content and third-party assets retain their own
+applicable terms. Inter and Source Serif 4 remain under SIL OFL 1.1. CST Studio
+Suite and its libraries are separate proprietary products.
+
+Commercial use is permitted under the AGPL's conditions. When distributing a
+modified version, preserve the license and notices and identify your changes
+and their dates (sections 4–5). For object-code distributions, provide the
+Corresponding Source as required by section 6; publish the matching sdist and
+build instructions alongside each wheel, with a clear source link and the
+exact revision, rather than relying only on a moving default branch.
+
+The current server uses local MCP stdio. If you expose a modified version to
+users through a network service or gateway, section 13 requires a prominent,
+no-charge offer of the Corresponding Source for that running version. Put that
+offer where remote users interact with the service; a repository link alone
+must not be assumed to cover unpublished deployment changes. Keep MCP stdout
+reserved for protocol messages. Source: [this repository](https://github.com/ismailakdag/cst-studio-mcp).
+
 
 ---
 

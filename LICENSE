@@ -1,0 +1,31 @@
+cst-studio-mcp: license scope
+============================
+
+The server/package software in src/cst_mcp/ (including its JSON data),
+supporting Python scripts in scripts/, tests/, and package/build configuration
+are licensed under the GNU Affero General Public License, version 3 or (at
+your option) any later version (SPDX: AGPL-3.0-or-later).
+
+The complete, unmodified version 3 license text is provided in
+LICENSES/AGPL-3.0-or-later.txt. See NOTICE for upstream attribution, provenance,
+and dated modification notices. This scope statement does not replace or
+add restrictions to that license.
+
+This is not a blanket relicensing of the repository. Independently authored
+website, presentation and documentation content in site/, presentation/,
+docs/ and README.md is not relicensed by this correction; existing grants
+and third-party notices remain applicable. Copied or generated server code,
+tool descriptions and schemas remain covered by the server's AGPL terms
+wherever reproduced, including the generated tool catalogs in docs/ and
+site/docs/. Merely moving covered content does not change its license.
+
+Inter and Source Serif 4 fonts retain their SIL Open Font License 1.1 and
+copyright notices in presentation/*-OFL.txt, site/presentation/*-OFL.txt and
+site/assets/fonts/LICENSE-*.txt. Other separately licensed third-party
+content retains its own terms. This file grants no new license to it.
+
+vba_cst/ includes a CST Online Help dump, separate from the upstream package
+reference data in src/cst_mcp/data/. No AGPL or MIT grant over the vendor's
+help text is asserted here. vba_cst/, site/ and presentation/ are excluded
+from the Python wheel and sdist. CST Studio Suite and its vendor libraries
+are separate proprietary products and are not included in those packages.

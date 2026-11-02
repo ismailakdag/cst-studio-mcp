@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Derived from mcp-cst-studio by RFingAdam; see NOTICE.
+# Attribution/license notice added 2026-11-02.
+
 """Windows dialog handler for CST Studio Suite.
 
 Detects, reads, and dismisses CST modal dialogs that block automation.
